@@ -5,21 +5,21 @@ import java.time.OffsetDateTime;
 public class PersonPermission {
     private String id;
     private String authorizedIdentifier;
-    private String authorizedIdentifierType;
+    private PersonPermissionsAuthorizedIdentifierType authorizedIdentifierType;
     private String targetIdentifier;
-    private String targetIdentifierType;
+    private PersonPermissionsTargetIdentifierType targetIdentifierType;
     private String authorIdentifier;
-    private String authorIdentifierType;
-    private String permissionScope;
+    private PersonPermissionsAuthorIdentifierType authorIdentifierType;
+    private PersonPermissionScope permissionScope;
     private String description;
-    private String permissionState;
+    private PermissionState permissionState;
     private OffsetDateTime startDate;
     private boolean canDelegate;
 
-  public PersonPermission() {
+    public PersonPermission() {
     }
 
-    public PersonPermission(String id, String authorizedIdentifier, String authorizedIdentifierType, String targetIdentifier, String targetIdentifierType, String authorIdentifier, String authorIdentifierType, String permissionScope, String description, String permissionState, OffsetDateTime startDate) {
+    public PersonPermission(String id, String authorizedIdentifier, PersonPermissionsAuthorizedIdentifierType authorizedIdentifierType, String targetIdentifier, PersonPermissionsTargetIdentifierType targetIdentifierType, String authorIdentifier, PersonPermissionsAuthorIdentifierType authorIdentifierType, PersonPermissionScope permissionScope, String description, PermissionState permissionState, OffsetDateTime startDate) {
         this.id = id;
         this.authorizedIdentifier = authorizedIdentifier;
         this.authorizedIdentifierType = authorizedIdentifierType;
@@ -49,11 +49,11 @@ public class PersonPermission {
         this.authorizedIdentifier = authorizedIdentifier;
     }
 
-    public String getAuthorizedIdentifierType() {
+    public PersonPermissionsAuthorizedIdentifierType getAuthorizedIdentifierType() {
         return authorizedIdentifierType;
     }
 
-    public void setAuthorizedIdentifierType(String authorizedIdentifierType) {
+    public void setAuthorizedIdentifierType(PersonPermissionsAuthorizedIdentifierType authorizedIdentifierType) {
         this.authorizedIdentifierType = authorizedIdentifierType;
     }
 
@@ -65,11 +65,11 @@ public class PersonPermission {
         this.targetIdentifier = targetIdentifier;
     }
 
-    public String getTargetIdentifierType() {
+    public PersonPermissionsTargetIdentifierType getTargetIdentifierType() {
         return targetIdentifierType;
     }
 
-    public void setTargetIdentifierType(String targetIdentifierType) {
+    public void setTargetIdentifierType(PersonPermissionsTargetIdentifierType targetIdentifierType) {
         this.targetIdentifierType = targetIdentifierType;
     }
 
@@ -81,19 +81,19 @@ public class PersonPermission {
         this.authorIdentifier = authorIdentifier;
     }
 
-    public String getAuthorIdentifierType() {
+    public PersonPermissionsAuthorIdentifierType getAuthorIdentifierType() {
         return authorIdentifierType;
     }
 
-    public void setAuthorIdentifierType(String authorIdentifierType) {
+    public void setAuthorIdentifierType(PersonPermissionsAuthorIdentifierType authorIdentifierType) {
         this.authorIdentifierType = authorIdentifierType;
     }
 
-    public String getPermissionScope() {
+    public PersonPermissionScope getPermissionScope() {
         return permissionScope;
     }
 
-    public void setPermissionScope(String permissionScope) {
+    public void setPermissionScope(PersonPermissionScope permissionScope) {
         this.permissionScope = permissionScope;
     }
 
@@ -105,11 +105,11 @@ public class PersonPermission {
         this.description = description;
     }
 
-    public String getPermissionState() {
+    public PermissionState getPermissionState() {
         return permissionState;
     }
 
-    public void setPermissionState(String permissionState) {
+    public void setPermissionState(PermissionState permissionState) {
         this.permissionState = permissionState;
     }
 
@@ -118,7 +118,7 @@ public class PersonPermission {
     }
 
     public void setStartDate(OffsetDateTime startDate) {
-      this.startDate = startDate;
+        this.startDate = startDate;
     }
 
     public boolean isCanDelegate() {

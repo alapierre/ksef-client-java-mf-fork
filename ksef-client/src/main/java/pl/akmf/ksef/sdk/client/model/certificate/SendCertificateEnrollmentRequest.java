@@ -1,19 +1,19 @@
 package pl.akmf.ksef.sdk.client.model.certificate;
 
-import java.time.OffsetDateTime;
-
 public class SendCertificateEnrollmentRequest {
     private String certificateName;
     private byte[] csr;
-    private OffsetDateTime validFrom;
+    private String validFrom;
+    private CertificateType certificateType;
 
     public SendCertificateEnrollmentRequest() {
     }
 
-    public SendCertificateEnrollmentRequest(String certificateName, byte[] csr, OffsetDateTime validFrom) {
+    public SendCertificateEnrollmentRequest(String certificateName, byte[] csr, String validFrom, CertificateType certificateType) {
         this.certificateName = certificateName;
         this.csr = csr;
         this.validFrom = validFrom;
+        this.certificateType = certificateType;
     }
 
     public String getCertificateName() {
@@ -32,12 +32,20 @@ public class SendCertificateEnrollmentRequest {
         this.csr = csr;
     }
 
-    public OffsetDateTime getValidFrom() {
+    public String getValidFrom() {
         return validFrom;
     }
 
-    public void setValidFrom(OffsetDateTime validFrom) {
+    public void setValidFrom(String validFrom) {
         this.validFrom = validFrom;
+    }
+
+    public CertificateType getCertificateType() {
+        return certificateType;
+    }
+
+    public void setCertificateType(CertificateType certificateType) {
+        this.certificateType = certificateType;
     }
 }
 

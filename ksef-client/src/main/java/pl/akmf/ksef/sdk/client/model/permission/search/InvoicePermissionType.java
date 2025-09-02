@@ -8,8 +8,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum InvoicePermissionType {
   
   SELFINVOICING("SelfInvoicing"),
-  
-  TAXREPRESENTATIVE("TaxRepresentative");
+  TAXREPRESENTATIVE("TaxRepresentative"),
+  RRINVOICING("RRInvoicing");
 
   private final String value;
 

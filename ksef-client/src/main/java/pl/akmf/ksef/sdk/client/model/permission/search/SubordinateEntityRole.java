@@ -4,15 +4,15 @@ import java.time.OffsetDateTime;
 
 public class SubordinateEntityRole {
     private String subordinateEntityIdentifier;
-    private String subordinateEntityIdentifierType;
-    private String role;
+    private SubordinateRoleSubordinateEntityIdentifierType subordinateEntityIdentifierType;
+    private SubordinateEntityRoleType role;
     private String description;
     private OffsetDateTime startDate;
 
     public SubordinateEntityRole() {
     }
 
-    public SubordinateEntityRole(String subordinateEntityIdentifier, String subordinateEntityIdentifierType, String role, String description, OffsetDateTime startDate) {
+    public SubordinateEntityRole(String subordinateEntityIdentifier, SubordinateRoleSubordinateEntityIdentifierType subordinateEntityIdentifierType, SubordinateEntityRoleType role, String description, OffsetDateTime startDate) {
         this.subordinateEntityIdentifier = subordinateEntityIdentifier;
         this.subordinateEntityIdentifierType = subordinateEntityIdentifierType;
         this.role = role;
@@ -28,19 +28,19 @@ public class SubordinateEntityRole {
         this.subordinateEntityIdentifier = subordinateEntityIdentifier;
     }
 
-    public String getSubordinateEntityIdentifierType() {
+    public SubordinateRoleSubordinateEntityIdentifierType getSubordinateEntityIdentifierType() {
         return subordinateEntityIdentifierType;
     }
 
-    public void setSubordinateEntityIdentifierType(String subordinateEntityIdentifierType) {
+    public void setSubordinateEntityIdentifierType(SubordinateRoleSubordinateEntityIdentifierType subordinateEntityIdentifierType) {
         this.subordinateEntityIdentifierType = subordinateEntityIdentifierType;
     }
 
-    public String getRole() {
+    public SubordinateEntityRoleType getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(SubordinateEntityRoleType role) {
         this.role = role;
     }
 

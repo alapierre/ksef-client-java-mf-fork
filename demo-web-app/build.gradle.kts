@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "pl.akmf.ksef"
-version = "0.0.1-SNAPSHOT"
+version = "2.0.1"
 
 java {
     toolchain {
@@ -36,12 +36,11 @@ val integrationTestImplementation by configurations
 val jakartaVersion = "4.0.2"
 val jakartaValidationApiVersion = "3.0.2"
 val jakartaAnnotationApiVersion = "3.0.0"
-val jacksonDatabindNullableVersion = "0.2.6"
 val commonsCollectionsVersion = "4.5.0"
 val santuarioXmlsecVersion = "3.0.4"
 val httpcomponentsHttpClientVersion = "4.3.6"
 val bouncycastleBcpkixJdk18onVersion = 1.76
-val jsr310Version = "2.15.2"
+val jsr310Version = "2.17.1"
 val jsxbVarsion = "4.0.5"
 val wiremockStandaloneVersion = "3.9.1"
 val testcontainersVersion = "1.20.0"
@@ -59,7 +58,6 @@ dependencies {
     // Validation
     implementation("jakarta.validation:jakarta.validation-api:$jakartaValidationApiVersion")
     implementation("jakarta.annotation:jakarta.annotation-api:$jakartaAnnotationApiVersion")
-    implementation("org.openapitools:jackson-databind-nullable:$jacksonDatabindNullableVersion")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jsr310Version")
 
     //
@@ -107,6 +105,10 @@ tasks.register<Test>("integrationTest") {
     testClassesDirs = sourceSets["integrationTest"].output.classesDirs
     classpath = sourceSets["integrationTest"].runtimeClasspath
     useJUnitPlatform()
+    testLogging {
+        events("failed")
+        setExceptionFormat("full")
+    }
 }
 
 tasks.named("check") {

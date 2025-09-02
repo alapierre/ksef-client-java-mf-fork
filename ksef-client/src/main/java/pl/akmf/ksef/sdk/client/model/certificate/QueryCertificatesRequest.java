@@ -2,16 +2,16 @@ package pl.akmf.ksef.sdk.client.model.certificate;
 
 import java.time.OffsetDateTime;
 
-public class CertificateMetadataListRequest {
+public class QueryCertificatesRequest {
     private String certificateSerialNumber;
     private String name;
     private CertificateListItemStatus status;
     private OffsetDateTime expiresAfter;
 
-    public CertificateMetadataListRequest() {
+    public QueryCertificatesRequest() {
     }
 
-    public CertificateMetadataListRequest(String certificateSerialNumber, String name, CertificateListItemStatus status, OffsetDateTime expiresAfter) {
+    public QueryCertificatesRequest(String certificateSerialNumber, String name, CertificateListItemStatus status, OffsetDateTime expiresAfter) {
         this.certificateSerialNumber = certificateSerialNumber;
         this.name = name;
         this.status = status;

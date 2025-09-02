@@ -2,8 +2,11 @@ package pl.akmf.ksef.sdk.client.model.session;
 
 import pl.akmf.ksef.sdk.client.model.StatusInfo;
 
+import java.time.OffsetDateTime;
+
 public class SessionStatusResponse {
     private StatusInfo status;
+    private OffsetDateTime validUntil;
     private UpoResponse upo;
     private Integer invoiceCount;
     private Integer successfulInvoiceCount;
@@ -26,6 +29,14 @@ public class SessionStatusResponse {
 
     public void setStatus(StatusInfo status) {
         this.status = status;
+    }
+
+    public OffsetDateTime getValidUntil() {
+        return validUntil;
+    }
+
+    public void setValidUntil(OffsetDateTime validUntil) {
+        this.validUntil = validUntil;
     }
 
     public UpoResponse getUpo() {

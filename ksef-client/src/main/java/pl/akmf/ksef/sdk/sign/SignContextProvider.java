@@ -1,6 +1,5 @@
 package pl.akmf.ksef.sdk.sign;
 
-
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 

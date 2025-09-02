@@ -17,6 +17,8 @@ public class SessionsQueryResponseItem {
 
   private OffsetDateTime dateUpdated;
 
+  private OffsetDateTime validUntil;
+
   private Integer totalInvoiceCount;
 
   private Integer successfulInvoiceCount;
@@ -57,6 +59,14 @@ public class SessionsQueryResponseItem {
 
   public void setDateUpdated(OffsetDateTime dateUpdated) {
     this.dateUpdated = dateUpdated;
+  }
+
+  public OffsetDateTime getValidUntil() {
+    return validUntil;
+  }
+
+  public void setValidUntil(OffsetDateTime validUntil) {
+    this.validUntil = validUntil;
   }
 
   public Integer getTotalInvoiceCount() {

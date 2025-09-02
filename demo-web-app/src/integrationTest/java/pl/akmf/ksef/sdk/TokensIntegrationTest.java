@@ -13,7 +13,6 @@ import pl.akmf.ksef.sdk.client.model.auth.GenerateTokenRequest;
 import pl.akmf.ksef.sdk.client.model.auth.GenerateTokenResponse;
 import pl.akmf.ksef.sdk.client.model.auth.QueryTokensResponse;
 import pl.akmf.ksef.sdk.client.model.auth.TokenPermissionType;
-import pl.akmf.ksef.sdk.client.model.xml.ContextIdentifierTypeEnum;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
 
 import java.io.IOException;
@@ -25,7 +24,7 @@ class TokensIntegrationTest extends BaseIntegrationTest {
     @Test
     void checkGenerateTokenTest() throws IOException, ApiException, JAXBException {
         String contextNip = TestUtils.generateRandomNIP();
-        authWithCustomNip(contextNip, ContextIdentifierTypeEnum.NIP, contextNip);
+        var authenticationToken = authWithCustomNip(contextNip, contextNip).authToken();
 
         // step 1: generate tokens
         GenerateTokenRequest request = new GenerateTokenRequestBuilder()
@@ -36,9 +35,9 @@ class TokensIntegrationTest extends BaseIntegrationTest {
                         TokenPermissionType.CREDENTIALSREAD))
                 .build();
 
-        GenerateTokenResponse token = defaultKsefClient.generateKsefToken(request);
-        GenerateTokenResponse token2 = defaultKsefClient.generateKsefToken(request);
-        GenerateTokenResponse token3 = defaultKsefClient.generateKsefToken(request);
+        GenerateTokenResponse token = defaultKsefClient.generateKsefToken(request, authenticationToken);
+        GenerateTokenResponse token2 = defaultKsefClient.generateKsefToken(request, authenticationToken);
+        GenerateTokenResponse token3 = defaultKsefClient.generateKsefToken(request, authenticationToken);
 
         Assertions.assertNotNull(token);
         Assertions.assertNotNull(token.getToken());
@@ -49,39 +48,39 @@ class TokensIntegrationTest extends BaseIntegrationTest {
                 .atMost(10, TimeUnit.SECONDS)
                 .pollInterval(1, TimeUnit.SECONDS)
                 .until(() -> {
-                    AuthenticationToken ksefToken = defaultKsefClient.getKsefToken(token.getReferenceNumber());
+                    AuthenticationToken ksefToken = defaultKsefClient.getKsefToken(token.getReferenceNumber(), authenticationToken);
                     return ksefToken != null && ksefToken.getStatus() == AuthenticationTokenStatus.ACTIVE;
                 });
 
-        AuthenticationToken ksefToken = defaultKsefClient.getKsefToken(token.getReferenceNumber());
+        AuthenticationToken ksefToken = defaultKsefClient.getKsefToken(token.getReferenceNumber(), authenticationToken);
         Assertions.assertNotNull(ksefToken);
         Assertions.assertEquals(AuthenticationTokenStatus.ACTIVE, ksefToken.getStatus());
 
         // step 3: filter active tokens
         List<AuthenticationTokenStatus> status = List.of(AuthenticationTokenStatus.ACTIVE);
         Integer pageSize = 10;
-        QueryTokensResponse tokens = defaultKsefClient.queryKsefTokens(status, StringUtils.EMPTY, pageSize);
+        QueryTokensResponse tokens = defaultKsefClient.queryKsefTokens(status, StringUtils.EMPTY, pageSize, authenticationToken);
         List<AuthenticationToken> filteredTokens = tokens.getTokens();
         Assertions.assertNotNull(filteredTokens);
         Assertions.assertEquals(3, filteredTokens.size());
 
         // step 4: revoke token and wait for REVOKED status
-        defaultKsefClient.revokeKsefToken(token.getReferenceNumber());
+        defaultKsefClient.revokeKsefToken(token.getReferenceNumber(), authenticationToken);
 
         Awaitility.await()
-                .atMost(5, TimeUnit.SECONDS)
-                .pollInterval(500, TimeUnit.MILLISECONDS)
+                .atMost(10, TimeUnit.SECONDS)
+                .pollInterval(1, TimeUnit.SECONDS)
                 .until(() -> {
-                    AuthenticationToken revokedToken = defaultKsefClient.getKsefToken(token.getReferenceNumber());
+                    AuthenticationToken revokedToken = defaultKsefClient.getKsefToken(token.getReferenceNumber(), authenticationToken);
                     return revokedToken != null && revokedToken.getStatus() == AuthenticationTokenStatus.REVOKED;
                 });
 
-        AuthenticationToken ksefTokenAfterRevoke = defaultKsefClient.getKsefToken(token.getReferenceNumber());
+        AuthenticationToken ksefTokenAfterRevoke = defaultKsefClient.getKsefToken(token.getReferenceNumber(), authenticationToken);
         Assertions.assertNotNull(ksefTokenAfterRevoke);
         Assertions.assertEquals(AuthenticationTokenStatus.REVOKED, ksefTokenAfterRevoke.getStatus());
 
         // step 5: filter active tokens after revoking one
-        QueryTokensResponse tokens2 = defaultKsefClient.queryKsefTokens(status, StringUtils.EMPTY, pageSize);
+        QueryTokensResponse tokens2 = defaultKsefClient.queryKsefTokens(status, StringUtils.EMPTY, pageSize, authenticationToken);
         List<AuthenticationToken> filteredTokens2 = tokens2.getTokens();
         Assertions.assertNotNull(filteredTokens2);
         Assertions.assertEquals(2, filteredTokens2.size());

@@ -4,17 +4,18 @@ import pl.akmf.ksef.sdk.client.model.StatusInfo;
 
 import java.time.OffsetDateTime;
 
-public class SessionInvoice {
+public class SessionInvoiceStatusResponse {
     private Integer ordinalNumber;
     private String invoiceNumber;
     private String ksefNumber;
     private String referenceNumber;
     private String invoiceHash;
     private String invoiceFileName;
-    private OffsetDateTime receiveDate;
+    private OffsetDateTime invoicingDate;
+    private OffsetDateTime acquisitionDate;
     private StatusInfo status;
 
-    public SessionInvoice() {
+    public SessionInvoiceStatusResponse() {
 
     }
 
@@ -66,12 +67,20 @@ public class SessionInvoice {
         this.invoiceFileName = invoiceFileName;
     }
 
-    public OffsetDateTime getReceiveDate() {
-        return receiveDate;
+    public OffsetDateTime getInvoicingDate() {
+        return invoicingDate;
     }
 
-    public void setReceiveDate(OffsetDateTime receiveDate) {
-        this.receiveDate = receiveDate;
+    public void setInvoicingDate(OffsetDateTime invoicingDate) {
+        this.invoicingDate = invoicingDate;
+    }
+
+    public OffsetDateTime getAcquisitionDate() {
+        return acquisitionDate;
+    }
+
+    public void setAcquisitionDate(OffsetDateTime acquisitionDate) {
+        this.acquisitionDate = acquisitionDate;
     }
 
     public StatusInfo getStatus() {

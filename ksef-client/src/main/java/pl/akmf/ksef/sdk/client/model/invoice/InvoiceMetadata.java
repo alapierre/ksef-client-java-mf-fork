@@ -13,9 +13,13 @@ public class InvoiceMetadata {
 
   private String invoiceNumber;
 
-  private OffsetDateTime invoiceDate;
+  private OffsetDateTime issueDate;
 
   private OffsetDateTime acquisitionDate;
+
+  private OffsetDateTime invoicingDate;
+
+  private OffsetDateTime permanentStorageDate;
 
   private InvoiceMetadataSeller seller;
 
@@ -27,7 +31,7 @@ public class InvoiceMetadata {
 
   private Double vatAmount;
 
-  private CurrencyCode currency;
+  private String currency;
 
   private InvoicingMode invoicingMode;
 
@@ -35,9 +39,9 @@ public class InvoiceMetadata {
 
   private FormCode formCode;
 
-  private Boolean isHidden;
-
   private Boolean isSelfInvoicing;
+
+  private Boolean hasAttachment;
 
   public InvoiceMetadata() { 
   }
@@ -58,12 +62,12 @@ public class InvoiceMetadata {
     this.invoiceNumber = invoiceNumber;
   }
 
-  public OffsetDateTime getInvoiceDate() {
-    return invoiceDate;
+  public OffsetDateTime getIssueDate() {
+    return issueDate;
   }
 
-  public void setInvoiceDate(OffsetDateTime invoiceDate) {
-    this.invoiceDate = invoiceDate;
+  public void setIssueDate(OffsetDateTime issueDate) {
+    this.issueDate = issueDate;
   }
 
   public OffsetDateTime getAcquisitionDate() {
@@ -72,6 +76,22 @@ public class InvoiceMetadata {
 
   public void setAcquisitionDate(OffsetDateTime acquisitionDate) {
     this.acquisitionDate = acquisitionDate;
+  }
+
+  public OffsetDateTime getInvoicingDate() {
+    return invoicingDate;
+  }
+
+  public void setInvoicingDate(OffsetDateTime invoicingDate) {
+    this.invoicingDate = invoicingDate;
+  }
+
+  public OffsetDateTime getPermanentStorageDate() {
+    return permanentStorageDate;
+  }
+
+  public void setPermanentStorageDate(OffsetDateTime permanentStorageDate) {
+    this.permanentStorageDate = permanentStorageDate;
   }
 
   public InvoiceMetadataSeller getSeller() {
@@ -114,11 +134,11 @@ public class InvoiceMetadata {
     this.vatAmount = vatAmount;
   }
 
-  public CurrencyCode getCurrency() {
+  public String getCurrency() {
     return currency;
   }
 
-  public void setCurrency(CurrencyCode currency) {
+  public void setCurrency(String currency) {
     this.currency = currency;
   }
 
@@ -146,20 +166,20 @@ public class InvoiceMetadata {
     this.formCode = formCode;
   }
 
-  public Boolean getHidden() {
-    return isHidden;
-  }
-
-  public void setHidden(Boolean hidden) {
-    isHidden = hidden;
-  }
-
   public Boolean getSelfInvoicing() {
     return isSelfInvoicing;
   }
 
   public void setSelfInvoicing(Boolean selfInvoicing) {
     isSelfInvoicing = selfInvoicing;
+  }
+
+  public Boolean getHasAttachment() {
+    return hasAttachment;
+  }
+
+  public void setHasAttachment(Boolean hasAttachment) {
+    this.hasAttachment = hasAttachment;
   }
 }
 

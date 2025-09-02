@@ -5,16 +5,16 @@ import java.time.OffsetDateTime;
 public class EntityAuthorizationGrant {
     private String id;
     private String authorIdentifier;
-    private String authorIdentifierType;
+    private EntityAuthorizationsAuthorIdentifierType authorIdentifierType;
     private String authorizedEntityIdentifier;
-    private String authorizedEntityIdentifierType;
+    private EntityAuthorizationsAuthorizedEntityIdentifierType authorizedEntityIdentifierType;
     private String authorizingEntityIdentifier;
-    private String authorizingEntityIdentifierType;
-    private EntityAuthorizationScope authorizationScope;
+    private EntityAuthorizationsAuthorizingEntityIdentifierType authorizingEntityIdentifierType;
+    private InvoicePermissionType authorizationScope;
     private String description;
     private OffsetDateTime startDate;
 
-    public EntityAuthorizationGrant(String id, String authorIdentifier, String authorIdentifierType, String authorizedEntityIdentifier, String authorizedEntityIdentifierType, String authorizingEntityIdentifier, String authorizingEntityIdentifierType, EntityAuthorizationScope authorizationScope, String description, OffsetDateTime startDate) {
+    public EntityAuthorizationGrant(String id, String authorIdentifier, EntityAuthorizationsAuthorIdentifierType authorIdentifierType, String authorizedEntityIdentifier, EntityAuthorizationsAuthorizedEntityIdentifierType authorizedEntityIdentifierType, String authorizingEntityIdentifier, EntityAuthorizationsAuthorizingEntityIdentifierType authorizingEntityIdentifierType, InvoicePermissionType authorizationScope, String description, OffsetDateTime startDate) {
         this.id = id;
         this.authorIdentifier = authorIdentifier;
         this.authorIdentifierType = authorIdentifierType;
@@ -46,11 +46,11 @@ public class EntityAuthorizationGrant {
         this.authorIdentifier = authorIdentifier;
     }
 
-    public String getAuthorIdentifierType() {
+    public EntityAuthorizationsAuthorIdentifierType getAuthorIdentifierType() {
         return authorIdentifierType;
     }
 
-    public void setAuthorIdentifierType(String authorIdentifierType) {
+    public void setAuthorIdentifierType(EntityAuthorizationsAuthorIdentifierType authorIdentifierType) {
         this.authorIdentifierType = authorIdentifierType;
     }
 
@@ -62,11 +62,11 @@ public class EntityAuthorizationGrant {
         this.authorizedEntityIdentifier = authorizedEntityIdentifier;
     }
 
-    public String getAuthorizedEntityIdentifierType() {
+    public EntityAuthorizationsAuthorizedEntityIdentifierType getAuthorizedEntityIdentifierType() {
         return authorizedEntityIdentifierType;
     }
 
-    public void setAuthorizedEntityIdentifierType(String authorizedEntityIdentifierType) {
+    public void setAuthorizedEntityIdentifierType(EntityAuthorizationsAuthorizedEntityIdentifierType authorizedEntityIdentifierType) {
         this.authorizedEntityIdentifierType = authorizedEntityIdentifierType;
     }
 
@@ -78,19 +78,19 @@ public class EntityAuthorizationGrant {
         this.authorizingEntityIdentifier = authorizingEntityIdentifier;
     }
 
-    public String getAuthorizingEntityIdentifierType() {
+    public EntityAuthorizationsAuthorizingEntityIdentifierType getAuthorizingEntityIdentifierType() {
         return authorizingEntityIdentifierType;
     }
 
-    public void setAuthorizingEntityIdentifierType(String authorizingEntityIdentifierType) {
+    public void setAuthorizingEntityIdentifierType(EntityAuthorizationsAuthorizingEntityIdentifierType authorizingEntityIdentifierType) {
         this.authorizingEntityIdentifierType = authorizingEntityIdentifierType;
     }
 
-    public EntityAuthorizationScope getAuthorizationScope() {
+    public InvoicePermissionType getAuthorizationScope() {
         return authorizationScope;
     }
 
-    public void setAuthorizationScope(EntityAuthorizationScope authorizationScope) {
+    public void setAuthorizationScope(InvoicePermissionType authorizationScope) {
         this.authorizationScope = authorizationScope;
     }
 

@@ -38,18 +38,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  *             </restriction>
  *           </simpleType>
  *         </element>
- *         <element name="ContextIdentifier">
- *           <complexType>
- *             <complexContent>
- *               <restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *                 <sequence>
- *                   <element name="Type" type="{http://ksef.mf.gov.pl/auth/token/2.0}ContextIdentifierTypeEnum"/>
- *                   <element name="Value" type="{http://ksef.mf.gov.pl/auth/token/2.0}TContextIdentifier"/>
- *                 </sequence>
- *               </restriction>
- *             </complexContent>
- *           </complexType>
- *         </element>
+ *         <element name="ContextIdentifier" type="{http://ksef.mf.gov.pl/auth/token/2.0}TContextIdentifier"/>
  *         <element name="SubjectIdentifierType" type="{http://ksef.mf.gov.pl/auth/token/2.0}SubjectIdentifierTypeEnum"/>
  *         <element name="IpAddressPolicy" minOccurs="0">
  *           <complexType>
@@ -115,7 +104,7 @@ public class AuthTokenRequest {
     @XmlJavaTypeAdapter(CollapsedStringAdapter.class)
     protected String challenge;
     @XmlElement(name = "ContextIdentifier", required = true)
-    protected AuthTokenRequest.ContextIdentifier contextIdentifier;
+    protected TContextIdentifier contextIdentifier;
     @XmlElement(name = "SubjectIdentifierType", required = true)
     @XmlSchemaType(name = "token")
     protected SubjectIdentifierTypeEnum subjectIdentifierType;
@@ -151,10 +140,10 @@ public class AuthTokenRequest {
      * 
      * @return
      *     possible object is
-     *     {@link AuthTokenRequest.ContextIdentifier }
+     *     {@link TContextIdentifier }
      *     
      */
-    public AuthTokenRequest.ContextIdentifier getContextIdentifier() {
+    public TContextIdentifier getContextIdentifier() {
         return contextIdentifier;
     }
 
@@ -163,10 +152,10 @@ public class AuthTokenRequest {
      * 
      * @param value
      *     allowed object is
-     *     {@link AuthTokenRequest.ContextIdentifier }
+     *     {@link TContextIdentifier }
      *     
      */
-    public void setContextIdentifier(AuthTokenRequest.ContextIdentifier value) {
+    public void setContextIdentifier(TContextIdentifier value) {
         this.contextIdentifier = value;
     }
 
@@ -223,7 +212,7 @@ public class AuthTokenRequest {
         return this;
     }
 
-    public AuthTokenRequest withContextIdentifier(AuthTokenRequest.ContextIdentifier value) {
+    public AuthTokenRequest withContextIdentifier(TContextIdentifier value) {
         setContextIdentifier(value);
         return this;
     }
@@ -236,100 +225,6 @@ public class AuthTokenRequest {
     public AuthTokenRequest withIpAddressPolicy(AuthTokenRequest.IpAddressPolicy value) {
         setIpAddressPolicy(value);
         return this;
-    }
-
-
-    /**
-     * <p>Java class for anonymous complex type</p>.
-     * 
-     * <p>The following schema fragment specifies the expected content contained within this class.</p>
-     * 
-     * <pre>{@code
-     * <complexType>
-     *   <complexContent>
-     *     <restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
-     *       <sequence>
-     *         <element name="Type" type="{http://ksef.mf.gov.pl/auth/token/2.0}ContextIdentifierTypeEnum"/>
-     *         <element name="Value" type="{http://ksef.mf.gov.pl/auth/token/2.0}TContextIdentifier"/>
-     *       </sequence>
-     *     </restriction>
-     *   </complexContent>
-     * </complexType>
-     * }</pre>
-     * 
-     * 
-     */
-    @XmlAccessorType(XmlAccessType.FIELD)
-    @XmlType(name = "", propOrder = {
-        "type",
-        "value"
-    })
-    public static class ContextIdentifier {
-
-        @XmlElement(name = "Type", required = true)
-        @XmlSchemaType(name = "token")
-        protected ContextIdentifierTypeEnum type;
-        @XmlElement(name = "Value", required = true)
-        protected String value;
-
-        /**
-         * Gets the value of the type property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link ContextIdentifierTypeEnum }
-         *     
-         */
-        public ContextIdentifierTypeEnum getType() {
-            return type;
-        }
-
-        /**
-         * Sets the value of the type property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link ContextIdentifierTypeEnum }
-         *     
-         */
-        public void setType(ContextIdentifierTypeEnum value) {
-            this.type = value;
-        }
-
-        /**
-         * Gets the value of the value property.
-         * 
-         * @return
-         *     possible object is
-         *     {@link String }
-         *     
-         */
-        public String getValue() {
-            return value;
-        }
-
-        /**
-         * Sets the value of the value property.
-         * 
-         * @param value
-         *     allowed object is
-         *     {@link String }
-         *     
-         */
-        public void setValue(String value) {
-            this.value = value;
-        }
-
-        public AuthTokenRequest.ContextIdentifier withType(ContextIdentifierTypeEnum value) {
-            setType(value);
-            return this;
-        }
-
-        public AuthTokenRequest.ContextIdentifier withValue(String value) {
-            setValue(value);
-            return this;
-        }
-
     }
 
 

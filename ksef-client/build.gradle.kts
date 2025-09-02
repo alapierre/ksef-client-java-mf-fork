@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "pl.akmf.ksef-sdk"
-version = "0.0.1-SNAPSHOT"
+version = "2.0.1"
 
 java {
     toolchain {
@@ -22,8 +22,7 @@ repositories {
 }
 
 val bouncycastleVersion = 1.76
-val jacksonDatabindNullableVersion = "0.2.6"
-val jsr310Version = "2.15.2"
+val jsr310Version = "2.17.1"
 val junitVersion = "4.4"
 val junitEngineVersion = "5.8.2"
 val jsxbVarsion = "4.0.5"
@@ -38,7 +37,6 @@ dependencies {
     implementation("eu.europa.ec.joinup.sd-dss:dss-xades:$xadesVersion")
     implementation("eu.europa.ec.joinup.sd-dss:dss-token:$xadesVersion")
     implementation("eu.europa.ec.joinup.sd-dss:dss-utils-apache-commons:$xadesVersion")
-    implementation("org.openapitools:jackson-databind-nullable:$jacksonDatabindNullableVersion")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jsr310Version")
 

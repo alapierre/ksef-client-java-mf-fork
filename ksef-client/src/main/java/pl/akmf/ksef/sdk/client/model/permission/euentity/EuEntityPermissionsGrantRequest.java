@@ -1,6 +1,6 @@
-package pl.akmf.ksef.sdk.client.model.permission.subunit;
+package pl.akmf.ksef.sdk.client.model.permission.euentity;
 
-public class GrantSubUnitPermissionsRequest {
+public class EuEntityPermissionsGrantRequest {
     private SubjectIdentifier subjectIdentifier;
     private ContextIdentifier contextIdentifier;
     private String description;
@@ -28,6 +28,5 @@ public class GrantSubUnitPermissionsRequest {
     public void setDescription(String description) {
         this.description = description;
     }
-
 }
 

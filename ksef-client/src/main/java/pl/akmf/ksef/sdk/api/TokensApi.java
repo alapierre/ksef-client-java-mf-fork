@@ -2,10 +2,10 @@ package pl.akmf.ksef.sdk.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pl.akmf.ksef.sdk.client.model.ApiClient;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import pl.akmf.ksef.sdk.client.HttpApiClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ApiResponse;
-import pl.akmf.ksef.sdk.client.model.Pair;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationToken;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenStatus;
 import pl.akmf.ksef.sdk.client.model.auth.GenerateTokenRequest;
@@ -13,33 +13,33 @@ import pl.akmf.ksef.sdk.client.model.auth.GenerateTokenResponse;
 import pl.akmf.ksef.sdk.client.model.auth.QueryTokensResponse;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.StringJoiner;
-import java.util.function.Consumer;
+import java.util.Map;
 
 import static pl.akmf.ksef.sdk.api.Url.TOKEN_GENERATE;
 import static pl.akmf.ksef.sdk.api.Url.TOKEN_LIST;
 import static pl.akmf.ksef.sdk.api.Url.TOKEN_REVOKE;
 import static pl.akmf.ksef.sdk.api.Url.TOKEN_STATUS;
+import static pl.akmf.ksef.sdk.api.UrlQueryParamsBuilder.buildUrlWithParams;
+import static pl.akmf.ksef.sdk.client.Headers.ACCEPT;
+import static pl.akmf.ksef.sdk.client.Headers.APPLICATION_JSON;
+import static pl.akmf.ksef.sdk.client.Headers.AUTHORIZATION;
+import static pl.akmf.ksef.sdk.client.Headers.BEARER;
+import static pl.akmf.ksef.sdk.client.Headers.CONTENT_TYPE;
+import static pl.akmf.ksef.sdk.client.Headers.CONTINUATION_TOKEN;
+import static pl.akmf.ksef.sdk.client.Parameter.PAGE_SIZE;
+import static pl.akmf.ksef.sdk.client.Parameter.PATH_REFERENCE_NUMBER;
+import static pl.akmf.ksef.sdk.client.Parameter.STATUS;
+import static pl.akmf.ksef.sdk.client.model.ApiException.getApiException;
 
-public class TokensApi extends BaseApi {
-    private final ObjectMapper memberVarObjectMapper;
-    private final String memberVarBaseUri;
-    private final Consumer<HttpRequest.Builder> memberVarInterceptor;
-    private final Duration memberVarReadTimeout;
+public class TokensApi {
+    private final HttpApiClient apiClient;
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
 
-    public TokensApi(ApiClient apiClient) {
-        super(apiClient.getHttpClient(),apiClient.getResponseInterceptor());
-        memberVarObjectMapper = apiClient.getObjectMapper();
-        memberVarBaseUri = apiClient.getBaseUri();
-        memberVarInterceptor = apiClient.getRequestInterceptor();
-        memberVarReadTimeout = apiClient.getReadTimeout();
+    public TokensApi(HttpApiClient apiClient) {
+        this.apiClient = apiClient;
     }
 
     /**
@@ -51,63 +51,39 @@ public class TokensApi extends BaseApi {
      * @return ApiResponse&lt;QueryTokensResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<QueryTokensResponse> apiV2TokensGet(List<AuthenticationTokenStatus> status, String xContinuationToken, Integer pageSize) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2TokensGetRequestBuilder(status, xContinuationToken, pageSize);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder,
-                    TOKEN_LIST.getOperationId());
+    public ApiResponse<QueryTokensResponse> apiV2TokensGet(List<AuthenticationTokenStatus> status, String xContinuationToken, Integer pageSize, String authenticationToken) throws ApiException {
+        var params = new HashMap<String, String>();
+        status.forEach(stat -> params.put(STATUS, stat.toString()));
+        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        String uri = buildUrlWithParams(TOKEN_LIST.getUrl(), params);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        if (xContinuationToken != null) {
+            headers.put(CONTINUATION_TOKEN, xContinuationToken);
+
+        }
+        var response = apiClient.get(uri, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(TOKEN_LIST.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
     }
-
-    private HttpRequest.Builder apiV2TokensGetRequestBuilder(List<AuthenticationTokenStatus> status, String xContinuationToken, Integer pageSize) {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = TOKEN_LIST.getUrl();
-
-        List<Pair> localVarQueryParams = new ArrayList<>();
-        StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("multi", "status", status));
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageSize", pageSize));
-
-        if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-            StringJoiner queryJoiner = new StringJoiner("&");
-            localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-            if (localVarQueryStringJoiner.length() != 0) {
-                queryJoiner.add(localVarQueryStringJoiner.toString());
-            }
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner));
-        } else {
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-        }
-
-        if (xContinuationToken != null) {
-            localVarRequestBuilder.header("x-continuation-token", xContinuationToken);
-        }
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
-    }
-
 
     /**
      * Wygenerowanie nowego tokena
@@ -116,50 +92,29 @@ public class TokensApi extends BaseApi {
      * @return ApiResponse&lt;GenerateTokenResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<GenerateTokenResponse> apiV2TokensPost(GenerateTokenRequest generateTokenRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2TokensPostRequestBuilder(generateTokenRequest);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder,
-                    TOKEN_GENERATE.getOperationId());
+    public ApiResponse<GenerateTokenResponse> apiV2TokensPost(GenerateTokenRequest generateTokenRequest, String authenticationToken) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
 
+        var response = apiClient.post(TOKEN_GENERATE.getUrl(), generateTokenRequest, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(TOKEN_GENERATE.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2TokensPostRequestBuilder(GenerateTokenRequest generateTokenRequest) throws ApiException {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = TOKEN_GENERATE.getUrl();
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Content-Type", "application/json");
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        try {
-            byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(generateTokenRequest);
-            localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -170,47 +125,19 @@ public class TokensApi extends BaseApi {
      * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<Void> apiV2TokensReferenceNumberDelete(String referenceNumber) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2TokensReferenceNumberDeleteRequestBuilder(referenceNumber);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder,
-                    TOKEN_REVOKE.getOperationId());
 
-            return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    null
-            );
-        } catch (IOException e) {
-            throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
+    public void apiV2TokensReferenceNumberDelete(String referenceNumber, String authenticationToken) throws ApiException {
+        String uri = TOKEN_REVOKE.getUrl()
+                .replace(PATH_REFERENCE_NUMBER, referenceNumber);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+
+        var response = apiClient.delete(uri, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(TOKEN_REVOKE.getOperationId(), response.body(), response.statusCode(), response.headers());
         }
-    }
-
-    private HttpRequest.Builder apiV2TokensReferenceNumberDeleteRequestBuilder(String referenceNumber) throws ApiException {
-        if (referenceNumber == null) {
-            throw new ApiException(400, "Missing the required parameter 'referenceNumber' when calling apiV2TokensReferenceNumberDelete");
-        }
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = TOKEN_REVOKE.getUrl()
-                .replace("{referenceNumber}", ApiClient.urlEncode(referenceNumber));
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("DELETE", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -220,47 +147,30 @@ public class TokensApi extends BaseApi {
      * @return ApiResponse&lt;AuthenticationToken&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<AuthenticationToken> apiV2TokensReferenceNumberGet(String referenceNumber) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2TokensReferenceNumberGetRequestBuilder(referenceNumber);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder,
-                    TOKEN_STATUS.getOperationId());
+    public ApiResponse<AuthenticationToken> apiV2TokensReferenceNumberGet(String referenceNumber, String authenticationToken) throws ApiException {
+        String uri = TOKEN_STATUS.getUrl()
+                .replace(PATH_REFERENCE_NUMBER, referenceNumber);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.get(uri, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(TOKEN_STATUS.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2TokensReferenceNumberGetRequestBuilder(String referenceNumber) throws ApiException {
-        if (referenceNumber == null) {
-            throw new ApiException(400, "Missing the required parameter 'referenceNumber' when calling apiV2TokensReferenceNumberGet");
-        }
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = TOKEN_STATUS.getUrl()
-                .replace("{referenceNumber}", ApiClient.urlEncode(referenceNumber));
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 }

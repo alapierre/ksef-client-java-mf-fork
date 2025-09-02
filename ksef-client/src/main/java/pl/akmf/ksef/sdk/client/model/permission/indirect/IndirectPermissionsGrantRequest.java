@@ -2,20 +2,20 @@ package pl.akmf.ksef.sdk.client.model.permission.indirect;
 
 import java.util.List;
 
-public class GrantIndirectEntityPermissionsRequest {
+public class IndirectPermissionsGrantRequest {
     private SubjectIdentifier subjectIdentifier;
     private TargetIdentifier targetIdentifier;
     private List<IndirectPermissionType> permissions;
     private String description;
 
-    public GrantIndirectEntityPermissionsRequest() {
+    public IndirectPermissionsGrantRequest() {
 
     }
 
-    public GrantIndirectEntityPermissionsRequest(SubjectIdentifier subjectIdentifier,
-                                                 TargetIdentifier targetIdentifier,
-                                                 List<IndirectPermissionType> permissions,
-                                                 String description) {
+    public IndirectPermissionsGrantRequest(SubjectIdentifier subjectIdentifier,
+                                           TargetIdentifier targetIdentifier,
+                                           List<IndirectPermissionType> permissions,
+                                           String description) {
         this.subjectIdentifier = subjectIdentifier;
         this.targetIdentifier = targetIdentifier;
         this.permissions = permissions;

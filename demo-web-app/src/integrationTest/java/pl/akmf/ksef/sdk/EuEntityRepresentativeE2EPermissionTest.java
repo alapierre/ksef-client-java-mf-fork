@@ -11,7 +11,6 @@ import pl.akmf.ksef.sdk.client.model.permission.euentity.EuEntityPermissionType;
 import pl.akmf.ksef.sdk.client.model.permission.euentity.SubjectIdentifier;
 import pl.akmf.ksef.sdk.client.model.permission.euentity.SubjectIdentifierType;
 import pl.akmf.ksef.sdk.client.model.permission.search.EuEntityPermission;
-import pl.akmf.ksef.sdk.client.model.xml.ContextIdentifierTypeEnum;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
 
 import java.io.IOException;
@@ -26,42 +25,42 @@ class EuEntityRepresentativeE2EPermissionTest extends BaseIntegrationTest {
     void euEntityRepresentativeE2EIntegrationTest() throws JAXBException, IOException, ApiException {
         String contextNip = TestUtils.generateRandomNIP();
         String subjectNip = TestUtils.generateRandomNIP();
-        authWithCustomNip(contextNip, ContextIdentifierTypeEnum.NIP_VAT_UE, contextNip);
+        var authToken = authWithCustomNip(contextNip, contextNip).authToken();
 
-        var grantReferenceNumber = grantEuEntityRepresentativePermission(subjectNip);
+        var grantReferenceNumber = grantEuEntityRepresentativePermission(subjectNip, authToken);
 
         await().atMost(15, SECONDS)
                 .pollInterval(1, SECONDS)
-                .until(() -> isOperationFinish(grantReferenceNumber));
+                .until(() -> isOperationFinish(grantReferenceNumber, authToken));
 
-        var permission = searchPermission(subjectNip, 1);
+        var permission = searchPermission(subjectNip, 1, authToken);
 
         permission.forEach(e -> {
-            var revokeReferenceNumber = revokePermission(e);
+            var revokeReferenceNumber = revokePermission(e, authToken);
 
             await().atMost(30, SECONDS)
                     .pollInterval(2, SECONDS)
-                    .until(() -> isOperationFinish(revokeReferenceNumber));
+                    .until(() -> isOperationFinish(revokeReferenceNumber, authToken));
         });
 
-        searchPermission(subjectNip, 0);
+        searchPermission(subjectNip, 0, authToken);
     }
 
-    private String revokePermission(String operationId) {
+    private String revokePermission(String operationId, String authToken) {
         try {
-            return defaultKsefClient.revokeAuthorizationsPermission(operationId).getOperationReferenceNumber();
+            return defaultKsefClient.revokeAuthorizationsPermission(operationId, authToken).getOperationReferenceNumber();
         } catch (ApiException e) {
             Assertions.fail(e.getMessage());
         }
         return null;
     }
 
-    private List<String> searchPermission(String subjectContext, int expectedNumber) throws ApiException {
+    private List<String> searchPermission(String subjectContext, int expectedNumber, String authToken) throws ApiException {
         var request = new EuEntityPermissionsQueryRequestBuilder()
                 .withAuthorizedFingerprintIdentifier(subjectContext)
                 .build();
 
-        var response = defaultKsefClient.searchGrantedEuEntityPermissions(request, 0, 10);
+        var response = defaultKsefClient.searchGrantedEuEntityPermissions(request, 0, 10, authToken);
 
         Assertions.assertEquals(expectedNumber, response.getPermissions().size());
 
@@ -71,22 +70,22 @@ class EuEntityRepresentativeE2EPermissionTest extends BaseIntegrationTest {
                 .toList();
     }
 
-    private String grantEuEntityRepresentativePermission(String subjectNip) throws ApiException {
+    private String grantEuEntityRepresentativePermission(String subjectNip, String authToken) throws ApiException {
         var request = new GrantEUEntityRepresentativePermissionsRequestBuilder()
                 .withSubjectIdentifier(new SubjectIdentifier(SubjectIdentifierType.FINGERPRINT, subjectNip))
                 .withPermissions(List.of(EuEntityPermissionType.INVOICEWRITE))
                 .withDescription("e2e test")
                 .build();
 
-        var response = defaultKsefClient.grantsPermissionEUEntityRepresentative(request);
+        var response = defaultKsefClient.grantsPermissionEUEntityRepresentative(request, authToken);
 
         Assertions.assertNotNull(response);
 
         return response.getOperationReferenceNumber();
     }
 
-    private Boolean isOperationFinish(String referenceNumber) throws ApiException {
-        PermissionStatusInfo operations = defaultKsefClient.permissionOperationStatus(referenceNumber);
+    private Boolean isOperationFinish(String referenceNumber, String authToken) throws ApiException {
+        PermissionStatusInfo operations = defaultKsefClient.permissionOperationStatus(referenceNumber, authToken);
         return operations != null && operations.getStatus().getCode() == 200;
     }
 }

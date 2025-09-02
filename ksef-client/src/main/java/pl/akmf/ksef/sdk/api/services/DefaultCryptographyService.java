@@ -24,6 +24,7 @@ import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
 import javax.crypto.NoSuchPaddingException;
@@ -35,6 +36,8 @@ import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
@@ -54,6 +57,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
@@ -73,6 +77,9 @@ public class DefaultCryptographyService implements CryptographyService {
     private static final String SECP_256_R_1 = "secp256r1";
     private static final int GCM_TAG_LENGTH = 128;
     private static final int GCM_NONCE_LENGTH = 12;
+    private static final String BEGIN_CERTIFICATE = "-----BEGIN CERTIFICATE-----\n";
+    private static final String END_CERTIFICATE = "\n-----END CERTIFICATE-----";
+    private static final String X_509 = "X.509";
     private final String symmetricKeyEncryptionPem;
     private final String ksefTokenPem;
 
@@ -83,13 +90,15 @@ public class DefaultCryptographyService implements CryptographyService {
         this.symmetricKeyEncryptionPem = publicKeyCertificates.stream()
                 .filter(c -> c.getUsage().contains(PublicKeyCertificateUsage.SYMMETRICKEYENCRYPTION))
                 .findFirst()
-                .map(PublicKeyCertificate::getCertificatePem)
+                .map(PublicKeyCertificate::getCertificate)
+                .map(c -> BEGIN_CERTIFICATE + c + END_CERTIFICATE)
                 .orElse(null);
 
         this.ksefTokenPem = publicKeyCertificates.stream()
                 .filter(c -> c.getUsage().contains(PublicKeyCertificateUsage.KSEFTOKENENCRYPTION))
                 .min(Comparator.comparing(PublicKeyCertificate::getValidFrom))
-                .map(PublicKeyCertificate::getCertificatePem)
+                .map(PublicKeyCertificate::getCertificate)
+                .map(c -> BEGIN_CERTIFICATE + c + END_CERTIFICATE)
                 .orElse(null);
     }
 
@@ -117,7 +126,23 @@ public class DefaultCryptographyService implements CryptographyService {
     }
 
     @Override
-    public byte[] encryptKsefTokenWithRSAUsingPublicKey(byte[] content) throws SystemKSeFSDKException, CertificateException, IOException {
+    public byte[] encryptKsefTokenWithRSAUsingPublicKey(String ksefToken, Instant challengeTimestamp) throws SystemKSeFSDKException, CertificateException, IOException {
+        var tokenWithTimestamp = (ksefToken + "|" + challengeTimestamp.toEpochMilli())
+                .getBytes(StandardCharsets.UTF_8);
+
+        return encryptWithRSAUsingPublicKey(tokenWithTimestamp);
+    }
+
+    @Override
+    public byte[] encryptKsefTokenWithECDsaUsingPublicKey(String ksefToken, Instant challengeTimestamp) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, CertificateException, IOException {
+        var tokenWithTimestamp = (ksefToken + "|" + challengeTimestamp.toEpochMilli())
+                .getBytes(StandardCharsets.UTF_8);
+
+        return encryptWithECDsaUsingPublicKey(tokenWithTimestamp);
+    }
+
+    @Override
+    public byte[] encryptWithRSAUsingPublicKey(byte[] content) throws SystemKSeFSDKException, CertificateException, IOException {
         PublicKey publicKey = parsePublicKeyFromPem(ksefTokenPem);
 
         return encryptWithRSAUsingPublicKey(content, publicKey);
@@ -127,21 +152,17 @@ public class DefaultCryptographyService implements CryptographyService {
     public byte[] encryptWithECDsaUsingPublicKey(byte[] content) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, CertificateException, IOException {
         PublicKey publicKey = parsePublicKeyFromPem(ksefTokenPem);
 
-        // 1. Ephemeral EC keypair
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(EC);
         kpg.initialize(new ECGenParameterSpec(SECP_256_R_1));
         KeyPair ephemeralKeyPair = kpg.generateKeyPair();
 
-        // 2. ECDH: Derive shared secret
         KeyAgreement keyAgreement = KeyAgreement.getInstance(ECDH);
         keyAgreement.init(ephemeralKeyPair.getPrivate());
         keyAgreement.doPhase(publicKey, true);
         byte[] sharedSecret = keyAgreement.generateSecret();
 
-        // 3. AES key from sharedSecret
         SecretKey aesKey = new SecretKeySpec(sharedSecret, 0, 16, AES);
 
-        // 4. AES-GCM encryption
         byte[] nonce = new byte[GCM_NONCE_LENGTH];
         SecureRandom random = new SecureRandom();
         random.nextBytes(nonce);
@@ -151,12 +172,9 @@ public class DefaultCryptographyService implements CryptographyService {
         cipher.init(Cipher.ENCRYPT_MODE, aesKey, gcmSpec);
         byte[] ciphertextWithTag = cipher.doFinal(content);
 
-        // 5. Ephemeral public key export (X.509 format)
         byte[] ephemeralPubEncoded = ephemeralKeyPair.getPublic().getEncoded();
 
-        // 6. Final format: [ephemeralPub || nonce || ciphertextWithTag]
-        ByteBuffer buffer = ByteBuffer.allocate(
-                ephemeralPubEncoded.length + nonce.length + ciphertextWithTag.length);
+        ByteBuffer buffer = ByteBuffer.allocate(ephemeralPubEncoded.length + nonce.length + ciphertextWithTag.length);
         buffer.put(ephemeralPubEncoded);
         buffer.put(nonce);
         buffer.put(ciphertextWithTag);
@@ -176,6 +194,29 @@ public class DefaultCryptographyService implements CryptographyService {
             return cipher.doFinal(content);
         } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
                  InvalidAlgorithmParameterException | IllegalBlockSizeException | BadPaddingException e) {
+            throw new SystemKSeFSDKException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void encryptStreamWithAES256(InputStream input, OutputStream output, byte[] key, byte[] iv) throws SystemKSeFSDKException {
+        SecretKeySpec secretKeySpec = new SecretKeySpec(key, AES);
+        IvParameterSpec ivSpec = new IvParameterSpec(iv);
+        try {
+            Cipher cipher = Cipher.getInstance(AES_CBC_PKCS_5_PADDING);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivSpec);
+            try (CipherOutputStream cipherOut = new CipherOutputStream(output, cipher)) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = input.read(buffer)) != -1) {
+                    cipherOut.write(buffer, 0, bytesRead);
+                }
+                cipherOut.flush();
+            } catch (IOException e) {
+                throw new SystemKSeFSDKException(e.getMessage(), e);
+            }
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
+                 InvalidAlgorithmParameterException e) {
             throw new SystemKSeFSDKException(e.getMessage(), e);
         }
     }
@@ -227,7 +268,7 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public PublicKey parsePublicKeyFromPem(String pem) throws CertificateException, IOException {
-        CertificateFactory factory = CertificateFactory.getInstance("X.509");
+        CertificateFactory factory = CertificateFactory.getInstance(X_509);
 
         try (ByteArrayInputStream input = new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8))) {
             X509Certificate certificate = (X509Certificate) factory.generateCertificate(input);

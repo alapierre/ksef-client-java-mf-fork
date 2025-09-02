@@ -1,14 +1,9 @@
 package pl.akmf.ksef.sdk.client.model.session;
 
-
 import pl.akmf.ksef.sdk.client.model.StatusInfo;
 
 import java.time.OffsetDateTime;
 
-
-/**
- * AuthenticationOperationStatusResponse
- */
 public class AuthenticationOperationStatusResponse {
     private String referenceNumber;
 
@@ -45,11 +40,11 @@ public class AuthenticationOperationStatusResponse {
         this.startDate = startDate;
     }
 
-    public Boolean getCurrent() {
+    public Boolean getIsCurrent() {
         return isCurrent;
     }
 
-    public void setCurrent(Boolean current) {
+    public void setIsCurrent(Boolean current) {
         isCurrent = current;
     }
 
@@ -69,11 +64,11 @@ public class AuthenticationOperationStatusResponse {
         this.status = status;
     }
 
-    public Boolean getTokenRedeemed() {
+    public Boolean getIsTokenRedeemed() {
         return isTokenRedeemed;
     }
 
-    public void setTokenRedeemed(Boolean tokenRedeemed) {
+    public void setIsTokenRedeemed(Boolean tokenRedeemed) {
         isTokenRedeemed = tokenRedeemed;
     }
 
@@ -93,4 +88,3 @@ public class AuthenticationOperationStatusResponse {
         this.refreshTokenValidUntil = refreshTokenValidUntil;
     }
 }
-

@@ -2,10 +2,10 @@ package pl.akmf.ksef.sdk.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pl.akmf.ksef.sdk.client.model.ApiClient;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import pl.akmf.ksef.sdk.client.HttpApiClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ApiResponse;
-import pl.akmf.ksef.sdk.client.model.Pair;
 import pl.akmf.ksef.sdk.client.model.permission.search.EntityAuthorizationPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.EuEntityPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.PersonPermissionsQueryRequest;
@@ -19,15 +19,9 @@ import pl.akmf.ksef.sdk.client.model.permission.search.SubordinateEntityRolesQue
 import pl.akmf.ksef.sdk.client.model.permission.search.SubunitPermissionsQueryRequest;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringJoiner;
-import java.util.function.Consumer;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 import static pl.akmf.ksef.sdk.api.Url.PERMISSION_SEARCH_AUTHORIZATIONS_GRANT;
 import static pl.akmf.ksef.sdk.api.Url.PERMISSION_SEARCH_ENTITY_ROLES;
@@ -35,19 +29,24 @@ import static pl.akmf.ksef.sdk.api.Url.PERMISSION_SEARCH_EU_ENTITY_GRANT;
 import static pl.akmf.ksef.sdk.api.Url.PERMISSION_SEARCH_PERSON_PERMISSION;
 import static pl.akmf.ksef.sdk.api.Url.PERMISSION_SEARCH_SUBORDINATE_PERMISSION;
 import static pl.akmf.ksef.sdk.api.Url.PERMISSION_SEARCH_SUBUNIT_GRANT;
+import static pl.akmf.ksef.sdk.api.Url.SECURITY_PUBLIC_KEY_CERTIFICATE;
+import static pl.akmf.ksef.sdk.api.UrlQueryParamsBuilder.buildUrlWithParams;
+import static pl.akmf.ksef.sdk.client.Headers.ACCEPT;
+import static pl.akmf.ksef.sdk.client.Headers.APPLICATION_JSON;
+import static pl.akmf.ksef.sdk.client.Headers.AUTHORIZATION;
+import static pl.akmf.ksef.sdk.client.Headers.BEARER;
+import static pl.akmf.ksef.sdk.client.Headers.CONTENT_TYPE;
+import static pl.akmf.ksef.sdk.client.Parameter.PAGE_OFFSET;
+import static pl.akmf.ksef.sdk.client.Parameter.PAGE_SIZE;
+import static pl.akmf.ksef.sdk.client.model.ApiException.getApiException;
 
-public class SearchPermissionApi extends BaseApi {
-    private final ObjectMapper memberVarObjectMapper;
-    private final String memberVarBaseUri;
-    private final Consumer<HttpRequest.Builder> memberVarInterceptor;
-    private final Duration memberVarReadTimeout;
+public class SearchPermissionApi {
+    private final HttpApiClient apiClient;
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
 
-    public SearchPermissionApi(ApiClient apiClient) {
-        super(apiClient.getHttpClient(), apiClient.getResponseInterceptor());
-        memberVarObjectMapper = apiClient.getObjectMapper();
-        memberVarBaseUri = apiClient.getBaseUri();
-        memberVarInterceptor = apiClient.getRequestInterceptor();
-        memberVarReadTimeout = apiClient.getReadTimeout();
+    public SearchPermissionApi(HttpApiClient apiClient) {
+        this.apiClient = apiClient;
     }
 
     /**
@@ -59,64 +58,34 @@ public class SearchPermissionApi extends BaseApi {
      * @return ApiResponse&lt;QueryEntityAuthorizationPermissionsResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<QueryEntityAuthorizationPermissionsResponse> apiV2PermissionsQueryAuthorizationsGrantsPost(Integer pageOffset, Integer pageSize, EntityAuthorizationPermissionsQueryRequest entityAuthorizationPermissionsQueryRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2PermissionsQueryAuthorizationsGrantsPostRequestBuilder(pageOffset, pageSize, entityAuthorizationPermissionsQueryRequest);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder,
-                    PERMISSION_SEARCH_AUTHORIZATIONS_GRANT.getOperationId());
+    public ApiResponse<QueryEntityAuthorizationPermissionsResponse> apiV2PermissionsQueryAuthorizationsGrantsPost(Integer pageOffset, Integer pageSize, EntityAuthorizationPermissionsQueryRequest entityAuthorizationPermissionsQueryRequest, String authenticationToken) throws ApiException {
+        var params = new HashMap<String, String>();
+        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        params.put(PAGE_OFFSET, String.valueOf(pageOffset));
+        String uri = buildUrlWithParams(PERMISSION_SEARCH_AUTHORIZATIONS_GRANT.getUrl(), params);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.post(uri, entityAuthorizationPermissionsQueryRequest, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(PERMISSION_SEARCH_AUTHORIZATIONS_GRANT.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2PermissionsQueryAuthorizationsGrantsPostRequestBuilder(Integer pageOffset, Integer pageSize, EntityAuthorizationPermissionsQueryRequest entityAuthorizationPermissionsQueryRequest) throws ApiException {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = PERMISSION_SEARCH_AUTHORIZATIONS_GRANT.getUrl();
-
-        List<Pair> localVarQueryParams = new ArrayList<>();
-        StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageOffset", pageOffset));
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageSize", pageSize));
-
-        if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-            StringJoiner queryJoiner = new StringJoiner("&");
-            localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-            if (localVarQueryStringJoiner.length() != 0) {
-                queryJoiner.add(localVarQueryStringJoiner.toString());
-            }
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner));
-        } else {
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-        }
-
-        localVarRequestBuilder.header("Content-Type", "application/json");
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        try {
-            byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(entityAuthorizationPermissionsQueryRequest);
-            localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -127,57 +96,33 @@ public class SearchPermissionApi extends BaseApi {
      * @return ApiResponse&lt;QueryEntityRolesResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<QueryEntityRolesResponse> apiV2PermissionsQueryEntitiesRolesGet(Integer pageOffset, Integer pageSize) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2PermissionsQueryEntitiesRolesGetRequestBuilder(pageOffset, pageSize);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, PERMISSION_SEARCH_ENTITY_ROLES.getOperationId());
+    public ApiResponse<QueryEntityRolesResponse> apiV2PermissionsQueryEntitiesRolesGet(Integer pageOffset, Integer pageSize, String authenticationToken) throws ApiException {
+        var params = new HashMap<String, String>();
+        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        params.put(PAGE_OFFSET, String.valueOf(pageOffset));
+        String uri = buildUrlWithParams(PERMISSION_SEARCH_ENTITY_ROLES.getUrl(), params);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.get(uri, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(PERMISSION_SEARCH_ENTITY_ROLES.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2PermissionsQueryEntitiesRolesGetRequestBuilder(Integer pageOffset, Integer pageSize) {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = PERMISSION_SEARCH_ENTITY_ROLES.getUrl();
-
-        List<Pair> localVarQueryParams = new ArrayList<>();
-        StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageOffset", pageOffset));
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageSize", pageSize));
-
-        if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-            StringJoiner queryJoiner = new StringJoiner("&");
-            localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-            if (localVarQueryStringJoiner.length() != 0) {
-                queryJoiner.add(localVarQueryStringJoiner.toString());
-            }
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner));
-        } else {
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-        }
-
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -189,62 +134,34 @@ public class SearchPermissionApi extends BaseApi {
      * @return ApiResponse&lt;QueryEuEntityPermissionsResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<QueryEuEntityPermissionsResponse> apiV2PermissionsQueryEuEntitiesGrantsPost(Integer pageOffset, Integer pageSize, EuEntityPermissionsQueryRequest euEntityPermissionsQueryRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2PermissionsQueryEuEntitiesGrantsPostRequestBuilder(pageOffset, pageSize, euEntityPermissionsQueryRequest);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, PERMISSION_SEARCH_EU_ENTITY_GRANT.getOperationId());
+    public ApiResponse<QueryEuEntityPermissionsResponse> apiV2PermissionsQueryEuEntitiesGrantsPost(Integer pageOffset, Integer pageSize, EuEntityPermissionsQueryRequest euEntityPermissionsQueryRequest, String authenticationToken) throws ApiException {
+        var params = new HashMap<String, String>();
+        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        params.put(PAGE_OFFSET, String.valueOf(pageOffset));
+        String uri = buildUrlWithParams(PERMISSION_SEARCH_EU_ENTITY_GRANT.getUrl(), params);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.post(uri, euEntityPermissionsQueryRequest, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(PERMISSION_SEARCH_EU_ENTITY_GRANT.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2PermissionsQueryEuEntitiesGrantsPostRequestBuilder(Integer pageOffset, Integer pageSize, EuEntityPermissionsQueryRequest euEntityPermissionsQueryRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = PERMISSION_SEARCH_EU_ENTITY_GRANT.getUrl();
-
-        List<Pair> localVarQueryParams = new ArrayList<>();
-        StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageOffset", pageOffset));
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageSize", pageSize));
-
-        if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-            StringJoiner queryJoiner = new StringJoiner("&");
-            localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-            if (localVarQueryStringJoiner.length() != 0) {
-                queryJoiner.add(localVarQueryStringJoiner.toString());
-            }
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
-        } else {
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-        }
-
-        localVarRequestBuilder.header("Content-Type", "application/json");
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        try {
-            byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(euEntityPermissionsQueryRequest);
-            localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -256,64 +173,34 @@ public class SearchPermissionApi extends BaseApi {
      * @return ApiResponse&lt;QueryPersonPermissionsResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<QueryPersonPermissionsResponse> apiV2PermissionsQueryPersonsGrantsPost(Integer pageOffset, Integer pageSize, PersonPermissionsQueryRequest personPermissionsQueryRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2PermissionsQueryPersonsGrantsPostRequestBuilder(pageOffset, pageSize, personPermissionsQueryRequest);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder,
-                    PERMISSION_SEARCH_PERSON_PERMISSION.getOperationId());
+    public ApiResponse<QueryPersonPermissionsResponse> apiV2PermissionsQueryPersonsGrantsPost(Integer pageOffset, Integer pageSize, PersonPermissionsQueryRequest personPermissionsQueryRequest, String authenticationToken) throws ApiException {
+        var params = new HashMap<String, String>();
+        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        params.put(PAGE_OFFSET, String.valueOf(pageOffset));
+        String uri = buildUrlWithParams(PERMISSION_SEARCH_PERSON_PERMISSION.getUrl(), params);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.post(uri, personPermissionsQueryRequest, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(PERMISSION_SEARCH_PERSON_PERMISSION.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2PermissionsQueryPersonsGrantsPostRequestBuilder(Integer pageOffset, Integer pageSize, PersonPermissionsQueryRequest personPermissionsQueryRequest) throws ApiException {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = PERMISSION_SEARCH_PERSON_PERMISSION.getUrl();
-
-        List<Pair> localVarQueryParams = new ArrayList<>();
-        StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageOffset", pageOffset));
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageSize", pageSize));
-
-        if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-            StringJoiner queryJoiner = new StringJoiner("&");
-            localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-            if (localVarQueryStringJoiner.length() != 0) {
-                queryJoiner.add(localVarQueryStringJoiner.toString());
-            }
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
-        } else {
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-        }
-
-        localVarRequestBuilder.header("Content-Type", "application/json");
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        try {
-            byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(personPermissionsQueryRequest);
-            localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -325,64 +212,34 @@ public class SearchPermissionApi extends BaseApi {
      * @return ApiResponse&lt;QuerySubordinateEntityRolesResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<QuerySubordinateEntityRolesResponse> apiV2PermissionsQuerySubordinateEntitiesRolesPost(Integer pageOffset, Integer pageSize, SubordinateEntityRolesQueryRequest subordinateEntityRolesQueryRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2PermissionsQuerySubordinateEntitiesRolesPostRequestBuilder(pageOffset, pageSize, subordinateEntityRolesQueryRequest);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder,
-                    PERMISSION_SEARCH_SUBORDINATE_PERMISSION.getOperationId());
+    public ApiResponse<QuerySubordinateEntityRolesResponse> apiV2PermissionsQuerySubordinateEntitiesRolesPost(Integer pageOffset, Integer pageSize, SubordinateEntityRolesQueryRequest subordinateEntityRolesQueryRequest, String authenticationToken) throws ApiException {
+        var params = new HashMap<String, String>();
+        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        params.put(PAGE_OFFSET, String.valueOf(pageOffset));
+        String uri = buildUrlWithParams(PERMISSION_SEARCH_SUBORDINATE_PERMISSION.getUrl(), params);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.post(uri, subordinateEntityRolesQueryRequest, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(PERMISSION_SEARCH_SUBORDINATE_PERMISSION.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    }) // closes the InputStream
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2PermissionsQuerySubordinateEntitiesRolesPostRequestBuilder(Integer pageOffset, Integer pageSize, SubordinateEntityRolesQueryRequest subordinateEntityRolesQueryRequest) throws ApiException {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = PERMISSION_SEARCH_SUBORDINATE_PERMISSION.getUrl();
-
-        List<Pair> localVarQueryParams = new ArrayList<>();
-        StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageOffset", pageOffset));
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageSize", pageSize));
-
-        if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-            StringJoiner queryJoiner = new StringJoiner("&");
-            localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-            if (localVarQueryStringJoiner.length() != 0) {
-                queryJoiner.add(localVarQueryStringJoiner.toString());
-            }
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
-        } else {
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-        }
-
-        localVarRequestBuilder.header("Content-Type", "application/json");
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        try {
-            byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(subordinateEntityRolesQueryRequest);
-            localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -394,63 +251,33 @@ public class SearchPermissionApi extends BaseApi {
      * @return ApiResponse&lt;QuerySubunitPermissionsResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<QuerySubunitPermissionsResponse> apiV2PermissionsQuerySubunitsGrantsPost(Integer pageOffset, Integer pageSize, SubunitPermissionsQueryRequest subunitPermissionsQueryRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2PermissionsQuerySubunitsGrantsPostRequestBuilder(pageOffset, pageSize, subunitPermissionsQueryRequest);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder,
-                    PERMISSION_SEARCH_SUBUNIT_GRANT.getOperationId());
+    public ApiResponse<QuerySubunitPermissionsResponse> apiV2PermissionsQuerySubunitsGrantsPost(Integer pageOffset, Integer pageSize, SubunitPermissionsQueryRequest subunitPermissionsQueryRequest, String authenticationToken) throws ApiException {
+        var params = new HashMap<String, String>();
+        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        params.put(PAGE_OFFSET, String.valueOf(pageOffset));
+        String uri = buildUrlWithParams(PERMISSION_SEARCH_SUBUNIT_GRANT.getUrl(), params);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.post(uri, subunitPermissionsQueryRequest, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(PERMISSION_SEARCH_SUBUNIT_GRANT.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2PermissionsQuerySubunitsGrantsPostRequestBuilder(Integer pageOffset, Integer pageSize, SubunitPermissionsQueryRequest subunitPermissionsQueryRequest) throws ApiException {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = PERMISSION_SEARCH_SUBUNIT_GRANT.getUrl();
-
-        List<Pair> localVarQueryParams = new ArrayList<>();
-        StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageOffset", pageOffset));
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageSize", pageSize));
-
-        if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-            StringJoiner queryJoiner = new StringJoiner("&");
-            localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-            if (localVarQueryStringJoiner.length() != 0) {
-                queryJoiner.add(localVarQueryStringJoiner.toString());
-            }
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner));
-        } else {
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-        }
-
-        localVarRequestBuilder.header("Content-Type", "application/json");
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        try {
-            byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(subunitPermissionsQueryRequest);
-            localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 }

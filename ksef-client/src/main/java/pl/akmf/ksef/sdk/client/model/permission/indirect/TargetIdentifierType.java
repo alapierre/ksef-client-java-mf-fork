@@ -3,8 +3,7 @@ package pl.akmf.ksef.sdk.client.model.permission.indirect;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum TargetIdentifierType {
-    NIP("Nip"),
-    INTERNALID("InternalId");
+    NIP("Nip");
 
     private final String value;
 

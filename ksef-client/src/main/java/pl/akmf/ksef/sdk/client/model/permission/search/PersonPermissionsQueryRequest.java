@@ -21,6 +21,7 @@ public class PersonPermissionsQueryRequest {
         this.targetIdentifier = targetIdentifier;
         this.permissionTypes = permissionTypes;
         this.permissionState = permissionState;
+        this.queryType = queryType;
     }
 
     public PersonPermissionsAuthorIdentifier getAuthorIdentifier() {

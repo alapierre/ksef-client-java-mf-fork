@@ -10,7 +10,8 @@ public enum CommonSessionStatus {
   
   INPROGRESS("InProgress"),
   
-  FAILED("Failed");
+  FAILED("Failed"),
+  CANCELLED("Cancelled");
 
   private String value;
 

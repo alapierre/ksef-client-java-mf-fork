@@ -11,9 +11,9 @@ import pl.akmf.ksef.sdk.client.model.permission.person.PersonPermissionType;
 import pl.akmf.ksef.sdk.client.model.permission.person.PersonPermissionsSubjectIdentifier;
 import pl.akmf.ksef.sdk.client.model.permission.person.PersonPermissionsSubjectIdentifierType;
 import pl.akmf.ksef.sdk.client.model.permission.search.PersonPermission;
+import pl.akmf.ksef.sdk.client.model.permission.search.PersonPermissionQueryType;
 import pl.akmf.ksef.sdk.client.model.permission.search.PersonPermissionsAuthorizedIdentifier;
 import pl.akmf.ksef.sdk.client.model.permission.search.PersonPermissionsAuthorizedIdentifierType;
-import pl.akmf.ksef.sdk.client.model.xml.ContextIdentifierTypeEnum;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
 
 import java.io.IOException;
@@ -29,32 +29,33 @@ class PersonPermissionIntegrationTest extends BaseIntegrationTest {
     void personPermissionE2EIntegrationTest() throws JAXBException, IOException, ApiException {
         String contextNip = TestUtils.generateRandomNIP();
         String subjectNip = TestUtils.generateRandomNIP();
-        authWithCustomNip(contextNip, ContextIdentifierTypeEnum.NIP, contextNip);
+        var authToken = authWithCustomNip(contextNip, contextNip).authToken();
 
-        var grantReferenceNumber = grantPermission(subjectNip);
+        var grantReferenceNumber = grantPermission(subjectNip, authToken);
 
         await().atMost(5, SECONDS)
                 .pollInterval(1, SECONDS)
-                .until(() -> isOperationFinish(grantReferenceNumber));
+                .until(() -> isOperationFinish(grantReferenceNumber, authToken));
 
-        var permission = searchPermission(subjectNip, 1);
+        var permission = searchPermission(subjectNip, 1, authToken);
 
         permission.forEach(e -> {
-            var revokeReferenceNumber = revokePermission(e);
+            var revokeReferenceNumber = revokePermission(e, authToken);
 
             await().atMost(30, SECONDS)
                     .pollInterval(2, SECONDS)
-                    .until(() -> isOperationFinish(revokeReferenceNumber));
+                    .until(() -> isOperationFinish(revokeReferenceNumber, authToken));
         });
-        searchPermission(subjectNip, 0);
+        searchPermission(subjectNip, 0, authToken);
     }
 
-    private List<String> searchPermission(String subjectNip, int expected) throws ApiException {
+    private List<String> searchPermission(String subjectNip, int expected, String authToken) throws ApiException {
         var request = new PersonPermissionsQueryRequestBuilder()
                 .withAuthorizedIdentifier(new PersonPermissionsAuthorizedIdentifier(PersonPermissionsAuthorizedIdentifierType.NIP, subjectNip))
+                .withQueryType(PersonPermissionQueryType.PERMISSION_GRANTED_IN_CURRENT_CONTEXT)
                 .build();
 
-        var response = defaultKsefClient.searchGrantedPersonPermissions(request, 0, 10);
+        var response = defaultKsefClient.searchGrantedPersonPermissions(request, 0, 10, authToken);
         Assertions.assertEquals(expected, response.getPermissions().size());
 
         if (response.getPermissions().isEmpty()) {
@@ -67,31 +68,29 @@ class PersonPermissionIntegrationTest extends BaseIntegrationTest {
                 .toList();
     }
 
-    private String revokePermission(String operationId) {
+    private String revokePermission(String operationId, String authToken) {
         try {
-            return defaultKsefClient.revokeCommonPermission(operationId).getOperationReferenceNumber();
+            return defaultKsefClient.revokeCommonPermission(operationId, authToken).getOperationReferenceNumber();
         } catch (ApiException e) {
             Assertions.fail(e.getMessage());
         }
         return null;
     }
 
-    private String grantPermission(String subjectNip) throws ApiException {
+    private String grantPermission(String subjectNip, String authToken) throws ApiException {
         var request = new GrantPersonPermissionsRequestBuilder()
                 .withSubjectIdentifier(new PersonPermissionsSubjectIdentifier(PersonPermissionsSubjectIdentifierType.NIP, subjectNip))
                 .withPermissions(List.of(PersonPermissionType.INVOICEWRITE))
                 .withDescription("e2e test")
                 .build();
 
-        var response = defaultKsefClient.grantsPermissionPerson(request);
+        var response = defaultKsefClient.grantsPermissionPerson(request, authToken);
         Assertions.assertNotNull(response);
         return response.getOperationReferenceNumber();
     }
 
-    private Boolean isOperationFinish(String referenceNumber) throws ApiException {
-        PermissionStatusInfo operations = defaultKsefClient.permissionOperationStatus(referenceNumber);
+    private Boolean isOperationFinish(String referenceNumber, String authToken) throws ApiException {
+        PermissionStatusInfo operations = defaultKsefClient.permissionOperationStatus(referenceNumber, authToken);
         return operations != null && operations.getStatus().getCode() == 200;
     }
 }
-
-

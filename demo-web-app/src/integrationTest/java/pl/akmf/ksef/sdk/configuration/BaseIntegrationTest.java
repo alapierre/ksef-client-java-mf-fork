@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import pl.akmf.ksef.sdk.TestClientApplication;
@@ -21,7 +20,6 @@ import pl.akmf.ksef.sdk.api.services.DefaultSignatureService;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.certificate.SelfSignedCertificate;
 import pl.akmf.ksef.sdk.client.model.xml.AuthTokenRequest;
-import pl.akmf.ksef.sdk.client.model.xml.ContextIdentifierTypeEnum;
 import pl.akmf.ksef.sdk.client.model.xml.SubjectIdentifierTypeEnum;
 
 import java.io.IOException;
@@ -37,7 +35,6 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 )
 @ContextConfiguration(classes = IntegrationConfig.class)
 @EnableAutoConfiguration
-@ActiveProfiles("DEV")
 public abstract class BaseIntegrationTest {
 
     @LocalServerPort
@@ -60,12 +57,12 @@ public abstract class BaseIntegrationTest {
         wireMock.stop();
     }
 
-    protected AuthTokensPair authWithCustomNip(String context, ContextIdentifierTypeEnum contextType, String subject) throws ApiException, JAXBException, IOException {
+    protected AuthTokensPair authWithCustomNip(String context, String subject) throws ApiException, JAXBException, IOException {
         var challenge = defaultKsefClient.getAuthChallenge();
 
         AuthTokenRequest authTokenRequest = new AuthTokenRequestBuilder()
                 .withChallenge(challenge.getChallenge())
-                .withContext(contextType, context)
+                .withContextNip(context)
                 .withSubjectType(SubjectIdentifierTypeEnum.CERTIFICATE_SUBJECT)
                 .build();
 
@@ -83,15 +80,15 @@ public abstract class BaseIntegrationTest {
         //Czekanie na zakończenie procesu
         await().atMost(4, SECONDS)
                 .pollInterval(1, SECONDS)
-                .until(() -> isSessionStatusReady(submitAuthTokenResponse.getReferenceNumber()));
+                .until(() -> isSessionStatusReady(submitAuthTokenResponse.getReferenceNumber(), submitAuthTokenResponse.getAuthenticationToken().getToken()));
 
-        var tokenResponse = defaultKsefClient.redeemToken();
+        var tokenResponse = defaultKsefClient.redeemToken(submitAuthTokenResponse.getAuthenticationToken().getToken());
 
         return new AuthTokensPair(tokenResponse.getAccessToken().getToken(), tokenResponse.getRefreshToken().getToken());
     }
 
-    private boolean isSessionStatusReady(String referenceNumber) throws ApiException {
-        var checkAuthStatus = defaultKsefClient.getAuthStatus(referenceNumber);
+    private boolean isSessionStatusReady(String referenceNumber, String tempAuthToken) throws ApiException {
+        var checkAuthStatus = defaultKsefClient.getAuthStatus(referenceNumber, tempAuthToken);
         return checkAuthStatus != null && checkAuthStatus.getStatus().getCode() == 200;
     }
 

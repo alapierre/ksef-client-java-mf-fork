@@ -3,14 +3,13 @@ package pl.akmf.ksef.sdk.client.model.invoice;
 /**
  * Dane nabywcy.
  */
-public class InvoicesAsynqQueryRequestBuyer {
+public class InvoiceQueryBuyer {
     private BuyerIdentifierType identifierType;
 
     private String identifier;
 
-    private String name;
 
-    public InvoicesAsynqQueryRequestBuyer() {
+    public InvoiceQueryBuyer() {
     }
 
     public BuyerIdentifierType getIdentifierType() {
@@ -27,14 +26,6 @@ public class InvoicesAsynqQueryRequestBuyer {
 
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 }
 

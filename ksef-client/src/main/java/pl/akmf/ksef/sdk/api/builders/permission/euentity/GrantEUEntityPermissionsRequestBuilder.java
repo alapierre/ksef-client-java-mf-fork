@@ -1,7 +1,7 @@
 package pl.akmf.ksef.sdk.api.builders.permission.euentity;
 
 import pl.akmf.ksef.sdk.client.model.permission.euentity.ContextIdentifier;
-import pl.akmf.ksef.sdk.client.model.permission.euentity.GrantEUEntityPermissionsRequest;
+import pl.akmf.ksef.sdk.client.model.permission.euentity.EuEntityPermissionsGrantRequest;
 import pl.akmf.ksef.sdk.client.model.permission.euentity.SubjectIdentifier;
 
 public class GrantEUEntityPermissionsRequestBuilder {
@@ -24,8 +24,8 @@ public class GrantEUEntityPermissionsRequestBuilder {
         return this;
     }
 
-    public GrantEUEntityPermissionsRequest build() {
-        GrantEUEntityPermissionsRequest request = new GrantEUEntityPermissionsRequest();
+    public EuEntityPermissionsGrantRequest build() {
+        EuEntityPermissionsGrantRequest request = new EuEntityPermissionsGrantRequest();
         request.setSubjectIdentifier(subjectIdentifier);
         request.setContextIdentifier(contextIdentifier);
         request.setDescription(description);

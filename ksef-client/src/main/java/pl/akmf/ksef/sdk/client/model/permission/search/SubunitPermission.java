@@ -5,23 +5,23 @@ import java.time.OffsetDateTime;
 public class SubunitPermission {
     private String id;
     private String authorizedIdentifier;
-    private String authorizedIdentifierType;
+    private SubunitPermissionsSubjectIdentifierType authorizedIdentifierType;
     private String subunitIdentifier;
-    private String subunitdentifierType;
+    private SubunitPermissionsSubunitIdentifierType subunitIdentifierType;
     private String authorIdentifier;
-    private String authorIdentifierType;
-    private String permissionScope;
+    private SubunitPermissionsAuthorIdentifierType authorIdentifierType;
+    private SubunitPermissionScope permissionScope;
     private String description;
     private OffsetDateTime startDate;
 
     SubunitPermission() {
     }
 
-    public SubunitPermission(String authorizedIdentifier, String authorizedIdentifierType, String subunitIdentifier, String subunitdentifierType, String authorIdentifier, String authorIdentifierType, String permissionScope, String description, OffsetDateTime startDate) {
+    public SubunitPermission(String authorizedIdentifier, SubunitPermissionsSubjectIdentifierType authorizedIdentifierType, String subunitIdentifier, SubunitPermissionsSubunitIdentifierType subunitIdentifierType, String authorIdentifier, SubunitPermissionsAuthorIdentifierType authorIdentifierType, SubunitPermissionScope permissionScope, String description, OffsetDateTime startDate) {
         this.authorizedIdentifier = authorizedIdentifier;
         this.authorizedIdentifierType = authorizedIdentifierType;
         this.subunitIdentifier = subunitIdentifier;
-        this.subunitdentifierType = subunitdentifierType;
+        this.subunitIdentifierType = subunitIdentifierType;
         this.authorIdentifier = authorIdentifier;
         this.authorIdentifierType = authorIdentifierType;
         this.permissionScope = permissionScope;
@@ -45,11 +45,11 @@ public class SubunitPermission {
         this.authorizedIdentifier = authorizedIdentifier;
     }
 
-    public String getAuthorizedIdentifierType() {
+    public SubunitPermissionsSubjectIdentifierType getAuthorizedIdentifierType() {
         return authorizedIdentifierType;
     }
 
-    public void setAuthorizedIdentifierType(String authorizedIdentifierType) {
+    public void setAuthorizedIdentifierType(SubunitPermissionsSubjectIdentifierType authorizedIdentifierType) {
         this.authorizedIdentifierType = authorizedIdentifierType;
     }
 
@@ -61,12 +61,12 @@ public class SubunitPermission {
         this.subunitIdentifier = subunitIdentifier;
     }
 
-    public String getSubunitdentifierType() {
-        return subunitdentifierType;
+    public SubunitPermissionsSubunitIdentifierType getSubunitIdentifierType() {
+        return subunitIdentifierType;
     }
 
-    public void setSubunitdentifierType(String subunitdentifierType) {
-        this.subunitdentifierType = subunitdentifierType;
+    public void setSubunitIdentifierType(SubunitPermissionsSubunitIdentifierType subunitIdentifierType) {
+        this.subunitIdentifierType = subunitIdentifierType;
     }
 
     public String getAuthorIdentifier() {
@@ -77,19 +77,19 @@ public class SubunitPermission {
         this.authorIdentifier = authorIdentifier;
     }
 
-    public String getAuthorIdentifierType() {
+    public SubunitPermissionsAuthorIdentifierType getAuthorIdentifierType() {
         return authorIdentifierType;
     }
 
-    public void setAuthorIdentifierType(String authorIdentifierType) {
+    public void setAuthorIdentifierType(SubunitPermissionsAuthorIdentifierType authorIdentifierType) {
         this.authorIdentifierType = authorIdentifierType;
     }
 
-    public String getPermissionScope() {
+    public SubunitPermissionScope getPermissionScope() {
         return permissionScope;
     }
 
-    public void setPermissionScope(String permissionScope) {
+    public void setPermissionScope(SubunitPermissionScope permissionScope) {
         this.permissionScope = permissionScope;
     }
 

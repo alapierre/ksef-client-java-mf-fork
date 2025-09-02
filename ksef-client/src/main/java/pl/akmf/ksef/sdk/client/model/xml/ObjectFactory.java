@@ -56,13 +56,13 @@ public class ObjectFactory {
     }
 
     /**
-     * Create an instance of {@link AuthTokenRequest.ContextIdentifier }
+     * Create an instance of {@link TContextIdentifier }
      * 
      * @return
-     *     the new instance of {@link AuthTokenRequest.ContextIdentifier }
+     *     the new instance of {@link TContextIdentifier }
      */
-    public AuthTokenRequest.ContextIdentifier createAuthTokenRequestContextIdentifier() {
-        return new AuthTokenRequest.ContextIdentifier();
+    public TContextIdentifier createTContextIdentifier() {
+        return new TContextIdentifier();
     }
 
     /**

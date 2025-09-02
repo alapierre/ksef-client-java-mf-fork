@@ -15,9 +15,10 @@ public enum AuthenticationMethod {
   
   QUALIFIEDSIGNATURE("QualifiedSignature"),
   
-  QUALIFIEDSEAL("QualifiedSeal");
+  QUALIFIEDSEAL("QualifiedSeal"),
+  PERSONALSIGNATURE("PersonalSignature");
 
-  private String value;
+  private final String value;
 
   AuthenticationMethod(String value) {
     this.value = value;

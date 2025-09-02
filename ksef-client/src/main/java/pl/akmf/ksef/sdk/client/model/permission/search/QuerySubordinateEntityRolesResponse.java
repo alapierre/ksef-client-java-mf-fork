@@ -4,16 +4,14 @@ import java.util.List;
 
 public class QuerySubordinateEntityRolesResponse {
     private List<SubordinateEntityRole> roles;
-    private Integer page;
-    private Integer pageSize;
+    private Boolean hasMore;
 
     QuerySubordinateEntityRolesResponse() {
     }
 
-    public QuerySubordinateEntityRolesResponse(List<SubordinateEntityRole> roles, Integer page, Integer pageSize) {
+    public QuerySubordinateEntityRolesResponse(List<SubordinateEntityRole> roles, Boolean hasMore) {
         this.roles = roles;
-        this.page = page;
-        this.pageSize = pageSize;
+        this.hasMore = hasMore;
     }
 
     public List<SubordinateEntityRole> getRoles() {
@@ -24,20 +22,12 @@ public class QuerySubordinateEntityRolesResponse {
         this.roles = roles;
     }
 
-    public Integer getPage() {
-        return page;
+    public Boolean getHasMore() {
+        return hasMore;
     }
 
-    public void setPage(Integer page) {
-        this.page = page;
-    }
-
-    public Integer getPageSize() {
-        return pageSize;
-    }
-
-    public void setPageSize(Integer pageSize) {
-        this.pageSize = pageSize;
+    public void setHasMore(Boolean hasMore) {
+        this.hasMore = hasMore;
     }
 }
 

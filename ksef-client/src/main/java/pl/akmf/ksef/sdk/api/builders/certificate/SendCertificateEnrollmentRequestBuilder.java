@@ -1,13 +1,13 @@
 package pl.akmf.ksef.sdk.api.builders.certificate;
 
+import pl.akmf.ksef.sdk.client.model.certificate.CertificateType;
 import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
-
-import java.time.OffsetDateTime;
 
 public class SendCertificateEnrollmentRequestBuilder {
     private String certificateName;
     private byte[] csr;
-    private OffsetDateTime validFrom;
+    private String validFrom;
+    private CertificateType certificateType;
 
     public SendCertificateEnrollmentRequestBuilder withCertificateName(String certificateName) {
         this.certificateName = certificateName;
@@ -19,8 +19,13 @@ public class SendCertificateEnrollmentRequestBuilder {
         return this;
     }
 
-    public SendCertificateEnrollmentRequestBuilder withValidFrom(OffsetDateTime validFrom) {
+    public SendCertificateEnrollmentRequestBuilder withValidFrom(String validFrom) {
         this.validFrom = validFrom;
+        return this;
+    }
+
+    public SendCertificateEnrollmentRequestBuilder withCertificateType(CertificateType certificateType) {
+        this.certificateType = certificateType;
         return this;
     }
 
@@ -29,6 +34,7 @@ public class SendCertificateEnrollmentRequestBuilder {
         request.setCertificateName(certificateName);
         request.setCsr(csr);
         request.setValidFrom(validFrom);
+        request.setCertificateType(certificateType);
 
         return request;
     }

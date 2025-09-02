@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,7 +47,8 @@ public class BatchSessionController {
     @PostMapping("/open-session/{contextIdentifier}")
     public ResponseEntity<String> openBatchSession(@PathVariable String contextIdentifier,
                                                    @RequestParam(value = "numberOfParts", defaultValue = "11") int numberOfParts,
-                                                   @RequestParam(value = "maxPartSizeMB", defaultValue = "0.01") double maxPartSizeMB
+                                                   @RequestParam(value = "maxPartSizeMB", defaultValue = "0.01") double maxPartSizeMB,
+                                                   @RequestHeader(name = "Authorization") String authToken
     ) throws Exception {
 
         String invoicePath = "demo-web-app/src/main/resources/xml/invoices/sample/invoice-template.xml";
@@ -123,7 +125,7 @@ public class BatchSessionController {
 
         // Build request
         var builder = OpenBatchSessionRequestBuilder.create()
-                .withFormCode( SystemCode.FA_2, "1-0E", "FA")
+                .withFormCode(SystemCode.FA_2, "1-0E", "FA")
                 .withOfflineMode(false)
                 .withBatchFile(zipMetadata.getFileSize(), zipMetadata.getHashSHA());
 
@@ -140,7 +142,7 @@ public class BatchSessionController {
                 )
                 .build();
 
-        var response = ksefClient.openBatchSession(request);
+        var response = ksefClient.openBatchSession(request, authToken);
         log.info("batch session opened " + response);
         ksefClient.sendBatchParts(response, encryptedZipParts);
         log.info("all parts send");
@@ -152,8 +154,9 @@ public class BatchSessionController {
     }
 
     @PostMapping("/close-session")
-    public ResponseEntity<Void> closeBatchSession(@RequestParam String referenceNumber) throws ApiException {
-        ksefClient.closeBatchSession(referenceNumber);
+    public ResponseEntity<Void> closeBatchSession(@RequestParam String referenceNumber,
+                                                  @RequestHeader(name = "Authorization") String authToken) throws ApiException {
+        ksefClient.closeBatchSession(referenceNumber, authToken);
 
         log.info("zamknięto sesje o nr ref " + referenceNumber);
         return ResponseEntity.ok().build();

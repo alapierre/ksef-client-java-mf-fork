@@ -3,12 +3,10 @@ package pl.akmf.ksef.sdk.client.model.invoice;
 /**
  * Dane sprzedawcy.
  */
-public class InvoicesAsynqQueryRequestSeller {
+public class InvoiceQuerySeller {
     private String identifier;
 
-    private String name;
-
-    public InvoicesAsynqQueryRequestSeller() {
+    public InvoiceQuerySeller() {
     }
 
     public String getIdentifier() {
@@ -17,14 +15,6 @@ public class InvoicesAsynqQueryRequestSeller {
 
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 }
 

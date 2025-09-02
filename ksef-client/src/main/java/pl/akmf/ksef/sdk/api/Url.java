@@ -27,7 +27,7 @@ public enum Url {
             "apiV2InvoicesAsyncQueryOperationReferenceNumberGet"),
     INVOICE_QUERY_ASYNC("/api/v2/invoices/async-query", "apiV2InvoicesAsyncQueryPost"),
     INVOICE_DOWNLOAD("/api/v2/invoices/download", "apiV2InvoicesDownloadPost"),
-    INVOICE_QUERY("/api/v2/invoices/query", "apiV2InvoicesQueryPost"),
+    INVOICE_QUERY_METADATA("/api/v2/invoices/query/metadata", "apiV2InvoicesQueryMetadataPost"),
 
     GRANT_EU_ADMINISTRATOR_PERMISSION("/api/v2/permissions/eu-entities/administration/grants", "apiV2PermissionsEuEntitiesAdministrationGrantsPost"),
     GRANT_EU_REPRESENTATIVE("/api/v2/permissions/eu-entities/grants", "apiV2PermissionsEuEntitiesGrantsPost"),

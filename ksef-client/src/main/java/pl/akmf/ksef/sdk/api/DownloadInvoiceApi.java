@@ -2,46 +2,45 @@ package pl.akmf.ksef.sdk.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pl.akmf.ksef.sdk.client.model.ApiClient;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import pl.akmf.ksef.sdk.client.HttpApiClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ApiResponse;
-import pl.akmf.ksef.sdk.client.model.Pair;
 import pl.akmf.ksef.sdk.client.model.invoice.AsyncInvoicesQueryStatus;
 import pl.akmf.ksef.sdk.client.model.invoice.DownloadInvoiceRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
-import pl.akmf.ksef.sdk.client.model.invoice.InvoicesAsynqQueryRequest;
-import pl.akmf.ksef.sdk.client.model.invoice.InvoicesQueryRequest;
-import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoicesReponse;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceMetadataQueryRequest;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoicesAsyncQueryRequest;
+import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoiceMetadataResponse;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringJoiner;
-import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.Map;
 
 import static pl.akmf.ksef.sdk.api.Url.INVOICE_DOWNLOAD;
 import static pl.akmf.ksef.sdk.api.Url.INVOICE_DOWNLOAD_BY_KSEF;
-import static pl.akmf.ksef.sdk.api.Url.INVOICE_QUERY;
 import static pl.akmf.ksef.sdk.api.Url.INVOICE_QUERY_ASYNC;
+import static pl.akmf.ksef.sdk.api.Url.INVOICE_QUERY_METADATA;
 import static pl.akmf.ksef.sdk.api.Url.INVOICE_QUERY_STATUS;
+import static pl.akmf.ksef.sdk.api.UrlQueryParamsBuilder.buildUrlWithParams;
+import static pl.akmf.ksef.sdk.client.Headers.ACCEPT;
+import static pl.akmf.ksef.sdk.client.Headers.APPLICATION_JSON;
+import static pl.akmf.ksef.sdk.client.Headers.AUTHORIZATION;
+import static pl.akmf.ksef.sdk.client.Headers.BEARER;
+import static pl.akmf.ksef.sdk.client.Headers.CONTENT_TYPE;
+import static pl.akmf.ksef.sdk.client.Parameter.PAGE_OFFSET;
+import static pl.akmf.ksef.sdk.client.Parameter.PAGE_SIZE;
+import static pl.akmf.ksef.sdk.client.Parameter.PATH_KSEF_REFERENCE_NUMBER;
+import static pl.akmf.ksef.sdk.client.Parameter.PATH_OPERATION_REFERENCE_NUMBER;
+import static pl.akmf.ksef.sdk.client.model.ApiException.getApiException;
 
-public class DownloadInvoiceApi extends BaseApi {
-    private final ObjectMapper memberVarObjectMapper;
-    private final String memberVarBaseUri;
-    private final Consumer<HttpRequest.Builder> memberVarInterceptor;
-    private final Duration memberVarReadTimeout;
+public class DownloadInvoiceApi {
+    private final HttpApiClient apiClient;
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
 
-    public DownloadInvoiceApi(ApiClient apiClient) {
-        super(apiClient.getHttpClient(), apiClient.getResponseInterceptor());
-        memberVarObjectMapper = apiClient.getObjectMapper();
-        memberVarBaseUri = apiClient.getBaseUri();
-        memberVarInterceptor = apiClient.getRequestInterceptor();
-        memberVarReadTimeout = apiClient.getReadTimeout();
+    public DownloadInvoiceApi(HttpApiClient apiClient) {
+        this.apiClient = apiClient;
     }
 
     /**
@@ -52,155 +51,97 @@ public class DownloadInvoiceApi extends BaseApi {
      * @return ApiResponse&lt;String&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<String> apiV2InvoicesKsefKsefReferenceNumberGet(String ksefReferenceNumber) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2InvoicesKsefKsefReferenceNumberGetRequestBuilder(ksefReferenceNumber);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, INVOICE_DOWNLOAD_BY_KSEF.getOperationId());
-            return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
-            );
-        } catch (IOException e) {
-            throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
+    public ApiResponse<byte[]> apiV2InvoicesKsefKsefReferenceNumberGet(String ksefReferenceNumber, String authenticationToken) throws ApiException {
+        String uri = buildUrlWithParams(INVOICE_DOWNLOAD_BY_KSEF.getUrl(), new HashMap<>())
+                .replace(PATH_KSEF_REFERENCE_NUMBER, ksefReferenceNumber);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+
+        var response = apiClient.get(uri, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(INVOICE_DOWNLOAD_BY_KSEF.getOperationId(), response.body(), response.statusCode(), response.headers());
         }
+
+        return new ApiResponse<>(
+                response.statusCode(),
+                response.headers(),
+                response.body()
+        );
     }
-
-    private HttpRequest.Builder apiV2InvoicesKsefKsefReferenceNumberGetRequestBuilder(String ksefReferenceNumber) throws ApiException {
-        if (ksefReferenceNumber == null) {
-            throw new ApiException(400, "Missing the required parameter 'ksefReferenceNumber' when calling apiV2InvoicesKsefKsefReferenceNumberGet");
-        }
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = INVOICE_DOWNLOAD_BY_KSEF.getUrl()
-                .replace("{ksefReferenceNumber}", ApiClient.urlEncode(ksefReferenceNumber));
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
-    }
-
 
     /**
-     * [mock] Sprawdza status asynchronicznego zapytania o pobranie faktur
+     * Sprawdza status asynchronicznego zapytania o pobranie faktur
      * Pobiera status wcześniej zainicjalizowanego zapytania asynchronicznego na podstawie identyfikatora operacji. Umożliwia śledzenie postępu przetwarzania zapytania oraz pobranie gotowych paczek z wynikami, jeśli są już dostępne.
      *
      * @param operationReferenceNumber Unikalny identyfikator operacji zwrócony podczas inicjalizacji zapytania. (required)
      * @return ApiResponse&lt;AsyncInvoicesQueryStatus&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<AsyncInvoicesQueryStatus> apiV2InvoicesAsyncQueryOperationReferenceNumberGet(String operationReferenceNumber) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2InvoicesAsyncQueryOperationReferenceNumberGetRequestBuilder(operationReferenceNumber);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, INVOICE_QUERY_STATUS.getOperationId());
-
-            return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
-            );
-
-        } catch (IOException e) {
-            throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
-        }
-    }
-
-    private HttpRequest.Builder apiV2InvoicesAsyncQueryOperationReferenceNumberGetRequestBuilder(String operationReferenceNumber) throws ApiException {
+    public ApiResponse<AsyncInvoicesQueryStatus> apiV2InvoicesAsyncQueryOperationReferenceNumberGet(String operationReferenceNumber, String authenticationToken) throws ApiException {
         if (operationReferenceNumber == null) {
             throw new ApiException(400, "Missing the required parameter 'operationReferenceNumber' when calling apiV2InvoicesAsyncQueryOperationReferenceNumberGet");
         }
 
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+        String uri = buildUrlWithParams(INVOICE_QUERY_STATUS.getUrl(), new HashMap<>())
+                .replace(PATH_OPERATION_REFERENCE_NUMBER, operationReferenceNumber);
 
-        String localVarPath = INVOICE_QUERY_STATUS.getUrl()
-                .replace("{operationReferenceNumber}", ApiClient.urlEncode(operationReferenceNumber));
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
 
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
+        var response = apiClient.get(uri, headers);
 
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(INVOICE_QUERY_STATUS.getOperationId(), response.body(), response.statusCode(), response.headers());
         }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
-    }
 
-
-    /**
-     * [mock] Inicjalizuje asynchroniczne zapytanie o pobranie faktur
-     * Rozpoczyna asynchroniczny proces wyszukiwania faktur w systemie KSeF na podstawie przekazanych filtrów. Wymagane jest przekazanie informacji o szyfrowaniu w polu &#x60;Encryption&#x60;, które służą do zaszyfrowania wygenerowanych paczek z fakturami.
-     *
-     * @param invoicesAsynqQueryRequest Zestaw filtrów dla wyszukiwania faktur. (optional)
-     * @return ApiResponse&lt;InitAsyncInvoicesQueryResponse&gt;
-     * @throws ApiException if fails to make API call
-     */
-    public ApiResponse<InitAsyncInvoicesQueryResponse> apiV2InvoicesAsyncQueryPost(InvoicesAsynqQueryRequest invoicesAsynqQueryRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2InvoicesAsyncQueryPostRequestBuilder(invoicesAsynqQueryRequest);
         try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, INVOICE_QUERY_ASYNC.getOperationId());
-
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
     }
 
-    private HttpRequest.Builder apiV2InvoicesAsyncQueryPostRequestBuilder(InvoicesAsynqQueryRequest invoicesAsynqQueryRequest) throws ApiException {
+    /**
+     * Inicjalizuje asynchroniczne zapytanie o pobranie faktur
+     * Rozpoczyna asynchroniczny proces wyszukiwania faktur w systemie KSeF na podstawie przekazanych filtrów. Wymagane jest przekazanie informacji o szyfrowaniu w polu &#x60;Encryption&#x60;, które służą do zaszyfrowania wygenerowanych paczek z fakturami.
+     *
+     * @param invoicesAsyncQueryRequest Zestaw filtrów dla wyszukiwania faktur. (optional)
+     * @return ApiResponse&lt;InitAsyncInvoicesQueryResponse&gt;
+     * @throws ApiException if fails to make API call
+     */
+    public ApiResponse<InitAsyncInvoicesQueryResponse> apiV2InvoicesAsyncQueryPost(InvoicesAsyncQueryRequest invoicesAsyncQueryRequest, String authenticationToken) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
 
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
+        var response = apiClient.post(INVOICE_QUERY_ASYNC.getUrl(), invoicesAsyncQueryRequest, headers);
 
-        String localVarPath = INVOICE_QUERY_ASYNC.getUrl();
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Content-Type", "application/json");
-        localVarRequestBuilder.header("Accept", "application/json");
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(INVOICE_QUERY_ASYNC.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
 
         try {
-            byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(invoicesAsynqQueryRequest);
-            localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
+            return new ApiResponse<>(
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
+            );
         } catch (IOException e) {
             throw new ApiException(e);
         }
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
-
 
     /**
      * Pobranie faktury  na podstawie numeru KSeF oraz danych faktury
@@ -210,118 +151,61 @@ public class DownloadInvoiceApi extends BaseApi {
      * @return ApiResponse&lt;String&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<String> apiV2InvoicesDownloadPost(DownloadInvoiceRequest downloadInvoiceRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2InvoicesDownloadPostRequestBuilder(downloadInvoiceRequest);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, INVOICE_DOWNLOAD.getOperationId());
+    public ApiResponse<byte[]> apiV2InvoicesDownloadPost(DownloadInvoiceRequest downloadInvoiceRequest, String authenticationToken) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
 
-            return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
-            );
-        } catch (IOException e) {
-            throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
+        var response = apiClient.post(INVOICE_DOWNLOAD.getUrl(), downloadInvoiceRequest, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(INVOICE_DOWNLOAD.getOperationId(), response.body(), response.statusCode(), response.headers());
         }
+
+        return new ApiResponse<>(
+                response.statusCode(),
+                response.headers(),
+                response.body());
     }
-
-    private HttpRequest.Builder apiV2InvoicesDownloadPostRequestBuilder(DownloadInvoiceRequest downloadInvoiceRequest) throws ApiException {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = INVOICE_DOWNLOAD.getUrl();
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Content-Type", "application/json");
-        localVarRequestBuilder.header("Accept", "application/xml");
-
-        try {
-            byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(downloadInvoiceRequest);
-            localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
-    }
-
 
     /**
-     * [mock] Pobranie listy metadanych faktur
-     * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania.
+     * Pobranie listy metadanych faktur
+     * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania. Wymagane uprawnienia: `InvoiceRead`.",
      *
-     * @param pageOffset           Indeks pierwszej strony wyników (domyślnie 0). (optional)
-     * @param pageSize             Rozmiar strony wyników(domyślnie 10). (optional)
-     * @param invoicesQueryRequest Zestaw filtrów dla wyszukiwania metadanych. (optional)
+     * @param pageOffset                  Indeks pierwszej strony wyników (domyślnie 0). (optional)
+     * @param pageSize                    Rozmiar strony wyników(domyślnie 10). (optional)
+     * @param invoiceMetadataQueryRequest Zestaw filtrów dla wyszukiwania metadanych. (optional)
      * @return ApiResponse&lt;QueryInvoicesReponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<QueryInvoicesReponse> apiV2InvoicesQueryPost(Integer pageOffset, Integer pageSize, InvoicesQueryRequest invoicesQueryRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2InvoicesQueryPostRequestBuilder(pageOffset, pageSize, invoicesQueryRequest);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, INVOICE_QUERY.getOperationId());
+    public ApiResponse<QueryInvoiceMetadataResponse> apiV2InvoicesQueryMetadataPost(Integer pageOffset, Integer pageSize, InvoiceMetadataQueryRequest invoiceMetadataQueryRequest, String authenticationToken) throws ApiException {
+        var params = new HashMap<String, String>();
+        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        params.put(PAGE_OFFSET, String.valueOf(pageOffset));
+        String uri = buildUrlWithParams(INVOICE_QUERY_METADATA.getUrl(), params);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.post(uri, invoiceMetadataQueryRequest, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(INVOICE_QUERY_METADATA.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2InvoicesQueryPostRequestBuilder(Integer pageOffset, Integer pageSize, InvoicesQueryRequest invoicesQueryRequest) throws ApiException {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = INVOICE_QUERY.getUrl();
-
-        List<Pair> localVarQueryParams = new ArrayList<>();
-        StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageOffset", pageOffset));
-        localVarQueryParams.addAll(ApiClient.parameterToPairs("pageSize", pageSize));
-
-        if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-            StringJoiner queryJoiner = new StringJoiner("&");
-            localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-            if (localVarQueryStringJoiner.length() != 0) {
-                queryJoiner.add(localVarQueryStringJoiner.toString());
-            }
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner.toString()));
-        } else {
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-        }
-
-        localVarRequestBuilder.header("Content-Type", "application/json");
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        try {
-            byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(invoicesQueryRequest);
-            localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 }

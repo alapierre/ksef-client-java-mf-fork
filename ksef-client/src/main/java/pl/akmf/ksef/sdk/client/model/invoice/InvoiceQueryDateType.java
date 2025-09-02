@@ -4,18 +4,13 @@ package pl.akmf.ksef.sdk.client.model.invoice;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-/**
- * Gets or Sets InvoiceQueryDateType
- */
 public enum InvoiceQueryDateType {
   
   ISSUE("Issue"),
   
   INVOICING("Invoicing"),
   
-  ACQUSITION("Acqusition"),
-  
-  HIDDEN("Hidden");
+  PERMANENTSTORAGE("PermanentStorage");
 
   private String value;
 

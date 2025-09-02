@@ -4,16 +4,18 @@ import java.util.List;
 
 public class SessionInvoicesResponse {
     private String continuationToken;
-    private List<SessionInvoice> invoices;
+    private List<SessionInvoiceStatusResponse> invoices;
     private Integer totalCount;
+    private Boolean hasMore;
 
     public SessionInvoicesResponse() {
     }
 
-    public SessionInvoicesResponse(String continuationToken, List<SessionInvoice> invoices, Integer totalCount) {
+    public SessionInvoicesResponse(String continuationToken, List<SessionInvoiceStatusResponse> invoices, Integer totalCount, Boolean hasMore) {
         this.continuationToken = continuationToken;
         this.invoices = invoices;
         this.totalCount = totalCount;
+        this.hasMore = hasMore;
     }
 
     public String getContinuationToken() {
@@ -24,11 +26,11 @@ public class SessionInvoicesResponse {
         this.continuationToken = continuationToken;
     }
 
-    public List<SessionInvoice> getInvoices() {
+    public List<SessionInvoiceStatusResponse> getInvoices() {
         return invoices;
     }
 
-    public void setInvoices(List<SessionInvoice> invoices) {
+    public void setInvoices(List<SessionInvoiceStatusResponse> invoices) {
         this.invoices = invoices;
     }
 
@@ -38,6 +40,14 @@ public class SessionInvoicesResponse {
 
     public void setTotalCount(Integer totalCount) {
         this.totalCount = totalCount;
+    }
+
+    public Boolean getHasMore() {
+        return hasMore;
+    }
+
+    public void setHasMore(Boolean hasMore) {
+        this.hasMore = hasMore;
     }
 }
 

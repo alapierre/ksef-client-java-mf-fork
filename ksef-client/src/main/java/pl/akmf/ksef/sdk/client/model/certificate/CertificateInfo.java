@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 public class CertificateInfo {
     private String certificateSerialNumber;
     private String name;
+    private CertificateType type;
     private String commonName;
     private CertificateListItemStatus status;
     private String subjectIdentifier;
@@ -15,6 +16,22 @@ public class CertificateInfo {
 
     public CertificateInfo() {
 
+    }
+
+    public CertificateInfo(String certificateSerialNumber, String name, CertificateType type,
+                           String commonName, CertificateListItemStatus status, String subjectIdentifier,
+                           String subjectIdentifierType, OffsetDateTime validFrom, OffsetDateTime validTo,
+                           OffsetDateTime lastUseDate) {
+        this.certificateSerialNumber = certificateSerialNumber;
+        this.name = name;
+        this.type = type;
+        this.commonName = commonName;
+        this.status = status;
+        this.subjectIdentifier = subjectIdentifier;
+        this.subjectIdentifierType = subjectIdentifierType;
+        this.validFrom = validFrom;
+        this.validTo = validTo;
+        this.lastUseDate = lastUseDate;
     }
 
     public String getCertificateSerialNumber() {
@@ -87,5 +104,13 @@ public class CertificateInfo {
 
     public void setLastUseDate(OffsetDateTime lastUseDate) {
         this.lastUseDate = lastUseDate;
+    }
+
+    public CertificateType getType() {
+        return type;
+    }
+
+    public void setType(CertificateType type) {
+        this.type = type;
     }
 }

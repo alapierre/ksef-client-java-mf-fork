@@ -4,6 +4,7 @@ package pl.akmf.ksef.sdk.api;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import pl.akmf.ksef.sdk.api.builders.session.OpenOnlineSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.session.SendInvoiceRequestBuilder;
@@ -35,7 +36,7 @@ public class OnlineSessionController {
      * @throws ApiException if fails to make API call
      */
     @PostMapping(value = "/open-session")
-    public OpenOnlineSessionResponse initSession() throws Exception {
+    public OpenOnlineSessionResponse initSession(@RequestHeader(name = "Authorization") String authToken) throws Exception {
         //przygotowanie serwisu kryptograficznego
         var cryptographyService = new DefaultCryptographyService(ksefClient);
         encryptionData = cryptographyService.getEncryptionData();
@@ -47,7 +48,7 @@ public class OnlineSessionController {
                 .build();
 
         //otwarcie sesji interaktywnej
-        return ksefClient.openOnlineSession(request);
+        return ksefClient.openOnlineSession(request, authToken);
     }
 
     /**
@@ -58,7 +59,9 @@ public class OnlineSessionController {
      * @throws ApiException if fails to make API call
      */
     @PostMapping(value = "/send-invoice/{referenceNumber}/{contextIdentifier}")
-    public SendInvoiceResponse sendInvoiceOnlineSessionAsync(@PathVariable String referenceNumber, @PathVariable String contextIdentifier) throws Exception {
+    public SendInvoiceResponse sendInvoiceOnlineSessionAsync(@PathVariable String referenceNumber,
+                                                             @PathVariable String contextIdentifier,
+                                                             @RequestHeader(name = "Authorization") String authToken) throws Exception {
         //init cryptography service
         var cryptographyService = new DefaultCryptographyService(ksefClient);
 
@@ -87,16 +90,17 @@ public class OnlineSessionController {
                 .build();
 
         //send invoice
-        return ksefClient.onlineSessionSendInvoice(referenceNumber, sendInvoiceRequest);
+        return ksefClient.onlineSessionSendInvoice(referenceNumber, sendInvoiceRequest, authToken);
     }
 
     /**
      * Zamknięcie sesji interaktywnej
      *
-     * @throws   ApiException if fails to make API call
+     * @throws ApiException if fails to make API call
      */
     @PostMapping(value = "/close-session/{referenceNumber}")
-    public void sessionClose(@PathVariable String referenceNumber) throws ApiException {
-        ksefClient.closeOnlineSession(referenceNumber);
+    public void sessionClose(@PathVariable String referenceNumber,
+                             @RequestHeader(name = "Authorization") String authToken) throws ApiException {
+        ksefClient.closeOnlineSession(referenceNumber, authToken);
     }
 }

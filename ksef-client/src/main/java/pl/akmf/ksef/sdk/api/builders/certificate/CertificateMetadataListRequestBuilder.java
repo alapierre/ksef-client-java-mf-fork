@@ -1,7 +1,7 @@
 package pl.akmf.ksef.sdk.api.builders.certificate;
 
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateListItemStatus;
-import pl.akmf.ksef.sdk.client.model.certificate.CertificateMetadataListRequest;
+import pl.akmf.ksef.sdk.client.model.certificate.QueryCertificatesRequest;
 
 import java.time.OffsetDateTime;
 
@@ -31,8 +31,8 @@ public class CertificateMetadataListRequestBuilder {
         return this;
     }
 
-    public CertificateMetadataListRequest build() {
-        CertificateMetadataListRequest request = new CertificateMetadataListRequest();
+    public QueryCertificatesRequest build() {
+        QueryCertificatesRequest request = new QueryCertificatesRequest();
         request.setCertificateSerialNumber(certificateSerialNumber);
         request.setName(name);
         request.setStatus(status);

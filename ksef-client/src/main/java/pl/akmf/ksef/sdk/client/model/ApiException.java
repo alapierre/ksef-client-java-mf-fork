@@ -1,9 +1,7 @@
 package pl.akmf.ksef.sdk.client.model;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.http.HttpHeaders;
-import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 
 public class ApiException extends Exception {
     private static final long serialVersionUID = -7789526261274021206L;
@@ -64,10 +62,10 @@ public class ApiException extends Exception {
         return responseBody;
     }
 
-    public static ApiException getApiException(String operationId, HttpResponse<InputStream> response) throws IOException {
-        String body = response.body() == null ? null : new String(response.body().readAllBytes());
-        String message = formatExceptionMessage(operationId, response.statusCode(), body);
-        return new ApiException(response.statusCode(), message, response.headers(), body);
+    public static ApiException getApiException(String operationId, byte[] body, int statusCode, HttpHeaders headers) {
+        String responseBody = body == null ? null : new String(body, StandardCharsets.UTF_8);
+        String message = formatExceptionMessage(operationId, statusCode, responseBody);
+        return new ApiException(statusCode, message, headers, responseBody);
     }
 
     private static String formatExceptionMessage(String operationId, int statusCode, String body) {

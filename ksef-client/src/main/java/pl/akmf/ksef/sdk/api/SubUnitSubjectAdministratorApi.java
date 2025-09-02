@@ -2,85 +2,63 @@ package pl.akmf.ksef.sdk.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pl.akmf.ksef.sdk.client.model.ApiClient;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import pl.akmf.ksef.sdk.client.HttpApiClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ApiResponse;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionsOperationResponse;
-import pl.akmf.ksef.sdk.client.model.permission.subunit.GrantSubUnitPermissionsRequest;
+import pl.akmf.ksef.sdk.client.model.permission.subunit.SubunitPermissionsGrantRequest;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.Map;
 
 import static pl.akmf.ksef.sdk.api.Url.GRANT_SUBUNIT_PERMISSION;
+import static pl.akmf.ksef.sdk.client.Headers.ACCEPT;
+import static pl.akmf.ksef.sdk.client.Headers.APPLICATION_JSON;
+import static pl.akmf.ksef.sdk.client.Headers.AUTHORIZATION;
+import static pl.akmf.ksef.sdk.client.Headers.BEARER;
+import static pl.akmf.ksef.sdk.client.Headers.CONTENT_TYPE;
+import static pl.akmf.ksef.sdk.client.model.ApiException.getApiException;
 
-public class SubUnitSubjectAdministratorApi extends BaseApi {
-    private final ObjectMapper memberVarObjectMapper;
-    private final String memberVarBaseUri;
-    private final Consumer<HttpRequest.Builder> memberVarInterceptor;
-    private final Duration memberVarReadTimeout;
+public class SubUnitSubjectAdministratorApi {
+    private final HttpApiClient apiClient;
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
 
-    public SubUnitSubjectAdministratorApi(ApiClient apiClient) {
-        super(apiClient.getHttpClient(), apiClient.getResponseInterceptor());
-        memberVarObjectMapper = apiClient.getObjectMapper();
-        memberVarBaseUri = apiClient.getBaseUri();
-        memberVarInterceptor = apiClient.getRequestInterceptor();
-        memberVarReadTimeout = apiClient.getReadTimeout();
+    public SubUnitSubjectAdministratorApi(HttpApiClient apiClient) {
+        this.apiClient = apiClient;
     }
 
     /**
      * Nadanie uprawnień administratora podmiotu podrzędnego
      *
-     * @param grantSubUnitPermissionsRequest (optional)
+     * @param subunitPermissionsGrantRequest (optional)
      * @return ApiResponse&lt;PermissionsOperationResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<PermissionsOperationResponse> apiV2PermissionsSubunitsGrantsPost(GrantSubUnitPermissionsRequest grantSubUnitPermissionsRequest) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2PermissionsSubunitsGrantsPostRequestBuilder(grantSubUnitPermissionsRequest);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, GRANT_SUBUNIT_PERMISSION.getOperationId());
+    public ApiResponse<PermissionsOperationResponse> apiV2PermissionsSubunitsGrantsPost(SubunitPermissionsGrantRequest subunitPermissionsGrantRequest, String authenticationToken) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
 
+        var response = apiClient.post(GRANT_SUBUNIT_PERMISSION.getUrl(), subunitPermissionsGrantRequest, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(GRANT_SUBUNIT_PERMISSION.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2PermissionsSubunitsGrantsPostRequestBuilder(GrantSubUnitPermissionsRequest grantSubUnitPermissionsRequest) throws ApiException {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = GRANT_SUBUNIT_PERMISSION.getUrl();
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Content-Type", "application/json");
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        try {
-            byte[] localVarPostBody = memberVarObjectMapper.writeValueAsBytes(grantSubUnitPermissionsRequest);
-            localVarRequestBuilder.method("POST", HttpRequest.BodyPublishers.ofByteArray(localVarPostBody));
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 }

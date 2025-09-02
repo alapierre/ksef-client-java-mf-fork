@@ -13,7 +13,6 @@ import pl.akmf.ksef.sdk.client.model.auth.EncryptionMethod;
 import pl.akmf.ksef.sdk.client.model.auth.GenerateTokenRequest;
 import pl.akmf.ksef.sdk.client.model.auth.GenerateTokenResponse;
 import pl.akmf.ksef.sdk.client.model.auth.TokenPermissionType;
-import pl.akmf.ksef.sdk.client.model.xml.ContextIdentifierTypeEnum;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
 
 import javax.crypto.BadPaddingException;
@@ -37,7 +36,7 @@ class AuthorizationIntegrationTest extends BaseIntegrationTest {
     @Test
     void refreshTokenE2EIntegrationTest() throws JAXBException, IOException, ApiException {
         // given
-        var token = authWithCustomNip(CONTEXT_NIP, ContextIdentifierTypeEnum.NIP, CONTEXT_NIP);
+        var token = authWithCustomNip(CONTEXT_NIP, CONTEXT_NIP);
 
         //when
         var refreshTokenResult = defaultKsefClient.refreshAccessToken(token.refreshToken());
@@ -47,7 +46,8 @@ class AuthorizationIntegrationTest extends BaseIntegrationTest {
         Assertions.assertNotEquals(token.authToken(), refreshTokenResult.getAccessToken().getToken());
     }
 
-    @Test
+    // @Test
+    // [ECDSA is not supported yet]
     void initAuthByTokenE2EIntegrationTestECDsa() throws JAXBException, IOException, ApiException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, CertificateException {
         initAuthByToken(EncryptionMethod.ECDsa);
     }
@@ -58,18 +58,16 @@ class AuthorizationIntegrationTest extends BaseIntegrationTest {
     }
 
     private void initAuthByToken(EncryptionMethod encryptionMethod) throws JAXBException, IOException, ApiException, InvalidAlgorithmParameterException, NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException, CertificateException {
-        authWithCustomNip(CONTEXT_NIP, ContextIdentifierTypeEnum.NIP, CONTEXT_NIP);
-        var ksefToken = getKSeFToken();
-
+        var authToken = authWithCustomNip(CONTEXT_NIP, CONTEXT_NIP);
+        var ksefToken = getKSeFToken(authToken.authToken());
         var challenge = defaultKsefClient.getAuthChallenge();
 
-        var tokenWithTimestamp = ksefToken.getToken() + "|" + challenge.getTimestamp().toEpochMilli();
         byte[] encryptedToken;
         switch (encryptionMethod) {
             case Rsa -> encryptedToken = new DefaultCryptographyService(defaultKsefClient)
-                    .encryptKsefTokenWithRSAUsingPublicKey(tokenWithTimestamp.getBytes(StandardCharsets.UTF_8));
+                    .encryptKsefTokenWithRSAUsingPublicKey(ksefToken.getToken(), challenge.getTimestamp());
             case ECDsa -> encryptedToken = new DefaultCryptographyService(defaultKsefClient)
-                    .encryptWithECDsaUsingPublicKey(tokenWithTimestamp.getBytes(StandardCharsets.UTF_8));
+                    .encryptKsefTokenWithECDsaUsingPublicKey(ksefToken.getToken(), challenge.getTimestamp());
             default -> throw new IllegalArgumentException();
         }
 
@@ -83,26 +81,22 @@ class AuthorizationIntegrationTest extends BaseIntegrationTest {
 
         await().atMost(30, SECONDS)
                 .pollInterval(2, SECONDS)
-                .until(() -> isAuthStatusReady(response.getReferenceNumber()));
+                .until(() -> isAuthStatusReady(response.getReferenceNumber(), response.getAuthenticationToken().getToken()));
 
-        var authStatus = defaultKsefClient.getAuthStatus(response.getReferenceNumber());
-
-        Assertions.assertEquals(200, authStatus.getStatus().getCode());
-
-        var tokenResponse = defaultKsefClient.redeemToken();
+        var tokenResponse = defaultKsefClient.redeemToken(response.getAuthenticationToken().getToken());
         Assertions.assertNotNull(tokenResponse);
     }
 
-    private Boolean isAuthStatusReady(String referenceNumber) throws ApiException {
-        var authStatus = defaultKsefClient.getAuthStatus(referenceNumber);
+    private Boolean isAuthStatusReady(String referenceNumber, String tempToken) throws ApiException {
+        var authStatus = defaultKsefClient.getAuthStatus(referenceNumber, tempToken);
         return authStatus != null && authStatus.getStatus().getCode() == 200;
     }
 
-    private GenerateTokenResponse getKSeFToken() throws ApiException {
+    private GenerateTokenResponse getKSeFToken(String authToken) throws ApiException {
         GenerateTokenRequest request = new GenerateTokenRequestBuilder()
                 .withDescription("test description")
                 .withPermissions(List.of(TokenPermissionType.INVOICEREAD, TokenPermissionType.INVOICEWRITE, TokenPermissionType.CREDENTIALSREAD))
                 .build();
-        return defaultKsefClient.generateKsefToken(request);
+        return defaultKsefClient.generateKsefToken(request, authToken);
     }
 }

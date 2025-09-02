@@ -4,105 +4,103 @@ import pl.akmf.ksef.sdk.client.model.invoice.CurrencyCode;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceMetadataInvoiceType;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceMetadataSchema;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryDateRange;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQuerySchemaType;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQuerySubjectType;
-import pl.akmf.ksef.sdk.client.model.invoice.InvoicesAsynqQueryRequest;
-import pl.akmf.ksef.sdk.client.model.invoice.InvoicesAsynqQueryRequestAmount;
-import pl.akmf.ksef.sdk.client.model.invoice.InvoicesAsynqQueryRequestBuyer;
-import pl.akmf.ksef.sdk.client.model.invoice.InvoicesAsynqQueryRequestSeller;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryAmount;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryBuyer;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQuerySeller;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceMetadataQueryRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoicingMode;
-import pl.akmf.ksef.sdk.client.model.session.EncryptionInfo;
 
 import java.util.List;
 
-public class InvoicesAsynqQueryRequestBuilder {
-    private EncryptionInfo encryption;
+public class InvoiceMetadataQueryRequestBuilder {
     private InvoiceQuerySubjectType subjectType;
     private InvoiceQueryDateRange dateRange;
     private String ksefNumber;
     private String invoiceNumber;
-    private InvoicesAsynqQueryRequestAmount amount;
-    private InvoicesAsynqQueryRequestSeller seller;
-    private InvoicesAsynqQueryRequestBuyer buyer;
+    private InvoiceQueryAmount amount;
+    private InvoiceQuerySeller seller;
+    private InvoiceQueryBuyer buyer;
     private List<CurrencyCode> currencyCodes;
-    private Boolean isHidden;
+    private Boolean hasAttachment = false;
     private InvoicingMode invoicingMode;
     private Boolean isSelfInvoicing;
     private InvoiceMetadataSchema invoiceSchema;
     private List<InvoiceMetadataInvoiceType> invoiceTypes;
+    private InvoiceQuerySchemaType schemaType;
 
-    public InvoicesAsynqQueryRequestBuilder withEncryption(EncryptionInfo encryption) {
-        this.encryption = encryption;
-        return this;
-    }
-
-    public InvoicesAsynqQueryRequestBuilder withSubjectType(InvoiceQuerySubjectType subjectType) {
+    public InvoiceMetadataQueryRequestBuilder withSubjectType(InvoiceQuerySubjectType subjectType) {
         this.subjectType = subjectType;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withDateRange(InvoiceQueryDateRange dateRange) {
+    public InvoiceMetadataQueryRequestBuilder withDateRange(InvoiceQueryDateRange dateRange) {
         this.dateRange = dateRange;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withKsefNumber(String ksefNumber) {
+    public InvoiceMetadataQueryRequestBuilder withKsefNumber(String ksefNumber) {
         this.ksefNumber = ksefNumber;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withInvoiceNumber(String invoiceNumber) {
+    public InvoiceMetadataQueryRequestBuilder withInvoiceNumber(String invoiceNumber) {
         this.invoiceNumber = invoiceNumber;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withAmount(InvoicesAsynqQueryRequestAmount amount) {
+    public InvoiceMetadataQueryRequestBuilder withAmount(InvoiceQueryAmount amount) {
         this.amount = amount;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withSeller(InvoicesAsynqQueryRequestSeller seller) {
+    public InvoiceMetadataQueryRequestBuilder withSeller(InvoiceQuerySeller seller) {
         this.seller = seller;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withBuyer(InvoicesAsynqQueryRequestBuyer buyer) {
+    public InvoiceMetadataQueryRequestBuilder withBuyer(InvoiceQueryBuyer buyer) {
         this.buyer = buyer;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withCurrencyCodes(List<CurrencyCode> currencyCodes) {
+    public InvoiceMetadataQueryRequestBuilder withCurrencyCodes(List<CurrencyCode> currencyCodes) {
         this.currencyCodes = currencyCodes;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withIsHidden(Boolean isHidden) {
-        this.isHidden = isHidden;
+    public InvoiceMetadataQueryRequestBuilder withHasAttachment(Boolean hasAttachment) {
+        this.hasAttachment = hasAttachment;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withInvoicingMode(InvoicingMode invoicingMode) {
+    public InvoiceMetadataQueryRequestBuilder withInvoicingMode(InvoicingMode invoicingMode) {
         this.invoicingMode = invoicingMode;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withIsSelfInvoicing(Boolean isSelfInvoicing) {
+    public InvoiceMetadataQueryRequestBuilder withIsSelfInvoicing(Boolean isSelfInvoicing) {
         this.isSelfInvoicing = isSelfInvoicing;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withInvoiceSchema(InvoiceMetadataSchema invoiceSchema) {
+    public InvoiceMetadataQueryRequestBuilder withInvoiceSchema(InvoiceMetadataSchema invoiceSchema) {
         this.invoiceSchema = invoiceSchema;
         return this;
     }
 
-    public InvoicesAsynqQueryRequestBuilder withInvoiceTypes(List<InvoiceMetadataInvoiceType> invoiceTypes) {
+    public InvoiceMetadataQueryRequestBuilder withInvoiceTypes(List<InvoiceMetadataInvoiceType> invoiceTypes) {
         this.invoiceTypes = invoiceTypes;
         return this;
     }
+    public InvoiceMetadataQueryRequestBuilder withSchemaType(InvoiceQuerySchemaType schemaType) {
+        this.schemaType = schemaType;
+        return this;
+    }
 
-    public InvoicesAsynqQueryRequest build() {
-        InvoicesAsynqQueryRequest request = new InvoicesAsynqQueryRequest();
-        request.setEncryption(encryption);
+    public InvoiceMetadataQueryRequest build() {
+        InvoiceMetadataQueryRequest request = new InvoiceMetadataQueryRequest();
         request.setSubjectType(subjectType);
         request.setDateRange(dateRange);
         request.setKsefNumber(ksefNumber);
@@ -111,11 +109,12 @@ public class InvoicesAsynqQueryRequestBuilder {
         request.setSeller(seller);
         request.setBuyer(buyer);
         request.setCurrencyCodes(currencyCodes);
-        request.setHidden(isHidden);
         request.setInvoicingMode(invoicingMode);
         request.setSelfInvoicing(isSelfInvoicing);
         request.setInvoiceSchema(invoiceSchema);
         request.setInvoiceTypes(invoiceTypes);
+        request.setHasAttachment(hasAttachment);
+        request.setSchemaType(schemaType);
         return request;
     }
 }

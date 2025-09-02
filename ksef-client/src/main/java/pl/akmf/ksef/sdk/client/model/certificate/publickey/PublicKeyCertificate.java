@@ -6,7 +6,7 @@ import java.util.List;
 
 
 public class PublicKeyCertificate {
-    private String certificatePem;
+    private String certificate;
     private OffsetDateTime validFrom;
     private OffsetDateTime validTo;
     private List<PublicKeyCertificateUsage> usage = new ArrayList<>();
@@ -14,12 +14,12 @@ public class PublicKeyCertificate {
     public PublicKeyCertificate() {
     }
 
-    public String getCertificatePem() {
-        return certificatePem;
+    public String getCertificate() {
+        return certificate;
     }
 
-    public void setCertificatePem(String certificatePem) {
-        this.certificatePem = certificatePem;
+    public void setCertificate(String certificate) {
+        this.certificate = certificate;
     }
 
     public OffsetDateTime getValidFrom() {

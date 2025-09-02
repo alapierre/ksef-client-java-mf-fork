@@ -2,11 +2,7 @@ package pl.akmf.ksef.sdk.client.model.invoice;
 
 import java.util.List;
 
-
-/**
- * InvoicesQueryRequest
- */
-public class InvoicesQueryRequest {
+public class InvoiceMetadataQueryRequest {
     private InvoiceQuerySubjectType subjectType;
 
     private InvoiceQueryDateRange dateRange;
@@ -15,25 +11,27 @@ public class InvoicesQueryRequest {
 
     private String invoiceNumber;
 
-    private InvoicesAsynqQueryRequestAmount amount;
+    private InvoiceQueryAmount amount;
 
-    private InvoicesAsynqQueryRequestSeller seller;
+    private InvoiceQuerySeller seller;
 
-    private InvoicesAsynqQueryRequestBuyer buyer;
+    private InvoiceQueryBuyer buyer;
 
     private List<CurrencyCode> currencyCodes;
-
-    private Boolean isHidden;
 
     private InvoicingMode invoicingMode;
 
     private Boolean isSelfInvoicing;
 
+    private InvoiceQuerySchemaType schemaType;
+
     private InvoiceMetadataSchema invoiceSchema;
 
     private List<InvoiceMetadataInvoiceType> invoiceTypes;
 
-    public InvoicesQueryRequest() {
+    private Boolean hasAttachment;
+
+    public InvoiceMetadataQueryRequest() {
     }
 
     public InvoiceQuerySubjectType getSubjectType() {
@@ -68,27 +66,27 @@ public class InvoicesQueryRequest {
         this.invoiceNumber = invoiceNumber;
     }
 
-    public InvoicesAsynqQueryRequestAmount getAmount() {
+    public InvoiceQueryAmount getAmount() {
         return amount;
     }
 
-    public void setAmount(InvoicesAsynqQueryRequestAmount amount) {
+    public void setAmount(InvoiceQueryAmount amount) {
         this.amount = amount;
     }
 
-    public InvoicesAsynqQueryRequestSeller getSeller() {
+    public InvoiceQuerySeller getSeller() {
         return seller;
     }
 
-    public void setSeller(InvoicesAsynqQueryRequestSeller seller) {
+    public void setSeller(InvoiceQuerySeller seller) {
         this.seller = seller;
     }
 
-    public InvoicesAsynqQueryRequestBuyer getBuyer() {
+    public InvoiceQueryBuyer getBuyer() {
         return buyer;
     }
 
-    public void setBuyer(InvoicesAsynqQueryRequestBuyer buyer) {
+    public void setBuyer(InvoiceQueryBuyer buyer) {
         this.buyer = buyer;
     }
 
@@ -98,14 +96,6 @@ public class InvoicesQueryRequest {
 
     public void setCurrencyCodes(List<CurrencyCode> currencyCodes) {
         this.currencyCodes = currencyCodes;
-    }
-
-    public Boolean getHidden() {
-        return isHidden;
-    }
-
-    public void setHidden(Boolean hidden) {
-        isHidden = hidden;
     }
 
     public InvoicingMode getInvoicingMode() {
@@ -124,6 +114,14 @@ public class InvoicesQueryRequest {
         isSelfInvoicing = selfInvoicing;
     }
 
+    public InvoiceQuerySchemaType getSchemaType() {
+        return schemaType;
+    }
+
+    public void setSchemaType(InvoiceQuerySchemaType schemaType) {
+        this.schemaType = schemaType;
+    }
+
     public InvoiceMetadataSchema getInvoiceSchema() {
         return invoiceSchema;
     }
@@ -138,6 +136,14 @@ public class InvoicesQueryRequest {
 
     public void setInvoiceTypes(List<InvoiceMetadataInvoiceType> invoiceTypes) {
         this.invoiceTypes = invoiceTypes;
+    }
+
+    public Boolean getHasAttachment() {
+        return hasAttachment;
+    }
+
+    public void setHasAttachment(Boolean hasAttachment) {
+        this.hasAttachment = hasAttachment;
     }
 }
 

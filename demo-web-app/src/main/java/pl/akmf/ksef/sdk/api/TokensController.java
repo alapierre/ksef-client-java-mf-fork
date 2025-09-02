@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pl.akmf.ksef.sdk.api.builders.tokens.GenerateTokenRequestBuilder;
@@ -24,30 +25,30 @@ public class TokensController {
     private final DefaultKsefClient ksefClient;
 
     @PostMapping("/generate-token")
-    public GenerateTokenResponse generateKsefToken() throws ApiException {
+    public GenerateTokenResponse generateKsefToken(@RequestHeader(name = "Authorization") String authToken) throws ApiException {
         GenerateTokenRequest request = new GenerateTokenRequestBuilder()
                 .withDescription("test description")
                 .withPermissions(List.of(TokenPermissionType.INVOICEREAD, TokenPermissionType.INVOICEWRITE, TokenPermissionType.CREDENTIALSREAD))
                 .build();
-        return ksefClient.generateKsefToken(request);
+        return ksefClient.generateKsefToken(request, authToken);
     }
 
     @PostMapping("/tokens")
-    public QueryTokensResponse queryKsefTokens() throws ApiException {
+    public QueryTokensResponse queryKsefTokens(@RequestHeader(name = "Authorization") String authToken) throws ApiException {
         List<AuthenticationTokenStatus> status = List.of(AuthenticationTokenStatus.ACTIVE);
         Integer pageSize = 10;
-        return ksefClient.queryKsefTokens(status, StringUtils.EMPTY, pageSize);
+        return ksefClient.queryKsefTokens(status, StringUtils.EMPTY, pageSize, authToken);
     }
 
     @GetMapping("/token")
-    public AuthenticationToken getKsefToken(@RequestParam String referenceNumber) throws ApiException {
+    public AuthenticationToken getKsefToken(@RequestParam String referenceNumber, @RequestHeader(name = "Authorization") String authToken) throws ApiException {
 
-        return ksefClient.getKsefToken(referenceNumber);
+        return ksefClient.getKsefToken(referenceNumber, authToken);
     }
 
     @PostMapping("/revoke-token")
-    public void revokeKsefToken(@RequestParam String referenceNumber) throws ApiException {
+    public void revokeKsefToken(@RequestParam String referenceNumber, @RequestHeader(name = "Authorization") String authToken) throws ApiException {
 
-        ksefClient.revokeKsefToken(referenceNumber);
+        ksefClient.revokeKsefToken(referenceNumber, authToken);
     }
 }

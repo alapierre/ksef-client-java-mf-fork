@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,8 +36,9 @@ public class SearchPermissionTestEndpoint {
     public ResponseEntity<QueryPersonPermissionsResponse> searchGrantedPersonPermissions(
             @RequestParam int pageOffset,
             @RequestParam int pageSize,
-            @RequestBody PersonPermissionsQueryRequest request) throws ApiException {
-        return ResponseEntity.ok(ksefClient.searchGrantedPersonPermissions(request, pageOffset, pageSize));
+            @RequestBody PersonPermissionsQueryRequest request,
+            @RequestHeader(name = "Authorization") String authToken) throws ApiException {
+        return ResponseEntity.ok(ksefClient.searchGrantedPersonPermissions(request, pageOffset, pageSize, authToken));
     }
 
     // Pobranie listy uprawnień administratora podmiotu podrzędnego
@@ -44,16 +46,18 @@ public class SearchPermissionTestEndpoint {
     public ResponseEntity<QuerySubunitPermissionsResponse> searchSubunitAdminPermissions(
             @RequestParam int pageOffset,
             @RequestParam int pageSize,
-            @RequestBody SubunitPermissionsQueryRequest request) throws ApiException {
-        return ResponseEntity.ok(ksefClient.searchSubunitAdminPermissions(request, pageOffset, pageSize));
+            @RequestBody SubunitPermissionsQueryRequest request,
+            @RequestHeader(name = "Authorization") String authToken) throws ApiException {
+        return ResponseEntity.ok(ksefClient.searchSubunitAdminPermissions(request, pageOffset, pageSize, authToken));
     }
 
     // Pobranie listy uprawnień do obsługi faktur nadanych podmiotom
     @GetMapping("/entities/roles")
     public ResponseEntity<QueryEntityRolesResponse> searchEntityInvoiceRoles(
             @RequestParam int pageOffset,
-            @RequestParam int pageSize) throws ApiException {
-        return ResponseEntity.ok(ksefClient.searchEntityInvoiceRoles(pageOffset, pageSize));
+            @RequestParam int pageSize,
+            @RequestHeader(name = "Authorization") String authToken) throws ApiException {
+        return ResponseEntity.ok(ksefClient.searchEntityInvoiceRoles(pageOffset, pageSize, authToken));
     }
 
     // Pobranie listy uprawnień do obsługi faktur nadanych podmiotom podrzędnym
@@ -61,8 +65,9 @@ public class SearchPermissionTestEndpoint {
     public ResponseEntity<QuerySubordinateEntityRolesResponse> searchSubordinateEntityInvoiceRoles(
             @RequestBody SubordinateEntityRolesQueryRequest request,
             @RequestParam int pageOffset,
-            @RequestParam int pageSize) throws ApiException {
-        return ResponseEntity.ok(ksefClient.searchSubordinateEntityInvoiceRoles(request, pageOffset, pageSize));
+            @RequestParam int pageSize,
+            @RequestHeader(name = "Authorization") String authToken) throws ApiException {
+        return ResponseEntity.ok(ksefClient.searchSubordinateEntityInvoiceRoles(request, pageOffset, pageSize, authToken));
     }
 
     // Pobranie listy uprawnień o charakterze upoważnień nadanych podmiotom
@@ -70,8 +75,9 @@ public class SearchPermissionTestEndpoint {
     public ResponseEntity<QueryEntityAuthorizationPermissionsResponse> searchEntityAuthorizationGrants(
             @RequestParam int pageOffset,
             @RequestParam int pageSize,
-            @RequestBody EntityAuthorizationPermissionsQueryRequest request) throws ApiException {
-        return ResponseEntity.ok(ksefClient.searchEntityAuthorizationGrants(request, pageOffset, pageSize));
+            @RequestBody EntityAuthorizationPermissionsQueryRequest request,
+            @RequestHeader(name = "Authorization") String authToken) throws ApiException {
+        return ResponseEntity.ok(ksefClient.searchEntityAuthorizationGrants(request, pageOffset, pageSize, authToken));
     }
 
     // Pobranie listy uprawnień nadanych podmiotom unijnym
@@ -79,7 +85,8 @@ public class SearchPermissionTestEndpoint {
     public ResponseEntity<QueryEuEntityPermissionsResponse> searchGrantedEuEntityPermissions(
             @RequestParam int pageOffset,
             @RequestParam int pageSize,
-            @RequestBody EuEntityPermissionsQueryRequest request) throws ApiException {
-        return ResponseEntity.ok(ksefClient.searchGrantedEuEntityPermissions(request, pageOffset, pageSize));
+            @RequestBody EuEntityPermissionsQueryRequest request,
+            @RequestHeader(name = "Authorization") String authToken) throws ApiException {
+        return ResponseEntity.ok(ksefClient.searchGrantedEuEntityPermissions(request, pageOffset, pageSize, authToken));
     }
 }

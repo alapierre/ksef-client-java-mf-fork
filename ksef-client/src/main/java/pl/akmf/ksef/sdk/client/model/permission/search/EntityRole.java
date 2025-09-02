@@ -5,15 +5,15 @@ import java.time.OffsetDateTime;
 
 public class EntityRole {
     private String parentEntityIdentifier;
-    private String parentEntityIdentifierType;
-    private String role;
+    private EntityRolesParentEntityIdentifierType parentEntityIdentifierType;
+    private EntityRoleType role;
     private String description;
     private OffsetDateTime startDate;
 
     public EntityRole() {
     }
 
-    public EntityRole(String parentEntityIdentifier, String parentEntityIdentifierType, String role, String description, OffsetDateTime startDate) {
+    public EntityRole(String parentEntityIdentifier, EntityRolesParentEntityIdentifierType parentEntityIdentifierType, EntityRoleType role, String description, OffsetDateTime startDate) {
         this.parentEntityIdentifier = parentEntityIdentifier;
         this.parentEntityIdentifierType = parentEntityIdentifierType;
         this.role = role;
@@ -29,19 +29,19 @@ public class EntityRole {
         this.parentEntityIdentifier = parentEntityIdentifier;
     }
 
-    public String getParentEntityIdentifierType() {
+    public EntityRolesParentEntityIdentifierType getParentEntityIdentifierType() {
         return parentEntityIdentifierType;
     }
 
-    public void setParentEntityIdentifierType(String parentEntityIdentifierType) {
+    public void setParentEntityIdentifierType(EntityRolesParentEntityIdentifierType parentEntityIdentifierType) {
         this.parentEntityIdentifierType = parentEntityIdentifierType;
     }
 
-    public String getRole() {
+    public EntityRoleType getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(EntityRoleType role) {
         this.role = role;
     }
 

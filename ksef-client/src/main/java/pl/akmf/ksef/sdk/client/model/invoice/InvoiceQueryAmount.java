@@ -3,14 +3,14 @@ package pl.akmf.ksef.sdk.client.model.invoice;
 /**
  * Filtr kwotowy – brutto, netto lub VAT (z wartością).
  */
-public class InvoicesAsynqQueryRequestAmount {
+public class InvoiceQueryAmount {
     private AmountType type;
 
     private Double from;
 
     private Double to;
 
-    public InvoicesAsynqQueryRequestAmount() {
+    public InvoiceQueryAmount() {
     }
 
     public AmountType getType() {

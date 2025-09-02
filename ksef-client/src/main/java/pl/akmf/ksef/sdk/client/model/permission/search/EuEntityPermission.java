@@ -5,18 +5,18 @@ import java.time.OffsetDateTime;
 public class EuEntityPermission {
     private String id;
     private String authorIdentifier;
-    private String authorIdentifierType;
+    private EuEntityPermissionsAuthorIdentifierType authorIdentifierType;
     private String vatUeIdentifier;
     private String euEntityName;
     private String authorizedFingerprintIdentifier;
-    private String permissionScope;
+    private EuEntityPermissionsQueryPermissionType permissionScope;
     private String description;
     private OffsetDateTime startDate;
 
     public EuEntityPermission() {
     }
 
-    public EuEntityPermission(String id, String authorIdentifier, String authorIdentifierType, String vatUeIdentifier, String euEntityName, String authorizedFingerprintIdentifier, String permissionScope, String description, OffsetDateTime startDate) {
+    public EuEntityPermission(String id, String authorIdentifier, EuEntityPermissionsAuthorIdentifierType authorIdentifierType, String vatUeIdentifier, String euEntityName, String authorizedFingerprintIdentifier, EuEntityPermissionsQueryPermissionType permissionScope, String description, OffsetDateTime startDate) {
         this.id = id;
         this.authorIdentifier = authorIdentifier;
         this.authorIdentifierType = authorIdentifierType;
@@ -44,11 +44,11 @@ public class EuEntityPermission {
         this.authorIdentifier = authorIdentifier;
     }
 
-    public String getAuthorIdentifierType() {
+    public EuEntityPermissionsAuthorIdentifierType getAuthorIdentifierType() {
         return authorIdentifierType;
     }
 
-    public void setAuthorIdentifierType(String authorIdentifierType) {
+    public void setAuthorIdentifierType(EuEntityPermissionsAuthorIdentifierType authorIdentifierType) {
         this.authorIdentifierType = authorIdentifierType;
     }
 
@@ -76,11 +76,11 @@ public class EuEntityPermission {
         this.authorizedFingerprintIdentifier = authorizedFingerprintIdentifier;
     }
 
-    public String getPermissionScope() {
+    public EuEntityPermissionsQueryPermissionType getPermissionScope() {
         return permissionScope;
     }
 
-    public void setPermissionScope(String permissionScope) {
+    public void setPermissionScope(EuEntityPermissionsQueryPermissionType permissionScope) {
         this.permissionScope = permissionScope;
     }
 

@@ -1,29 +1,20 @@
 package pl.akmf.ksef.sdk.api.builders.auth;
 
+import org.apache.commons.lang3.StringUtils;
 import pl.akmf.ksef.sdk.client.model.xml.AuthTokenRequest;
-import pl.akmf.ksef.sdk.client.model.xml.ContextIdentifierTypeEnum;
 import pl.akmf.ksef.sdk.client.model.xml.IpChangePolicyEnum;
 import pl.akmf.ksef.sdk.client.model.xml.SubjectIdentifierTypeEnum;
+import pl.akmf.ksef.sdk.client.model.xml.TContextIdentifier;
 
 import java.util.List;
 
 public class AuthTokenRequestBuilder {
-
     private String challenge;
     private boolean challengeSet = false;
-    private AuthTokenRequest.ContextIdentifier context;
-    private boolean contextSet = false;
+    private final TContextIdentifier context = new TContextIdentifier();
     private SubjectIdentifierTypeEnum subjectIdentifierTypeEnum;
     private AuthTokenRequest.IpAddressPolicy ipPolicy;
 
-    /**
-     * Mandatory: sets the challenge token to sign.
-     * Must be called before withContext().
-     *
-     * @param challenge The challenge token to sign
-     * @return This builder instance for method chaining
-     * @throws IllegalArgumentException if challenge is null or empty
-     */
     public AuthTokenRequestBuilder withChallenge(String challenge) {
         if (challenge == null || challenge.trim().isEmpty()) {
             throw new IllegalArgumentException("Challenge cannot be null or empty.");
@@ -34,17 +25,7 @@ public class AuthTokenRequestBuilder {
         return this;
     }
 
-    /**
-     * Mandatory: sets the context (and subject).
-     * Must be called after withChallenge().
-     *
-     * @param type  The context identifier type
-     * @param value The context value
-     * @return This builder instance for method chaining
-     * @throws IllegalStateException    if withChallenge() was not called first
-     * @throws IllegalArgumentException if value is null or empty
-     */
-    public AuthTokenRequestBuilder withContext(ContextIdentifierTypeEnum type, String value) {
+    public AuthTokenRequestBuilder withContextNip(String value) {
         if (!challengeSet) {
             throw new IllegalStateException("You must call withChallenge() before withContext().");
         }
@@ -53,10 +34,45 @@ public class AuthTokenRequestBuilder {
             throw new IllegalArgumentException("Context value cannot be null or empty.");
         }
 
-        this.context = new AuthTokenRequest.ContextIdentifier();
-        this.context.setType(type);
-        this.context.setValue(value);
-        this.contextSet = true;
+        if (StringUtils.isNotBlank(context.getInternalId()) || StringUtils.isNotBlank(context.getNipVatUe())) {
+            throw new IllegalArgumentException("Other context type has beem already set");
+        }
+
+        this.context.setNip(value);
+        return this;
+    }
+
+    public AuthTokenRequestBuilder withInternalId(String value) {
+        if (!challengeSet) {
+            throw new IllegalStateException("You must call withChallenge() before withContext().");
+        }
+
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException("Context value cannot be null or empty.");
+        }
+
+        if (StringUtils.isNotBlank(context.getNip()) || StringUtils.isNotBlank(context.getNipVatUe())) {
+            throw new IllegalArgumentException("Other context type has beem already set");
+        }
+
+        this.context.setInternalId(value);
+        return this;
+    }
+
+    public AuthTokenRequestBuilder withNipVatEu(String value) {
+        if (!challengeSet) {
+            throw new IllegalStateException("You must call withChallenge() before withContext().");
+        }
+
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException("Context value cannot be null or empty.");
+        }
+
+        if (StringUtils.isNotBlank(context.getInternalId()) || StringUtils.isNotBlank(context.getNip())) {
+            throw new IllegalArgumentException("Other context type has beem already set");
+        }
+
+        this.context.setNipVatUe(value);
         return this;
     }
 
@@ -69,17 +85,6 @@ public class AuthTokenRequestBuilder {
         return this;
     }
 
-
-    /**
-     * Optional: configure IP-address policy.
-     *
-     * @param ipPolicyChanges The IP address policy change enum
-     * @param ipAddress       The IP address policy address list enum
-     * @param ipRange         The IP address policy range list
-     * @param ipMask          The IP address policy mask list
-     * @return This builder instance for method chaining
-     * @throws IllegalArgumentException if ipPolicy is null
-     */
     public AuthTokenRequestBuilder withIpAddressPolicy(String ipPolicyChanges,
                                                        List<String> ipAddress,
                                                        List<String> ipRange,
@@ -95,19 +100,9 @@ public class AuthTokenRequestBuilder {
         return this;
     }
 
-    /**
-     * Builds the AuthTokenRequest.
-     * Throws if mandatory steps were skipped.
-     *
-     * @return The constructed AuthTokenRequest
-     * @throws IllegalStateException if mandatory steps were not completed
-     */
     public AuthTokenRequest build() {
         if (!challengeSet) {
             throw new IllegalStateException("Challenge has not been set. Call withChallenge() first.");
-        }
-        if (!contextSet) {
-            throw new IllegalStateException("Context has not been set. Call withContext() after withChallenge().");
         }
 
         AuthTokenRequest request = new AuthTokenRequest();

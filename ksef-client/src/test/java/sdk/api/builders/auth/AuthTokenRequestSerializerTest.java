@@ -5,7 +5,6 @@ import org.junit.Test;
 import pl.akmf.ksef.sdk.api.builders.auth.AuthTokenRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.auth.AuthTokenRequestSerializer;
 import pl.akmf.ksef.sdk.client.model.xml.AuthTokenRequest;
-import pl.akmf.ksef.sdk.client.model.xml.ContextIdentifierTypeEnum;
 import pl.akmf.ksef.sdk.client.model.xml.SubjectIdentifierTypeEnum;
 
 import java.util.List;
@@ -37,7 +36,7 @@ public class AuthTokenRequestSerializerTest {
         //given: create token object
         AuthTokenRequest authTokenRequest = new AuthTokenRequestBuilder()
                 .withChallenge("222-222-2222-2222")
-                .withContext(ContextIdentifierTypeEnum.NIP, "111111111")
+                .withContextNip( "111111111")
                 .withSubjectType(SubjectIdentifierTypeEnum.CERTIFICATE_SUBJECT)
                 .withIpAddressPolicy("reject", List.of("321"), List.of("range"), List.of("mask"))
                 .build();

@@ -2,37 +2,37 @@ package pl.akmf.ksef.sdk.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pl.akmf.ksef.sdk.client.model.ApiClient;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import pl.akmf.ksef.sdk.client.HttpApiClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ApiResponse;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionStatusInfo;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionsOperationResponse;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.Map;
 
 import static pl.akmf.ksef.sdk.api.Url.PERMISSION_REVOKE_AUTHORIZATION;
 import static pl.akmf.ksef.sdk.api.Url.PERMISSION_REVOKE_COMMON;
 import static pl.akmf.ksef.sdk.api.Url.PERMISSION_STATUS;
+import static pl.akmf.ksef.sdk.api.UrlQueryParamsBuilder.buildUrlWithParams;
+import static pl.akmf.ksef.sdk.client.Headers.ACCEPT;
+import static pl.akmf.ksef.sdk.client.Headers.APPLICATION_JSON;
+import static pl.akmf.ksef.sdk.client.Headers.AUTHORIZATION;
+import static pl.akmf.ksef.sdk.client.Headers.BEARER;
+import static pl.akmf.ksef.sdk.client.Headers.CONTENT_TYPE;
+import static pl.akmf.ksef.sdk.client.Parameter.PATH_PERMISSION_ID;
+import static pl.akmf.ksef.sdk.client.Parameter.PATH_REFERENCE_NUMBER;
+import static pl.akmf.ksef.sdk.client.model.ApiException.getApiException;
 
-public class OperationApi extends BaseApi {
-    private final ObjectMapper memberVarObjectMapper;
-    private final String memberVarBaseUri;
-    private final Consumer<HttpRequest.Builder> memberVarInterceptor;
-    private final Duration memberVarReadTimeout;
+public class OperationApi {
+    private final HttpApiClient apiClient;
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
 
-    public OperationApi(ApiClient apiClient) {
-        super(apiClient.getHttpClient(), apiClient.getResponseInterceptor());
-        memberVarObjectMapper = apiClient.getObjectMapper();
-        memberVarBaseUri = apiClient.getBaseUri();
-        memberVarInterceptor = apiClient.getRequestInterceptor();
-        memberVarReadTimeout = apiClient.getReadTimeout();
+    public OperationApi(HttpApiClient apiClient) {
+        this.apiClient = apiClient;
     }
 
     /**
@@ -42,47 +42,31 @@ public class OperationApi extends BaseApi {
      * @return ApiResponse&lt;PermissionsOperationStatusResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<PermissionStatusInfo> apiV2PermissionsOperationsReferenceNumberGet(String referenceNumber) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2PermissionsOperationsReferenceNumberGetRequestBuilder(referenceNumber);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, PERMISSION_STATUS.getOperationId());
+    public ApiResponse<PermissionStatusInfo> apiV2PermissionsOperationsReferenceNumberGet(String referenceNumber, String authenticationToken) throws ApiException {
+        String uri = buildUrlWithParams(PERMISSION_STATUS.getUrl(), new HashMap<>())
+                .replace(PATH_REFERENCE_NUMBER, referenceNumber);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.get(uri, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(PERMISSION_STATUS.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2PermissionsOperationsReferenceNumberGetRequestBuilder(String referenceNumber) throws ApiException {
-        if (referenceNumber == null) {
-            throw new ApiException(400, "Missing the required parameter 'referenceNumber' when calling apiV2PermissionsOperationsReferenceNumberGet");
-        }
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = PERMISSION_STATUS.getUrl()
-                .replace("{referenceNumber}", ApiClient.urlEncode(referenceNumber));
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -93,47 +77,31 @@ public class OperationApi extends BaseApi {
      * @return ApiResponse&lt;PermissionsOperationResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<PermissionsOperationResponse> apiV2PermissionsAuthorizationsGrantsPermissionIdDelete(String permissionId) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2PermissionsAuthorizationsGrantsPermissionIdDeleteRequestBuilder(permissionId);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, PERMISSION_REVOKE_AUTHORIZATION.getOperationId());
+    public ApiResponse<PermissionsOperationResponse> apiV2PermissionsAuthorizationsGrantsPermissionIdDelete(String permissionId, String authenticationToken) throws ApiException {
+        String uri = buildUrlWithParams(PERMISSION_REVOKE_AUTHORIZATION.getUrl(), new HashMap<>())
+                .replace(PATH_PERMISSION_ID, permissionId);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.delete(uri, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(PERMISSION_REVOKE_AUTHORIZATION.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2PermissionsAuthorizationsGrantsPermissionIdDeleteRequestBuilder(String permissionId) throws ApiException {
-        if (permissionId == null) {
-            throw new ApiException(400, "Missing the required parameter 'permissionId' when calling apiV2PermissionsAuthorizationsGrantsPermissionIdDelete");
-        }
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = PERMISSION_REVOKE_AUTHORIZATION.getUrl()
-                .replace("{permissionId}", ApiClient.urlEncode(permissionId));
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("DELETE", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -144,46 +112,30 @@ public class OperationApi extends BaseApi {
      * @return ApiResponse&lt;PermissionsOperationResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<PermissionsOperationResponse> apiV2PermissionsCommonGrantsPermissionIdDelete(String permissionId) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2PermissionsCommonGrantsPermissionIdDeleteRequestBuilder(permissionId);
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, PERMISSION_REVOKE_COMMON.getOperationId());
+    public ApiResponse<PermissionsOperationResponse> apiV2PermissionsCommonGrantsPermissionIdDelete(String permissionId, String authenticationToken) throws ApiException {
+        String uri = buildUrlWithParams(PERMISSION_REVOKE_COMMON.getUrl(), new HashMap<>())
+                .replace(PATH_PERMISSION_ID, permissionId);
 
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        var response = apiClient.delete(uri, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(PERMISSION_REVOKE_COMMON.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
+        try {
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2PermissionsCommonGrantsPermissionIdDeleteRequestBuilder(String permissionId) throws ApiException {
-        if (permissionId == null) {
-            throw new ApiException(400, "Missing the required parameter 'permissionId' when calling apiV2PermissionsCommonGrantsPermissionIdDelete");
-        }
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = PERMISSION_REVOKE_COMMON.getUrl()
-                .replace("{permissionId}", ApiClient.urlEncode(permissionId));
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("DELETE", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 }

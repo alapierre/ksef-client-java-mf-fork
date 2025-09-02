@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import pl.akmf.ksef.sdk.api.services.DefaultKsefClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
@@ -17,8 +18,9 @@ public class OperationStatusController {
     private final DefaultKsefClient ksefClient;
 
     @GetMapping("{referenceNumber}/status")
-    public PermissionStatusInfo getOperationStatusAsync(@PathVariable String referenceNumber) throws ApiException {
-        var statusInfo = ksefClient.permissionOperationStatus(referenceNumber);
+    public PermissionStatusInfo getOperationStatusAsync(@PathVariable String referenceNumber,
+                                                        @RequestHeader(name = "Authorization") String authToken) throws ApiException {
+        var statusInfo = ksefClient.permissionOperationStatus(referenceNumber, authToken);
 
         log.info("response " + statusInfo);
         return statusInfo;

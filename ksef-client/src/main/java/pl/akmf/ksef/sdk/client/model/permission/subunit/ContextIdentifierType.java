@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ContextIdentifierType {
     NIP("Nip"),
-    INTERNALID("InternalId"),;
+    INTERNALID("InternalId");
 
     private final String value;
 

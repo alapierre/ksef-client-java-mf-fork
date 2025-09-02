@@ -2,19 +2,16 @@ package pl.akmf.ksef.sdk.client.model.permission.search;
 
 import java.util.List;
 
-
 public class QueryEntityRolesResponse {
     private List<EntityRole> roles;
-    private Integer page;
-    private Integer pageSize;
+    private Boolean hasMore;
 
     QueryEntityRolesResponse() {
     }
 
-    public QueryEntityRolesResponse(List<EntityRole> roles, Integer page, Integer pageSize) {
+    public QueryEntityRolesResponse(List<EntityRole> roles, Boolean hasMore) {
         this.roles = roles;
-        this.page = page;
-        this.pageSize = pageSize;
+        this.hasMore = hasMore;
     }
 
     public List<EntityRole> getRoles() {
@@ -25,16 +22,12 @@ public class QueryEntityRolesResponse {
         this.roles = roles;
     }
 
-    public Integer getPage() {
-        return page;
+    public Boolean getHasMore() {
+        return hasMore;
     }
 
-    public void setPage(Integer page) {
-        this.page = page;
-    }
-
-    public Integer getPageSize() {
-        return pageSize;
+    public void setHasMore(Boolean hasMore) {
+        this.hasMore = hasMore;
     }
 }
 

@@ -2,43 +2,37 @@ package pl.akmf.ksef.sdk.api;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import pl.akmf.ksef.sdk.client.model.ApiClient;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import pl.akmf.ksef.sdk.client.HttpApiClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ApiResponse;
-import pl.akmf.ksef.sdk.client.model.Pair;
 import pl.akmf.ksef.sdk.client.model.session.AuthenticationListResponse;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringJoiner;
-import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.Map;
 
 import static pl.akmf.ksef.sdk.api.Url.SESSION_ACTIVE_SESSIONS;
 import static pl.akmf.ksef.sdk.api.Url.SESSION_REVOKE_CURRENT_SESSION;
 import static pl.akmf.ksef.sdk.api.Url.SESSION_REVOKE_SESSION;
+import static pl.akmf.ksef.sdk.api.UrlQueryParamsBuilder.buildUrlWithParams;
+import static pl.akmf.ksef.sdk.client.Headers.ACCEPT;
+import static pl.akmf.ksef.sdk.client.Headers.APPLICATION_JSON;
+import static pl.akmf.ksef.sdk.client.Headers.AUTHORIZATION;
+import static pl.akmf.ksef.sdk.client.Headers.BEARER;
+import static pl.akmf.ksef.sdk.client.Headers.CONTENT_TYPE;
+import static pl.akmf.ksef.sdk.client.Headers.CONTINUATION_TOKEN;
+import static pl.akmf.ksef.sdk.client.Parameter.PAGE_SIZE;
+import static pl.akmf.ksef.sdk.client.Parameter.PATH_REFERENCE_NUMBER;
+import static pl.akmf.ksef.sdk.client.model.ApiException.getApiException;
 
-public class ActiveSessionApi extends BaseApi {
-    private final ObjectMapper memberVarObjectMapper;
-    private final String memberVarBaseUri;
-    private final Consumer<HttpRequest.Builder> memberVarInterceptor;
-    private final Duration memberVarReadTimeout;
+public class ActiveSessionApi {
+    private final HttpApiClient apiClient;
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
 
-    public ActiveSessionApi() {
-        this(new ApiClient());
-    }
-
-    public ActiveSessionApi(ApiClient apiClient) {
-        super(apiClient.getHttpClient(), apiClient.getResponseInterceptor());
-        memberVarObjectMapper = apiClient.getObjectMapper();
-        memberVarBaseUri = apiClient.getBaseUri();
-        memberVarInterceptor = apiClient.getRequestInterceptor();
-        memberVarReadTimeout = apiClient.getReadTimeout();
+    public ActiveSessionApi(HttpApiClient apiClient) {
+        this.apiClient = apiClient;
     }
 
     /**
@@ -48,42 +42,15 @@ public class ActiveSessionApi extends BaseApi {
      * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<Void> apiV2AuthSessionsCurrentDelete() throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2AuthSessionsCurrentDeleteRequestBuilder();
-        try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, SESSION_REVOKE_CURRENT_SESSION.getOperationId());
+    public void apiV2AuthSessionsCurrentDelete(String authenticationToken) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
 
-            return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    null
-            );
-        } catch (IOException e) {
-            throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
+        var response = apiClient.delete(SESSION_REVOKE_CURRENT_SESSION.getUrl(), headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(SESSION_REVOKE_CURRENT_SESSION.getOperationId(), response.body(), response.statusCode(), response.headers());
         }
-    }
-
-    private HttpRequest.Builder apiV2AuthSessionsCurrentDeleteRequestBuilder() {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = SESSION_REVOKE_CURRENT_SESSION.getUrl();
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("DELETE", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -95,58 +62,36 @@ public class ActiveSessionApi extends BaseApi {
      * @return ApiResponse&lt;AuthenticationListResponse&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<AuthenticationListResponse> apiV2AuthSessionsGet(Integer pageSize, String continuationToken) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2AuthSessionsGetRequestBuilder(pageSize, continuationToken);
+    public ApiResponse<AuthenticationListResponse> apiV2AuthSessionsGet(Integer pageSize, String continuationToken, String authenticationToken) throws ApiException {
+        var params = new HashMap<String, String>();
+        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        String uri = buildUrlWithParams(SESSION_ACTIVE_SESSIONS.getUrl(), params);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        if (continuationToken != null) {
+            headers.put(CONTINUATION_TOKEN, continuationToken);
+
+        }
+        var response = apiClient.get(uri, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(SESSION_ACTIVE_SESSIONS.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
         try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, SESSION_ACTIVE_SESSIONS.getOperationId());
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    localVarResponse.body() == null ? null : memberVarObjectMapper.readValue(localVarResponse.body(), new TypeReference<>() {
-                    })
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2AuthSessionsGetRequestBuilder(Integer pageSize, String continuationToken) {
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = SESSION_ACTIVE_SESSIONS.getUrl();
-
-        StringJoiner localVarQueryStringJoiner = new StringJoiner("&");
-        List<Pair> localVarQueryParams = new ArrayList<>(ApiClient.parameterToPairs("pageSize", pageSize));
-
-        if (!localVarQueryParams.isEmpty() || localVarQueryStringJoiner.length() != 0) {
-            StringJoiner queryJoiner = new StringJoiner("&");
-            localVarQueryParams.forEach(p -> queryJoiner.add(p.getName() + '=' + p.getValue()));
-            if (localVarQueryStringJoiner.length() != 0) {
-                queryJoiner.add(localVarQueryStringJoiner.toString());
-            }
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath + '?' + queryJoiner));
-        } else {
-            localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-        }
-
-        if (continuationToken != null) {
-            localVarRequestBuilder.header("x-continuation-token", continuationToken);
-        }
-
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("GET", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 
     /**
@@ -157,44 +102,29 @@ public class ActiveSessionApi extends BaseApi {
      * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
-    public ApiResponse<Void> apiV2AuthSessionsReferenceNumberDelete(String referenceNumber) throws ApiException {
-        HttpRequest.Builder localVarRequestBuilder = apiV2AuthSessionsReferenceNumberDeleteRequestBuilder(referenceNumber);
+    public ApiResponse<Void> apiV2AuthSessionsReferenceNumberDelete(String referenceNumber, String authenticationToken) throws ApiException {
+        String uri = buildUrlWithParams(SESSION_REVOKE_SESSION.getUrl(), new HashMap<>())
+                .replace(PATH_REFERENCE_NUMBER, referenceNumber);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + authenticationToken);
+
+        var response = apiClient.delete(uri, headers);
+
+        if (response.statusCode() / 100 != 2) {
+            throw getApiException(SESSION_REVOKE_SESSION.getOperationId(), response.body(), response.statusCode(), response.headers());
+        }
+
         try {
-            HttpResponse<InputStream> localVarResponse = getInputStreamHttpResponse(localVarRequestBuilder, SESSION_REVOKE_SESSION.getOperationId());
             return new ApiResponse<>(
-                    localVarResponse.statusCode(),
-                    localVarResponse.headers().map(),
-                    null
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            new TypeReference<>() {
+                            })
             );
         } catch (IOException e) {
             throw new ApiException(e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiException(e);
         }
-    }
-
-    private HttpRequest.Builder apiV2AuthSessionsReferenceNumberDeleteRequestBuilder(String referenceNumber) throws ApiException {
-        if (referenceNumber == null) {
-            throw new ApiException(400, "Missing the required parameter 'referenceNumber' when calling apiV2AuthSessionsReferenceNumberDelete");
-        }
-
-        HttpRequest.Builder localVarRequestBuilder = HttpRequest.newBuilder();
-
-        String localVarPath = SESSION_REVOKE_SESSION
-                .getUrl().replace("{referenceNumber}", ApiClient.urlEncode(referenceNumber));
-
-        localVarRequestBuilder.uri(URI.create(memberVarBaseUri + localVarPath));
-
-        localVarRequestBuilder.header("Accept", "application/json");
-
-        localVarRequestBuilder.method("DELETE", HttpRequest.BodyPublishers.noBody());
-        if (memberVarReadTimeout != null) {
-            localVarRequestBuilder.timeout(memberVarReadTimeout);
-        }
-        if (memberVarInterceptor != null) {
-            memberVarInterceptor.accept(localVarRequestBuilder);
-        }
-        return localVarRequestBuilder;
     }
 }

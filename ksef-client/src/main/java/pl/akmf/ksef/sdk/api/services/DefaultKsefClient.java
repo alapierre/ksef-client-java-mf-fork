@@ -14,17 +14,15 @@ import pl.akmf.ksef.sdk.api.InteractiveSessionApi;
 import pl.akmf.ksef.sdk.api.NaturalPersonKseFApi;
 import pl.akmf.ksef.sdk.api.OperationApi;
 import pl.akmf.ksef.sdk.api.PublicKeyCertificateApi;
-import pl.akmf.ksef.sdk.api.PublicKeyEnvironmentApi;
 import pl.akmf.ksef.sdk.api.SearchPermissionApi;
 import pl.akmf.ksef.sdk.api.SendStatusAndUpoApi;
 import pl.akmf.ksef.sdk.api.SubUnitSubjectAdministratorApi;
 import pl.akmf.ksef.sdk.api.SubjectForInvoiceApi;
 import pl.akmf.ksef.sdk.api.TokensApi;
+import pl.akmf.ksef.sdk.client.HttpApiClient;
 import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
-import pl.akmf.ksef.sdk.client.model.ApiClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.auth.AuthKsefTokenRequest;
-import pl.akmf.ksef.sdk.client.model.auth.AuthStatus;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationChallengeResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationInitResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationOperationStatusResponse;
@@ -40,23 +38,23 @@ import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentsInfoRespo
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateLimitsResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateListRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateListResponse;
-import pl.akmf.ksef.sdk.client.model.certificate.CertificateMetadataListRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateMetadataListResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateRevokeRequest;
+import pl.akmf.ksef.sdk.client.model.certificate.QueryCertificatesRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
 import pl.akmf.ksef.sdk.client.model.invoice.AsyncInvoicesQueryStatus;
 import pl.akmf.ksef.sdk.client.model.invoice.DownloadInvoiceRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
-import pl.akmf.ksef.sdk.client.model.invoice.InvoicesAsynqQueryRequest;
-import pl.akmf.ksef.sdk.client.model.invoice.InvoicesQueryRequest;
-import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoicesReponse;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceMetadataQueryRequest;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoicesAsyncQueryRequest;
+import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoiceMetadataResponse;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionStatusInfo;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionsOperationResponse;
 import pl.akmf.ksef.sdk.client.model.permission.entity.GrantEntityPermissionsRequest;
-import pl.akmf.ksef.sdk.client.model.permission.euentity.GrantEUEntityPermissionsRequest;
+import pl.akmf.ksef.sdk.client.model.permission.euentity.EuEntityPermissionsGrantRequest;
 import pl.akmf.ksef.sdk.client.model.permission.euentity.GrantEUEntityRepresentativePermissionsRequest;
-import pl.akmf.ksef.sdk.client.model.permission.indirect.GrantIndirectEntityPermissionsRequest;
+import pl.akmf.ksef.sdk.client.model.permission.indirect.IndirectPermissionsGrantRequest;
 import pl.akmf.ksef.sdk.client.model.permission.person.GrantPersonPermissionsRequest;
 import pl.akmf.ksef.sdk.client.model.permission.proxy.GrantProxyEntityPermissionsRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.EntityAuthorizationPermissionsQueryRequest;
@@ -70,14 +68,15 @@ import pl.akmf.ksef.sdk.client.model.permission.search.QuerySubordinateEntityRol
 import pl.akmf.ksef.sdk.client.model.permission.search.QuerySubunitPermissionsResponse;
 import pl.akmf.ksef.sdk.client.model.permission.search.SubordinateEntityRolesQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.SubunitPermissionsQueryRequest;
-import pl.akmf.ksef.sdk.client.model.permission.subunit.GrantSubUnitPermissionsRequest;
+import pl.akmf.ksef.sdk.client.model.permission.subunit.SubunitPermissionsGrantRequest;
 import pl.akmf.ksef.sdk.client.model.session.AuthenticationListResponse;
-import pl.akmf.ksef.sdk.client.model.session.SessionInvoice;
+import pl.akmf.ksef.sdk.client.model.session.SessionInvoiceStatusResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionInvoicesResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionStatusResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.session.SessionsQueryResponse;
 import pl.akmf.ksef.sdk.client.model.session.batch.BatchPartSendingInfo;
+import pl.akmf.ksef.sdk.client.model.session.batch.BatchPartStreamSendingInfo;
 import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionResponse;
 import pl.akmf.ksef.sdk.client.model.session.batch.PackagePartSignatureInitResponseType;
@@ -85,64 +84,77 @@ import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionResponse;
 import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceRequest;
 import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceResponse;
-import pl.akmf.ksef.sdk.system.KsefEnviroments;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class DefaultKsefClient implements KSeFClient {
-    private final ApiClient apiClient;
-    private AuthenticationApi authenticationApi;
-    private InteractiveSessionApi interactiveSessionApi;
-    private CertificateApi certificateApi;
-    private SearchPermissionApi searchPermissionApi;
-    private ForAuthorizedSubjectApi forAuthorizedSubjectApi;
-    private GrantDirectlyApi grantDirectlyApi;
-    private DownloadInvoiceApi downloadInvoiceApi;
-    private SubjectForInvoiceApi subjectForInvoiceApi;
-    private EuSubjectRepresentationApi euSubjectRepresentationApi;
-    private EuSubjectAdministratorApi euSubjectAdministratorApi;
-    private SubUnitSubjectAdministratorApi subUnitSubjectAdministratorApi;
-    private SendStatusAndUpoApi sendStatusAndUpoApi;
-    private BatchInvoiceApi batchInvoiceApi;
-    private NaturalPersonKseFApi naturalPersonKseFApi;
-    private OperationApi operationApi;
-    private PublicKeyEnvironmentApi publicKeyEnvironmentApi;
-    private TokensApi tokensApi;
-    private PublicKeyCertificateApi publicKeyCertificateApi;
-    private ActiveSessionApi activeSessionApi;
+    private final AuthenticationApi authenticationApi;
+    private final InteractiveSessionApi interactiveSessionApi;
+    private final CertificateApi certificateApi;
+    private final SearchPermissionApi searchPermissionApi;
+    private final ForAuthorizedSubjectApi forAuthorizedSubjectApi;
+    private final GrantDirectlyApi grantDirectlyApi;
+    private final DownloadInvoiceApi downloadInvoiceApi;
+    private final SubjectForInvoiceApi subjectForInvoiceApi;
+    private final EuSubjectRepresentationApi euSubjectRepresentationApi;
+    private final EuSubjectAdministratorApi euSubjectAdministratorApi;
+    private final SubUnitSubjectAdministratorApi subUnitSubjectAdministratorApi;
+    private final SendStatusAndUpoApi sendStatusAndUpoApi;
+    private final BatchInvoiceApi batchInvoiceApi;
+    private final NaturalPersonKseFApi naturalPersonKseFApi;
+    private final OperationApi operationApi;
+    private final TokensApi tokensApi;
+    private final PublicKeyCertificateApi publicKeyCertificateApi;
+    private final ActiveSessionApi activeSessionApi;
 
-    public DefaultKsefClient(KsefEnviroments ksefEnviroments) {
-        this.apiClient = createApiClient(ksefEnviroments);
-        initApiClient();
+    public DefaultKsefClient(HttpApiClient httpApiClient) {
+        authenticationApi = new AuthenticationApi(httpApiClient);
+        interactiveSessionApi = new InteractiveSessionApi(httpApiClient);
+        certificateApi = new CertificateApi(httpApiClient);
+        searchPermissionApi = new SearchPermissionApi(httpApiClient);
+        forAuthorizedSubjectApi = new ForAuthorizedSubjectApi(httpApiClient);
+        grantDirectlyApi = new GrantDirectlyApi(httpApiClient);
+        downloadInvoiceApi = new DownloadInvoiceApi(httpApiClient);
+        subjectForInvoiceApi = new SubjectForInvoiceApi(httpApiClient);
+        euSubjectRepresentationApi = new EuSubjectRepresentationApi(httpApiClient);
+        euSubjectAdministratorApi = new EuSubjectAdministratorApi(httpApiClient);
+        subUnitSubjectAdministratorApi = new SubUnitSubjectAdministratorApi(httpApiClient);
+        sendStatusAndUpoApi = new SendStatusAndUpoApi(httpApiClient);
+        batchInvoiceApi = new BatchInvoiceApi(httpApiClient);
+        naturalPersonKseFApi = new NaturalPersonKseFApi(httpApiClient);
+        operationApi = new OperationApi(httpApiClient);
+        tokensApi = new TokensApi(httpApiClient);
+        publicKeyCertificateApi = new PublicKeyCertificateApi(httpApiClient);
+        activeSessionApi = new ActiveSessionApi(httpApiClient);
     }
 
     @Override
-    public PermissionsOperationResponse grantsPermissionsProxyEntity(GrantProxyEntityPermissionsRequest body) throws ApiException {
+    public PermissionsOperationResponse grantsPermissionsProxyEntity(GrantProxyEntityPermissionsRequest body, String authenticationToken) throws ApiException {
 
-        return forAuthorizedSubjectApi.apiV2PermissionsAuthorizationsGrantsPost(body).getData();
+        return forAuthorizedSubjectApi.apiV2PermissionsAuthorizationsGrantsPost(body, authenticationToken).getData();
     }
 
     @Override
-    public PermissionsOperationResponse grantsPermissionIndirectEntity(GrantIndirectEntityPermissionsRequest body) throws ApiException {
-        return grantDirectlyApi.apiV2PermissionsIndirectGrantsPost(body).getData();
+    public PermissionsOperationResponse grantsPermissionIndirectEntity(IndirectPermissionsGrantRequest body, String authenticationToken) throws ApiException {
+        return grantDirectlyApi.apiV2PermissionsIndirectGrantsPost(body, authenticationToken).getData();
     }
 
     @Override
-    public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body) throws ApiException {
+    public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, String authenticationToken) throws ApiException {
 
-        return batchInvoiceApi.batchOpenWithHttpInfo(body).getData();
+        return batchInvoiceApi.batchOpenWithHttpInfo(body, authenticationToken).getData();
     }
 
     @Override
-    public void closeBatchSession(String referenceNumber) throws ApiException {
-        batchInvoiceApi.apiV2SessionsBatchReferenceNumberClosePostWithHttpInfo(referenceNumber);
+    public void closeBatchSession(String referenceNumber, String authenticationToken) throws ApiException {
+        batchInvoiceApi.apiV2SessionsBatchReferenceNumberClosePostWithHttpInfo(referenceNumber, authenticationToken);
     }
 
     @Override
@@ -192,53 +204,100 @@ public class DefaultKsefClient implements KSeFClient {
     }
 
     @Override
-    public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body) throws ApiException {
-        return interactiveSessionApi.onlineSessionOpenWithHttpInfo(body).getData();
+    public void sendBatchPartsWithStream(OpenBatchSessionResponse openBatchSessionResponse, List<BatchPartStreamSendingInfo> parts) throws IOException, InterruptedException {
+        if (CollectionUtils.isEmpty(parts)) {
+            throw new IllegalArgumentException("No files to send.");
+        }
+
+        List<PackagePartSignatureInitResponseType> responsePartUploadRequests = openBatchSessionResponse.getPartUploadRequests();
+        if (CollectionUtils.isEmpty(responsePartUploadRequests)) {
+            throw new IllegalStateException("No information about parts to send.");
+        }
+
+        HttpClient client = HttpClient.newHttpClient();
+        List<String> errors = new ArrayList<>();
+
+        for (PackagePartSignatureInitResponseType responsePart : responsePartUploadRequests) {
+            InputStream dataStream = parts.stream()
+                    .filter(p -> responsePart.getOrdinalNumber() == p.getOrdinalNumber())
+                    .findFirst()
+                    .orElseThrow()
+                    .getDataStream();
+
+            HttpRequest.BodyPublisher bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(dataStream.readAllBytes());
+
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                    .uri(responsePart.getUrl())
+                    .PUT(bodyPublisher);
+            requestBuilder.header("Content-Type", "application/octet-stream");
+
+            Map<String, String> headerEntryList = responsePart.getHeaders();
+            if (headerEntryList != null) {
+                headerEntryList.forEach(requestBuilder::header);
+            }
+
+            HttpResponse<String> responseResult = client.send(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
+
+            if (responseResult.statusCode() >= 400) {
+                errors.add("Error sends part " + responsePart.getOrdinalNumber() + ": " +
+                        responseResult.statusCode() + " " + responseResult.body());
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            throw new IOException("Errors when sending parts:\n" + String.join("\n", errors));
+        }
     }
 
     @Override
-    public void closeOnlineSession(String referenceNumber) throws ApiException {
-        interactiveSessionApi.apiV2SessionsOnlineReferenceNumberClosePostWithHttpInfo(referenceNumber);
+    public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, String authenticationToken) throws ApiException {
+        return interactiveSessionApi.onlineSessionOpenWithHttpInfo(body, authenticationToken).getData();
     }
 
     @Override
-    public SendInvoiceResponse onlineSessionSendInvoice(String referenceNumber, SendInvoiceRequest body) throws ApiException {
-        return interactiveSessionApi.apiV2SessionsOnlineReferenceNumberInvoicesPostWithHttpInfo(referenceNumber, body).getData();
+    public void closeOnlineSession(String referenceNumber, String authenticationToken) throws ApiException {
+        interactiveSessionApi.apiV2SessionsOnlineReferenceNumberClosePostWithHttpInfo(referenceNumber, authenticationToken);
     }
 
     @Override
-    public CertificateLimitsResponse getCertificateLimits() throws ApiException {
-        return certificateApi.apiV2CertificatesLimitsGetWithHttpInfo().getData();
+    public SendInvoiceResponse onlineSessionSendInvoice(String referenceNumber, SendInvoiceRequest body, String authenticationToken) throws ApiException {
+        return interactiveSessionApi.apiV2SessionsOnlineReferenceNumberInvoicesPostWithHttpInfo(referenceNumber, body, authenticationToken).getData();
     }
 
     @Override
-    public CertificateEnrollmentsInfoResponse getCertificateEnrollmentInfo() throws ApiException {
-        return certificateApi.apiV2CertificatesEnrollmentsDataGetWithHttpInfo().getData();
+    public CertificateLimitsResponse getCertificateLimits(String authenticationToken) throws ApiException {
+        return certificateApi.apiV2CertificatesLimitsGetWithHttpInfo(authenticationToken).getData();
     }
 
     @Override
-    public CertificateEnrollmentResponse sendCertificateEnrollment(SendCertificateEnrollmentRequest body) throws ApiException {
-        return certificateApi.apiV2CertificatesEnrollmentsPostWithHttpInfo(body).getData();
+    public CertificateEnrollmentsInfoResponse getCertificateEnrollmentInfo(String authenticationToken) throws ApiException {
+        return certificateApi.apiV2CertificatesEnrollmentsDataGetWithHttpInfo(authenticationToken).getData();
     }
 
     @Override
-    public CertificateEnrollmentStatusResponse getCertificateEnrollmentStatus(String referenceNumber) throws ApiException {
-        return certificateApi.apiV2CertificatesEnrollmentsReferenceNumberGetWithHttpInfo(referenceNumber).getData();
+    public CertificateEnrollmentResponse sendCertificateEnrollment(SendCertificateEnrollmentRequest body, String authenticationToken) throws ApiException {
+        return certificateApi.apiV2CertificatesEnrollmentsPostWithHttpInfo(body, authenticationToken).getData();
     }
 
     @Override
-    public CertificateListResponse getCertificateList(CertificateListRequest body) throws ApiException {
-        return certificateApi.apiV2CertificatesRetrievePostWithHttpInfo(body).getData();
+    public CertificateEnrollmentStatusResponse getCertificateEnrollmentStatus(String referenceNumber, String authenticationToken) throws ApiException {
+        return certificateApi.apiV2CertificatesEnrollmentsReferenceNumberGetWithHttpInfo(referenceNumber, authenticationToken).getData();
     }
 
     @Override
-    public void revokeCertificate(CertificateRevokeRequest body, String serialNumber) throws ApiException {
-        certificateApi.apiV2CertificatesCertificateSerialNumberRevokePostWithHttpInfo(serialNumber, body);
+    public CertificateListResponse getCertificateList(CertificateListRequest body, String authenticationToken) throws ApiException {
+        return certificateApi.apiV2CertificatesRetrievePostWithHttpInfo(body, authenticationToken).getData();
     }
 
     @Override
-    public CertificateMetadataListResponse getCertificateMetadataList(CertificateMetadataListRequest body, int pageSize, int pageOffset) throws ApiException {
-        return certificateApi.apiV2CertificatesQueryPostWithHttpInfo(pageSize, pageOffset, body).getData();
+    public void revokeCertificate(CertificateRevokeRequest body, String serialNumber, String authenticationToken) throws ApiException {
+        certificateApi.apiV2CertificatesCertificateSerialNumberRevokePostWithHttpInfo(serialNumber, body, authenticationToken);
+    }
+
+    @Override
+    public CertificateMetadataListResponse getCertificateMetadataList(QueryCertificatesRequest body,
+                                                                      int pageSize, int pageOffset, String authenticationToken) throws ApiException {
+        return certificateApi.apiV2CertificatesQueryPostWithHttpInfo(pageSize, pageOffset, body, authenticationToken).getData();
     }
 
     @Override
@@ -254,9 +313,6 @@ public class DefaultKsefClient implements KSeFClient {
             throw new ApiException();
         }
 
-        setNewAccessToken(initResponse.getAuthenticationToken().getToken());
-        initApiClient();
-
         return initResponse;
     }
 
@@ -268,181 +324,178 @@ public class DefaultKsefClient implements KSeFClient {
             throw new ApiException();
         }
 
-        setNewAccessToken(initResponse.getAuthenticationToken().getToken());
-        initApiClient();
-
         return initResponse;
     }
 
     @Override
-    public pl.akmf.ksef.sdk.client.model.session.AuthenticationOperationStatusResponse getAuthStatus(String referenceNumber) throws ApiException {
+    public pl.akmf.ksef.sdk.client.model.session.AuthenticationOperationStatusResponse getAuthStatus(String referenceNumber, String authenticationToken) throws ApiException {
 
-        return authenticationApi.apiV2AuthTokenTokenReferenceNumberGetWithHttpInfo(referenceNumber).getData();
+        return authenticationApi.apiV2AuthTokenTokenReferenceNumberGetWithHttpInfo(referenceNumber, authenticationToken).getData();
     }
 
     @Override
-    public AuthenticationOperationStatusResponse redeemToken() throws ApiException {
-        var authenticationOperationStatusResponse = authenticationApi.apiV2AuthRedeemTokenPost().getData();
+    public AuthenticationOperationStatusResponse redeemToken(String authenticationToken) throws ApiException {
 
-
-        setNewAccessToken(authenticationOperationStatusResponse.getAccessToken().getToken());
-        initApiClient();
-
-        return authenticationOperationStatusResponse;
+        return authenticationApi.apiV2AuthRedeemTokenPost(authenticationToken).getData();
     }
 
     @Override
     public AuthenticationTokenRefreshResponse refreshAccessToken(String refreshToken) throws ApiException {
-        setNewAccessToken(refreshToken);
-
-        initApiClient();
-        var refreshTokenResponse = authenticationApi.apiV2AuthTokenRefreshPostWithHttpInfo().getData();
+        var refreshTokenResponse = authenticationApi.apiV2AuthTokenRefreshPostWithHttpInfo(refreshToken).getData();
 
         if (refreshTokenResponse.getAccessToken() == null) {
             throw new ApiException();
 
         }
 
-        setNewAccessToken(refreshTokenResponse.getAccessToken().getToken());
-        initApiClient();
-
         return refreshTokenResponse;
     }
 
     @Override
-    public void revokeAccessToken() throws ApiException {
-        authenticationApi.apiV2AuthTokenDeleteWithHttpInfo();
+    public void revokeAccessToken(String authenticationToken) throws ApiException {
+        authenticationApi.apiV2AuthTokenDeleteWithHttpInfo(authenticationToken);
     }
 
     @Override
-    public PermissionStatusInfo permissionOperationStatus(String referenceNumber) throws ApiException {
-        return operationApi.apiV2PermissionsOperationsReferenceNumberGet(referenceNumber).getData();
+    public PermissionStatusInfo permissionOperationStatus(String referenceNumber, String authenticationToken) throws ApiException {
+        return operationApi.apiV2PermissionsOperationsReferenceNumberGet(referenceNumber, authenticationToken).getData();
     }
 
     //----------------- Search Permission -------------------
     @Override
-    public QueryPersonPermissionsResponse searchGrantedPersonPermissions(PersonPermissionsQueryRequest request, int pageOffset, int pageSize) throws ApiException {
-        return searchPermissionApi.apiV2PermissionsQueryPersonsGrantsPost(pageOffset, pageSize, request).getData();
+    public QueryPersonPermissionsResponse searchGrantedPersonPermissions(PersonPermissionsQueryRequest request,
+                                                                         int pageOffset, int pageSize, String authenticationToken) throws ApiException {
+        return searchPermissionApi.apiV2PermissionsQueryPersonsGrantsPost(pageOffset, pageSize, request, authenticationToken).getData();
     }
 
     @Override
-    public QuerySubunitPermissionsResponse searchSubunitAdminPermissions(SubunitPermissionsQueryRequest request, int pageOffset, int pageSize) throws ApiException {
-        return searchPermissionApi.apiV2PermissionsQuerySubunitsGrantsPost(pageOffset, pageSize, request).getData();
+    public QuerySubunitPermissionsResponse searchSubunitAdminPermissions(SubunitPermissionsQueryRequest request,
+                                                                         int pageOffset, int pageSize, String authenticationToken) throws ApiException {
+        return searchPermissionApi.apiV2PermissionsQuerySubunitsGrantsPost(pageOffset, pageSize, request, authenticationToken).getData();
     }
 
     @Override
-    public QueryEntityRolesResponse searchEntityInvoiceRoles(int pageOffset, int pageSize) throws ApiException {
-        return searchPermissionApi.apiV2PermissionsQueryEntitiesRolesGet(pageOffset, pageSize).getData();
+    public QueryEntityRolesResponse searchEntityInvoiceRoles(int pageOffset, int pageSize, String authenticationToken) throws ApiException {
+        return searchPermissionApi.apiV2PermissionsQueryEntitiesRolesGet(pageOffset, pageSize, authenticationToken).getData();
     }
 
     @Override
-    public QuerySubordinateEntityRolesResponse searchSubordinateEntityInvoiceRoles(SubordinateEntityRolesQueryRequest request, int pageOffset, int pageSize) throws ApiException {
-        return searchPermissionApi.apiV2PermissionsQuerySubordinateEntitiesRolesPost(pageOffset, pageSize, request).getData();
+    public QuerySubordinateEntityRolesResponse searchSubordinateEntityInvoiceRoles(SubordinateEntityRolesQueryRequest request, int pageOffset, int pageSize, String authenticationToken) throws ApiException {
+        return searchPermissionApi.apiV2PermissionsQuerySubordinateEntitiesRolesPost(pageOffset, pageSize, request, authenticationToken).getData();
     }
 
     @Override
-    public QueryEntityAuthorizationPermissionsResponse searchEntityAuthorizationGrants(EntityAuthorizationPermissionsQueryRequest request, int pageOffset, int pageSize) throws ApiException {
-        return searchPermissionApi.apiV2PermissionsQueryAuthorizationsGrantsPost(pageOffset, pageSize, request).getData();
+    public QueryEntityAuthorizationPermissionsResponse searchEntityAuthorizationGrants(EntityAuthorizationPermissionsQueryRequest request, int pageOffset, int pageSize, String authenticationToken) throws ApiException {
+        return searchPermissionApi.apiV2PermissionsQueryAuthorizationsGrantsPost(pageOffset, pageSize, request, authenticationToken).getData();
     }
 
     @Override
-    public QueryEuEntityPermissionsResponse searchGrantedEuEntityPermissions(EuEntityPermissionsQueryRequest request, int pageOffset, int pageSize) throws ApiException {
-        return searchPermissionApi.apiV2PermissionsQueryEuEntitiesGrantsPost(pageOffset, pageSize, request).getData();
+    public QueryEuEntityPermissionsResponse searchGrantedEuEntityPermissions(EuEntityPermissionsQueryRequest request,
+                                                                             int pageOffset, int pageSize, String authenticationToken) throws ApiException {
+        return searchPermissionApi.apiV2PermissionsQueryEuEntitiesGrantsPost(pageOffset, pageSize, request, authenticationToken).getData();
     }
 
     //------------------ END Search Permission------------------
 
     @Override
-    public PermissionsOperationResponse grantsPermissionEUEntity(GrantEUEntityPermissionsRequest body) throws ApiException {
-        return euSubjectAdministratorApi.apiV2PermissionsEuEntitiesAdministrationGrantsPost(body).getData();
+    public PermissionsOperationResponse grantsPermissionEUEntity(EuEntityPermissionsGrantRequest body, String authenticationToken) throws ApiException {
+        return euSubjectAdministratorApi.apiV2PermissionsEuEntitiesAdministrationGrantsPost(body, authenticationToken).getData();
     }
 
     @Override
-    public PermissionsOperationResponse grantsPermissionEUEntityRepresentative(GrantEUEntityRepresentativePermissionsRequest body) throws ApiException {
-        return euSubjectRepresentationApi.apiV2PermissionsEuEntitiesGrantsPost(body).getData();
+    public PermissionsOperationResponse grantsPermissionEUEntityRepresentative(GrantEUEntityRepresentativePermissionsRequest body, String authenticationToken) throws ApiException {
+        return euSubjectRepresentationApi.apiV2PermissionsEuEntitiesGrantsPost(body, authenticationToken).getData();
     }
 
     @Override
-    public String getInvoice(String ksefReferenceNumber) throws ApiException {
-        return downloadInvoiceApi.apiV2InvoicesKsefKsefReferenceNumberGet(ksefReferenceNumber).getData();
-    }
-
-    public String getInvoice(DownloadInvoiceRequest request) throws ApiException {
-        return downloadInvoiceApi.apiV2InvoicesDownloadPost(request).getData();
-    }
-
-    public QueryInvoicesReponse queryInvoices(Integer pageOffset, Integer pageSize, InvoicesQueryRequest request) throws ApiException {
-        return downloadInvoiceApi.apiV2InvoicesQueryPost(pageOffset, pageSize, request).getData();
-    }
-
-    public InitAsyncInvoicesQueryResponse initAsyncQueryInvoice(InvoicesAsynqQueryRequest request) throws ApiException {
-        return downloadInvoiceApi.apiV2InvoicesAsyncQueryPost(request).getData();
-    }
-
-    public AsyncInvoicesQueryStatus checkStatusAsyncQueryInvoice(String operationReferenceNumber) throws ApiException {
-        return downloadInvoiceApi.apiV2InvoicesAsyncQueryOperationReferenceNumberGet(operationReferenceNumber).getData();
+    public byte[] getInvoice(String ksefReferenceNumber, String authenticationToken) throws ApiException {
+        return downloadInvoiceApi.apiV2InvoicesKsefKsefReferenceNumberGet(ksefReferenceNumber, authenticationToken).getData();
     }
 
     @Override
-    public PermissionsOperationResponse grantsPermissionEntity(GrantEntityPermissionsRequest body) throws ApiException {
-        return subjectForInvoiceApi.apiV2PermissionsEntitiesGrantsPost(body).getData();
+    public byte[] getInvoice(DownloadInvoiceRequest request, String authenticationToken) throws ApiException {
+        return downloadInvoiceApi.apiV2InvoicesDownloadPost(request, authenticationToken).getData();
+    }
+
+    @Override
+    public QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset, Integer pageSize,
+                                                             InvoiceMetadataQueryRequest request, String authenticationToken) throws ApiException {
+        return downloadInvoiceApi.apiV2InvoicesQueryMetadataPost(pageOffset, pageSize, request, authenticationToken).getData();
+    }
+
+    @Override
+    public InitAsyncInvoicesQueryResponse initAsyncQueryInvoice(InvoicesAsyncQueryRequest request, String authenticationToken) throws ApiException {
+        return downloadInvoiceApi.apiV2InvoicesAsyncQueryPost(request, authenticationToken).getData();
+    }
+
+    @Override
+    public AsyncInvoicesQueryStatus checkStatusAsyncQueryInvoice(String operationReferenceNumber, String authenticationToken) throws ApiException {
+        return downloadInvoiceApi.apiV2InvoicesAsyncQueryOperationReferenceNumberGet(operationReferenceNumber, authenticationToken).getData();
+    }
+
+    @Override
+    public PermissionsOperationResponse grantsPermissionEntity(GrantEntityPermissionsRequest body, String authenticationToken) throws ApiException {
+        return subjectForInvoiceApi.apiV2PermissionsEntitiesGrantsPost(body, authenticationToken).getData();
     }
 
     //------------------ Start Session------------------
 
     @Override
-    public SessionStatusResponse getSessionStatus(String referenceNumber) throws ApiException {
-        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberGet(referenceNumber).getData();
+    public SessionStatusResponse getSessionStatus(String referenceNumber, String authenticationToken) throws ApiException {
+        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberGet(referenceNumber, authenticationToken).getData();
     }
 
     @Override
-    public SessionInvoice getSessionInvoiceStatus(String referenceNumber, String invoiceReferenceNumber) throws ApiException {
-        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberInvoicesInvoiceReferenceNumberGet(referenceNumber, invoiceReferenceNumber).getData();
+    public SessionInvoiceStatusResponse getSessionInvoiceStatus(String referenceNumber, String invoiceReferenceNumber
+            , String authenticationToken) throws ApiException {
+        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberInvoicesInvoiceReferenceNumberGet(referenceNumber, invoiceReferenceNumber, authenticationToken).getData();
     }
 
     @Override
-    public byte[] getSessionInvoiceUpoByReferenceNumber(String referenceNumber, String invoiceReferenceNumber) throws ApiException {
-        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberInvoicesInvoiceReferenceNumberUpoGet(referenceNumber, invoiceReferenceNumber).getData();
+    public byte[] getSessionInvoiceUpoByReferenceNumber(String referenceNumber, String invoiceReferenceNumber, String authenticationToken) throws ApiException {
+        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberInvoicesInvoiceReferenceNumberUpoGet(referenceNumber, invoiceReferenceNumber, authenticationToken).getData();
     }
 
     @Override
-    public byte[] getSessionInvoiceUpoByKsefNumber(String referenceNumber, String ksefNumber) throws ApiException {
-        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberInvoicesKsefKsefNumberUpoGet(referenceNumber, ksefNumber).getData();
+    public byte[] getSessionInvoiceUpoByKsefNumber(String referenceNumber, String ksefNumber, String authenticationToken) throws ApiException {
+        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberInvoicesKsefKsefNumberUpoGet(referenceNumber, ksefNumber, authenticationToken).getData();
     }
 
     @Override
-    public byte[] getSessionUpo(String referenceNumber, String upoReferenceNumber) throws ApiException {
-        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberUpoUpoReferenceNumberGet(referenceNumber, upoReferenceNumber).getData();
+    public byte[] getSessionUpo(String referenceNumber, String upoReferenceNumber, String authenticationToken) throws ApiException {
+        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberUpoUpoReferenceNumberGet(referenceNumber, upoReferenceNumber, authenticationToken).getData();
     }
 
     @Override
-    public SessionInvoicesResponse getSessionInvoices(String referenceNumber, Integer pageSize, Integer pageOffset) throws ApiException {
-        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberInvoicesGet(referenceNumber, pageOffset, pageSize).getData();
+    public SessionInvoicesResponse getSessionInvoices(String referenceNumber, Integer pageSize, Integer pageOffset, String authenticationToken) throws ApiException {
+        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberInvoicesGet(referenceNumber, pageOffset, pageSize, authenticationToken).getData();
     }
 
     @Override
-    public SessionInvoicesResponse getSessionFailedInvoices(String referenceNumber, String continuationToken, Integer pageSize) throws ApiException {
-        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberInvoicesFailedGet(referenceNumber, continuationToken, pageSize).getData();
+    public SessionInvoicesResponse getSessionFailedInvoices(String referenceNumber, String continuationToken,
+                                                            Integer pageSize, String authenticationToken) throws ApiException {
+        return sendStatusAndUpoApi.apiV2SessionsReferenceNumberInvoicesFailedGet(referenceNumber, continuationToken, pageSize, authenticationToken).getData();
     }
 
     @Override
-    public SessionsQueryResponse getSessions(SessionsQueryRequest request, Integer pageSize, String continuationToken) throws ApiException {
-        return sendStatusAndUpoApi.apiV2SessionsGet(request, pageSize, continuationToken).getData();
+    public SessionsQueryResponse getSessions(SessionsQueryRequest request, Integer pageSize, String continuationToken
+            , String authenticationToken) throws ApiException {
+        return sendStatusAndUpoApi.apiV2SessionsGet(request, pageSize, continuationToken, authenticationToken).getData();
     }
 
     @Override
-    public AuthenticationListResponse getActiveSessions(Integer pageSize, String continuationToken) throws ApiException {
-        return activeSessionApi.apiV2AuthSessionsGet(pageSize, continuationToken).getData();
+    public AuthenticationListResponse getActiveSessions(Integer pageSize, String continuationToken, String authenticationToken) throws ApiException {
+        return activeSessionApi.apiV2AuthSessionsGet(pageSize, continuationToken, authenticationToken).getData();
     }
 
     @Override
-    public void revokeCurrentSession() throws ApiException {
-        activeSessionApi.apiV2AuthSessionsCurrentDelete();
+    public void revokeCurrentSession(String authenticationToken) throws ApiException {
+        activeSessionApi.apiV2AuthSessionsCurrentDelete(authenticationToken);
     }
 
     @Override
-    public void revokeSession(String referenceNumber) throws ApiException {
-        activeSessionApi.apiV2AuthSessionsReferenceNumberDelete(referenceNumber);
+    public void revokeSession(String referenceNumber, String authenticationToken) throws ApiException {
+        activeSessionApi.apiV2AuthSessionsReferenceNumberDelete(referenceNumber, authenticationToken);
     }
 
     //------------------ END Session------------------
@@ -450,98 +503,56 @@ public class DefaultKsefClient implements KSeFClient {
     //------------------ START Person permissions ------------------
 
     @Override
-    public PermissionsOperationResponse grantsPermissionPerson(GrantPersonPermissionsRequest request) throws ApiException {
-        return naturalPersonKseFApi.apiV2PermissionsPersonsGrantsPost(request).getData();
+    public PermissionsOperationResponse grantsPermissionPerson(GrantPersonPermissionsRequest request, String authenticationToken) throws ApiException {
+        return naturalPersonKseFApi.apiV2PermissionsPersonsGrantsPost(request, authenticationToken).getData();
     }
 
     //------------------ END Person permissions ------------------
 
     @Override
-    public PermissionsOperationResponse grantsPermissionSubUnit(GrantSubUnitPermissionsRequest body) throws ApiException {
-        return subUnitSubjectAdministratorApi.apiV2PermissionsSubunitsGrantsPost(body).getData();
+    public PermissionsOperationResponse grantsPermissionSubUnit(SubunitPermissionsGrantRequest body, String authenticationToken) throws ApiException {
+        return subUnitSubjectAdministratorApi.apiV2PermissionsSubunitsGrantsPost(body, authenticationToken).getData();
     }
 
     @Override
-    public PermissionsOperationResponse revokeCommonPermission(String permissionId) throws ApiException {
-        return operationApi.apiV2PermissionsCommonGrantsPermissionIdDelete(permissionId).getData();
+    public PermissionsOperationResponse revokeCommonPermission(String permissionId, String authenticationToken) throws ApiException {
+        return operationApi.apiV2PermissionsCommonGrantsPermissionIdDelete(permissionId, authenticationToken).getData();
     }
 
     @Override
-    public PermissionsOperationResponse revokeAuthorizationsPermission(String permissionId) throws ApiException {
-        return operationApi.apiV2PermissionsAuthorizationsGrantsPermissionIdDelete(permissionId).getData();
-    }
-
-    @Override
-    public byte[] getPublicKey() throws ApiException {
-        return publicKeyEnvironmentApi.apiV2SPublicKeyGet();
+    public PermissionsOperationResponse revokeAuthorizationsPermission(String permissionId, String authenticationToken) throws ApiException {
+        return operationApi.apiV2PermissionsAuthorizationsGrantsPermissionIdDelete(permissionId, authenticationToken).getData();
     }
 
     //------------------ START Tokens ------------------
 
     @Override
-    public GenerateTokenResponse generateKsefToken(GenerateTokenRequest tokenRequest) throws ApiException {
-        return tokensApi.apiV2TokensPost(tokenRequest).getData();
+    public GenerateTokenResponse generateKsefToken(GenerateTokenRequest tokenRequest, String authenticationToken) throws ApiException {
+        return tokensApi.apiV2TokensPost(tokenRequest, authenticationToken).getData();
     }
 
     @Override
-    public QueryTokensResponse queryKsefTokens(List<AuthenticationTokenStatus> statuses, String continuationToken, Integer pageSize) throws ApiException {
+    public QueryTokensResponse queryKsefTokens(List<AuthenticationTokenStatus> statuses, String continuationToken,
+                                               Integer pageSize, String authenticationToken) throws ApiException {
 
-        return tokensApi.apiV2TokensGet(statuses, continuationToken, pageSize).getData();
+        return tokensApi.apiV2TokensGet(statuses, continuationToken, pageSize, authenticationToken).getData();
     }
 
     @Override
-    public AuthenticationToken getKsefToken(String referenceNumber) throws ApiException {
+    public AuthenticationToken getKsefToken(String referenceNumber, String authenticationToken) throws ApiException {
 
-        return tokensApi.apiV2TokensReferenceNumberGet(referenceNumber).getData();
+        return tokensApi.apiV2TokensReferenceNumberGet(referenceNumber, authenticationToken).getData();
     }
 
     @Override
-    public void revokeKsefToken(String referenceNumber) throws ApiException {
+    public void revokeKsefToken(String referenceNumber, String authenticationToken) throws ApiException {
 
-        tokensApi.apiV2TokensReferenceNumberDelete(referenceNumber);
+        tokensApi.apiV2TokensReferenceNumberDelete(referenceNumber, authenticationToken);
     }
 
     @Override
     public List<PublicKeyCertificate> retrievePublicKeyCertificate() throws ApiException {
 
         return publicKeyCertificateApi.apiV2SecurityPublicKeyCertificatesGet().getData();
-    }
-
-    //------------------ END Tokens ------------------
-
-
-    private static ApiClient createApiClient(KsefEnviroments ksefEnviroments) {
-        ApiClient apiClient = new ApiClient();
-        apiClient.setScheme("https");
-        apiClient.setHost(ksefEnviroments.getUrl());
-        apiClient.setConnectTimeout(Duration.ofSeconds(10));
-        apiClient.setReadTimeout(Duration.ofSeconds(10));
-        return apiClient;
-    }
-
-    private void initApiClient() {
-        this.authenticationApi = new AuthenticationApi(apiClient);
-        this.interactiveSessionApi = new InteractiveSessionApi(apiClient);
-        this.certificateApi = new CertificateApi(apiClient);
-        this.searchPermissionApi = new SearchPermissionApi(apiClient);
-        this.forAuthorizedSubjectApi = new ForAuthorizedSubjectApi(apiClient);
-        this.grantDirectlyApi = new GrantDirectlyApi(apiClient);
-        this.downloadInvoiceApi = new DownloadInvoiceApi(apiClient);
-        this.subjectForInvoiceApi = new SubjectForInvoiceApi(apiClient);
-        this.euSubjectRepresentationApi = new EuSubjectRepresentationApi(apiClient);
-        this.euSubjectAdministratorApi = new EuSubjectAdministratorApi(apiClient);
-        this.subUnitSubjectAdministratorApi = new SubUnitSubjectAdministratorApi(apiClient);
-        this.sendStatusAndUpoApi = new SendStatusAndUpoApi(apiClient);
-        this.batchInvoiceApi = new BatchInvoiceApi(apiClient);
-        this.naturalPersonKseFApi = new NaturalPersonKseFApi(apiClient);
-        this.operationApi = new OperationApi(apiClient);
-        this.publicKeyEnvironmentApi = new PublicKeyEnvironmentApi(apiClient);
-        this.tokensApi = new TokensApi(apiClient);
-        this.publicKeyCertificateApi = new PublicKeyCertificateApi(apiClient);
-        this.activeSessionApi = new ActiveSessionApi(apiClient);
-    }
-
-    private void setNewAccessToken(String accessToken) {
-        apiClient.setRequestInterceptor(builder -> builder.header("Authorization", "Bearer " + accessToken));
     }
 }

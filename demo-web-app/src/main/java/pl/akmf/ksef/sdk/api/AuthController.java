@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import pl.akmf.ksef.sdk.api.builders.auth.AuthTokenRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.auth.AuthTokenRequestSerializer;
@@ -19,7 +20,6 @@ import pl.akmf.ksef.sdk.client.model.auth.AuthenticationOperationStatusResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenRefreshResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.SelfSignedCertificate;
 import pl.akmf.ksef.sdk.client.model.xml.AuthTokenRequest;
-import pl.akmf.ksef.sdk.client.model.xml.ContextIdentifierTypeEnum;
 import pl.akmf.ksef.sdk.client.model.xml.SubjectIdentifierTypeEnum;
 
 import java.io.ByteArrayInputStream;
@@ -54,14 +54,14 @@ public class AuthController {
      * @throws ApiException if fails to make API call
      */
     @PostMapping(value = "/auth-step-by-step/{context}")
-    public AuthenticationOperationStatusResponse authStepByStep(@PathVariable String context) throws ApiException, JAXBException, IOException, InterruptedException {
+    public AuthenticationOperationStatusResponse authStepByStep(@PathVariable String context) throws ApiException, JAXBException, IOException {
         //wykonanie auth challenge
         var challenge = ksefClient.getAuthChallenge();
 
         //xml niezbędny do uwierzytelnienia
         AuthTokenRequest authTokenRequest = new AuthTokenRequestBuilder()
                 .withChallenge(challenge.getChallenge())
-                .withContext(ContextIdentifierTypeEnum.NIP, context)
+                .withContextNip(context)
                 .withSubjectType(SubjectIdentifierTypeEnum.CERTIFICATE_SUBJECT)
                 .build();
 
@@ -82,14 +82,14 @@ public class AuthController {
         //Czekanie na zakończenie procesu
         await().atMost(4, SECONDS)
                 .pollInterval(1, SECONDS)
-                .until(() -> isSessionStatusReady(submitAuthTokenResponse.getReferenceNumber()));
+                .until(() -> isSessionStatusReady(submitAuthTokenResponse.getReferenceNumber(), submitAuthTokenResponse.getAuthenticationToken().getToken()));
 
         //pobranie tokenów
-        return ksefClient.redeemToken();
+        return ksefClient.redeemToken(submitAuthTokenResponse.getAuthenticationToken().getToken());
     }
 
     @PostMapping(value = "auth-with-ksef-certificate")
-    public AuthenticationOperationStatusResponse authWithKsefCert(@RequestBody CertAuthRequest request) throws CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, ApiException, JAXBException, IOException, InterruptedException {
+    public AuthenticationOperationStatusResponse authWithKsefCert(@RequestBody CertAuthRequest request) throws CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, ApiException, JAXBException, IOException {
         var x500 = new CertificateBuilders().buildForOrganization("Kowalski sp. z o.o", "VATPL-1111111111", "Kowalski");
         SelfSignedCertificate selfSignedCertificate = new DefaultCertificateGenerator().generateSelfSignedCertificateRsa(x500);
         String privateKeyBase64 = Base64.getEncoder().encodeToString(selfSignedCertificate.getPrivateKey().getEncoded());
@@ -114,7 +114,7 @@ public class AuthController {
 
         var authTokenRequest = new AuthTokenRequestBuilder()
                 .withChallenge(challenge)
-                .withContext(ContextIdentifierTypeEnum.NIP, request.getContextIdentifier())
+                .withContextNip(request.getContextIdentifier())
                 .withSubjectType(SubjectIdentifierTypeEnum.CERTIFICATE_SUBJECT)
                 .build();
 
@@ -127,10 +127,10 @@ public class AuthController {
 
         await().atMost(4, SECONDS)
                 .pollInterval(1, SECONDS)
-                .until(() -> isSessionStatusReady(submitAuthTokenResponse.getReferenceNumber()));
+                .until(() -> isSessionStatusReady(submitAuthTokenResponse.getReferenceNumber(), submitAuthTokenResponse.getAuthenticationToken().getToken()));
 
         //pobranie tokenów
-        return ksefClient.redeemToken();
+        return ksefClient.redeemToken(submitAuthTokenResponse.getAuthenticationToken().getToken());
     }
 
     /**
@@ -153,14 +153,14 @@ public class AuthController {
      * @throws ApiException if fails to make API call
      */
     @GetMapping(value = "/revoke")
-    public void revokeToken() throws Exception {
-        ksefClient.revokeAccessToken();
+    public void revokeToken(@RequestHeader(name = "Authorization") String authToken) throws Exception {
+        ksefClient.revokeAccessToken(authToken);
     }
 
-    private boolean isSessionStatusReady(String referenceNumber) throws ApiException {
-        var checkAuthStatus = ksefClient.getAuthStatus(referenceNumber);
+    private boolean isSessionStatusReady(String referenceNumber, String authToken) throws ApiException {
+        var checkAuthStatus = ksefClient.getAuthStatus(referenceNumber, authToken);
         log.info("Polling: StatusCode= " + checkAuthStatus.getStatus().getCode() + ", " +
-                 "Description='" + checkAuthStatus.getStatus().getDescription());
+                "Description='" + checkAuthStatus.getStatus().getDescription());
 
         return checkAuthStatus.getStatus().getCode() == 200;
     }

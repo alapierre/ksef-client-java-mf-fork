@@ -19,4 +19,15 @@ class TestUtils {
 
         return sb.toString();
     }
+
+    public static String generateRandomVatEu() {
+        StringBuilder sb = new StringBuilder(10);
+        Random random = new Random();
+        sb.append("DE");
+        for (int i = 0; i < 9; i++) {
+            sb.append(random.nextInt(0, 10));
+        }
+
+        return sb.toString();
+    }
 }
