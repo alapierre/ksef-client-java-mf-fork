@@ -41,7 +41,6 @@ public class InteractiveSessionApi {
      * Zamyka sesję interaktywną i rozpoczyna generowanie zbiorczego UPO.
      *
      * @param referenceNumber Numer referencyjny sesji (required)
-     * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
     public void apiV2SessionsOnlineReferenceNumberClosePostWithHttpInfo(String referenceNumber, String authenticationToken) throws ApiException {

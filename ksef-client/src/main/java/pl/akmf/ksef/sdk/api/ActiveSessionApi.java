@@ -39,7 +39,6 @@ public class ActiveSessionApi {
      * Unieważnienie aktualnej sesji uwierzytelnienia
      * Unieważnia sesję powiązaną z tokenem użytym do wywołania tej operacji.  Unieważnienie sesji sprawia, że powiązany z nią refresh token przestaje działać i nie można już za jego pomocą uzyskać kolejnych access tokenów. **Aktywne access tokeny działają do czasu minięcia ich termin ważności.**  Sposób uwierzytelnienia: &#x60;RefreshToken&#x60; lub &#x60;ContextToken&#x60;.
      *
-     * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
     public void apiV2AuthSessionsCurrentDelete(String authenticationToken) throws ApiException {

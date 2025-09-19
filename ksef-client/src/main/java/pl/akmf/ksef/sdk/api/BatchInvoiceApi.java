@@ -38,7 +38,6 @@ public class BatchInvoiceApi {
      * Informuje system o tym, że wszystkie pliki zostały przekazane i można rozpocząć ich przetwarzanie.
      *
      * @param referenceNumber Numer referencyjny sesji (required)
-     * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
     public void apiV2SessionsBatchReferenceNumberClosePostWithHttpInfo(String referenceNumber, String authenticationToken) throws ApiException {

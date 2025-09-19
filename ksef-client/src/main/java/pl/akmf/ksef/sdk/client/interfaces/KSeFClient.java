@@ -104,7 +104,6 @@ public interface KSeFClient {
      *
      * @param openBatchSessionResponse
      * @param parts                    - Kolekcja trzymająca informacje o partach
-     * @return
      */
     void sendBatchPartsWithStream(OpenBatchSessionResponse openBatchSessionResponse, List<BatchPartStreamSendingInfo> parts) throws IOException, InterruptedException;
 
@@ -635,7 +634,7 @@ public interface KSeFClient {
     /**
      * Zwraca informacje o kluczach publicznych używanych do szyfrowania danych przesyłanych do systemu KSeF.
      *
-     * @return List<PublicKeyCertificate>
+     * @return List of PublicKeyCertificate objects
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      */
     List<PublicKeyCertificate> retrievePublicKeyCertificate() throws ApiException;

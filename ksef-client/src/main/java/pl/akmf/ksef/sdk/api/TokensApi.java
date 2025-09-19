@@ -121,11 +121,9 @@ public class TokensApi {
      * Unieważnienie tokena
      * Unieważniony token nie pozwoli już na uwierzytelnienie się za jego pomocą. Unieważnienie nie może zostać cofnięte.
      *
-     * @param referenceNumber Numer referencyjny tokena do unieważeniania. (required)
-     * @return ApiResponse&lt;Void&gt;
+     * @param referenceNumber Numer referencyjny tokena do unieważniania. (required)
      * @throws ApiException if fails to make API call
      */
-
     public void apiV2TokensReferenceNumberDelete(String referenceNumber, String authenticationToken) throws ApiException {
         String uri = TOKEN_REVOKE.getUrl()
                 .replace(PATH_REFERENCE_NUMBER, referenceNumber);

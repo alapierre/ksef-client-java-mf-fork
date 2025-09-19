@@ -1,14 +1,18 @@
 plugins {
     `java-library`
+    signing
+    `maven-publish`
 }
 
-group = "pl.akmf.ksef-sdk"
+group = "io.alapierre.ksef-sdk"
 version = "2.0.1"
 
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+    withSourcesJar()
+    withJavadocJar()
 }
 
 configurations {
@@ -94,7 +98,63 @@ tasks.register("generateJaxb") {
     }
 }
 
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+
+            pom {
+                name.set("app")
+                description.set("Fork of MF/AK Java SDK for KSeF (Krajowy System e-Faktur)")
+                url.set("https://github.com/alapierre/ksef-client-java-mf-fork")
+
+                licenses {
+                    license {
+                        name.set("Apache License 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                    }
+                }
+
+                developers {
+                    developer {
+                        name.set("Adrian Lapierre")
+                        email.set("al@alapierre.io")
+                    }
+                    developer {
+                        name.set("Karol Bryzgiel")
+                        email.set("karol.bryzgiel@itrust.dev")
+                    }
+                }
+
+                scm {
+                    connection.set("scm:git:git://github.com/alapierre/ksef-client-java-mf-fork.git")
+                    developerConnection.set("scm:git:ssh://github.com:alapierre/ksef-client-java-mf-fork.git")
+                    url.set("https://github.com/alapierre/ksef-client-java-mf-fork")
+                }
+            }
+            repositories {
+                maven {
+                    name = "staging"
+                    url = uri(rootProject.layout.buildDirectory.dir("staging-deploy"))
+                }
+            }
+        }
+    }
+
+}
+
+signing {
+
+    val keyId = System.getenv("SIGNING_KEY_ID") ?: findProperty("signing.keyId")?.toString()
+    val password = System.getenv("SIGNING_PASSWORD") ?: findProperty("signing.password")?.toString()
+
+    if (keyId != null && password != null) {
+        extra["signing.keyId"] = keyId
+        extra["signing.password"] = password
+    }
 
 
-
+    useGpgCmd()
+    sign(publishing.publications["maven"])
+}
 
