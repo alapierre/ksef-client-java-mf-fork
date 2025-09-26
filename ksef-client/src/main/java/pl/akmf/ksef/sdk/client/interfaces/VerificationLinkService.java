@@ -2,10 +2,7 @@ package pl.akmf.ksef.sdk.client.interfaces;
 
 import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.SignatureException;
 import java.time.LocalDate;
 
 public interface VerificationLinkService {
@@ -31,5 +28,5 @@ public interface VerificationLinkService {
      * @param privateKey
      * @return
      */
-    String buildCertificateVerificationUrl(String sellerNip, ContextIdentifierType contextIdentifierType, String contextIdentifierValue, String certificateSerial, String invoiceHash, PrivateKey privateKey) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException;
+    String buildCertificateVerificationUrl(String sellerNip, ContextIdentifierType contextIdentifierType, String contextIdentifierValue, String certificateSerial, String invoiceHash, PrivateKey privateKey);
 }

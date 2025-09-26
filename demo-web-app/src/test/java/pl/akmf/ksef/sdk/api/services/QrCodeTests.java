@@ -1,5 +1,6 @@
 package pl.akmf.ksef.sdk.api.services;
 
+import org.bouncycastle.asn1.x500.X500Name;
 import org.junit.jupiter.api.Test;
 import pl.akmf.ksef.sdk.api.builders.certificate.CertificateBuilders;
 import pl.akmf.ksef.sdk.client.interfaces.QrCodeService;
@@ -14,10 +15,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
-public class QrCodeTests {
+class QrCodeTests {
 
     private final VerificationLinkService linkSvc = new DefaultVerificationLinkService();
     private final QrCodeService qrSvc = new DefaultQrCodeService();
@@ -31,10 +32,10 @@ public class QrCodeTests {
     //   • Większe zużycie pamięci i miejsca na dysku
     // =============================================
     @Test
-    public void buildCertificateQr_WithEmbeddedPrivateKey_ShouldReturnBase64Png() throws Exception {
-        var x500 = new CertificateBuilders()
-                .buildForOrganization("Kowalski sp. z o.o", "VATPL-1111111111", "Kowalski");
-        SelfSignedCertificate cert = new DefaultCertificateGenerator().generateSelfSignedCertificateRsa(x500);
+    void buildCertificateQr_WithEmbeddedPrivateKey_ShouldReturnBase64Png() throws Exception {
+        X500Name x500 = new CertificateBuilders()
+                .buildForOrganization("Kowalski sp. z o.o", "VATPL-1111111111", "Kowalski", "PL");
+        SelfSignedCertificate cert = new DefaultCertificateService().generateSelfSignedCertificateRsa(x500);
 
         String nip = "0000000000";
         String serial = UUID.randomUUID().toString();
@@ -53,7 +54,7 @@ public class QrCodeTests {
     }
 
     @Test
-    public void buildCertificateQr_PublicOnlyWithoutPrivateKey_ShouldThrow() throws Exception {
+    void buildCertificateQr_PublicOnlyWithoutPrivateKey_ShouldThrow() throws Exception {
         String nip = "0000000000";
         String xml = "<x/>";
         String serial = UUID.randomUUID().toString();
@@ -72,10 +73,10 @@ public class QrCodeTests {
     // • Szybsze operacje: generowanie, podpis, weryfikacja
     // =============================================
     @Test
-    public void buildCertificateQr_WithEmbeddedEccPrivateKey_ShouldReturnBase64Png() throws Exception {
-        var x500 = new CertificateBuilders()
-                .buildForOrganization("Kowalski sp. z o.o", "VATPL-1111111111", "TestEcc");
-        SelfSignedCertificate cert = new DefaultCertificateGenerator().generateSelfSignedCertificateEcdsa(x500);
+    void buildCertificateQr_WithEmbeddedEccPrivateKey_ShouldReturnBase64Png() throws Exception {
+        X500Name x500 = new CertificateBuilders()
+                .buildForOrganization("Kowalski sp. z o.o", "VATPL-1111111111", "TestEcc", "PL");
+        SelfSignedCertificate cert = new DefaultCertificateService().generateSelfSignedCertificateEcdsa(x500);
 
         String nip = "0000000000";
         String serial = UUID.randomUUID().toString();

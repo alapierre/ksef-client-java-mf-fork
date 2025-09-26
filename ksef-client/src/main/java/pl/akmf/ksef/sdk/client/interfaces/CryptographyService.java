@@ -101,10 +101,19 @@ public interface CryptographyService {
      * Generuje żądanie podpisania certyfikatu (CSR) na podstawie przekazanych informacji o certyfikacie.
      *
      * @param certificateInfo
-     * @return Zwraca CSR oraz klucz prywatny, oba zakodowane w Base64
+     * @return Zwraca CSR oraz klucz prywatny, oba zakodowane w formacie Base64
      * @throws SystemKSeFSDKException
      */
     CsrResult generateCsr(CertificateEnrollmentsInfoResponse certificateInfo) throws SystemKSeFSDKException;
+
+    /**
+     * Generuje żądanie podpisania certyfikatu (CSR) z użyciem krzywej eliptycznej (EC) na podstawie przekazanych informacji o certyfikacie.
+     *
+     * @param certificateInfo
+     * @return Zwraca CSR oraz klucz prywatny, oba zakodowane w Base64 w formacie DER
+     * @throws SystemKSeFSDKException
+     */
+    CsrResult generateCsrWithEcdsa(CertificateEnrollmentsInfoResponse certificateInfo) throws SystemKSeFSDKException, InvalidAlgorithmParameterException;
 
     FileMetadata getMetaData(byte[] file) throws SystemKSeFSDKException;
 

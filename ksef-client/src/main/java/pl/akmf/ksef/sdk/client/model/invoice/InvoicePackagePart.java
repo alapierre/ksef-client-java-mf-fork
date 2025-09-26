@@ -5,61 +5,90 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 
 
-/**
- * InvoicePackagePart
- */
 public class InvoicePackagePart {
-  private Integer ordinalNumber;
+    private Integer ordinalNumber;
+    private String partName;
+    private String method;
+    private URI url;
+    private int partSize;
+    private String partHash;
+    private int encryptedPartSize;
+    private String encryptedPartHash;
+    private OffsetDateTime expirationDate;
 
-  private String method;
+    public InvoicePackagePart() {
+    }
 
-  private URI url;
+    public Integer getOrdinalNumber() {
+        return ordinalNumber;
+    }
 
-  private OffsetDateTime expirationDate;
+    public void setOrdinalNumber(Integer ordinalNumber) {
+        this.ordinalNumber = ordinalNumber;
+    }
 
-  private Map<String, String> headers ;
+    public String getPartName() {
+        return partName;
+    }
 
-  public InvoicePackagePart() { 
-  }
+    public void setPartName(String partName) {
+        this.partName = partName;
+    }
 
-  public Integer getOrdinalNumber() {
-    return ordinalNumber;
-  }
+    public String getMethod() {
+        return method;
+    }
 
-  public void setOrdinalNumber(Integer ordinalNumber) {
-    this.ordinalNumber = ordinalNumber;
-  }
+    public void setMethod(String method) {
+        this.method = method;
+    }
 
-  public String getMethod() {
-    return method;
-  }
+    public URI getUrl() {
+        return url;
+    }
 
-  public void setMethod(String method) {
-    this.method = method;
-  }
+    public void setUrl(URI url) {
+        this.url = url;
+    }
 
-  public URI getUrl() {
-    return url;
-  }
+    public int getPartSize() {
+      return partSize;
+    }
 
-  public void setUrl(URI url) {
-    this.url = url;
-  }
+    public void setPartSize(int partSize) {
+      this.partSize = partSize;
+    }
 
-  public OffsetDateTime getExpirationDate() {
-    return expirationDate;
-  }
+    public String getPartHash() {
+      return partHash;
+    }
 
-  public void setExpirationDate(OffsetDateTime expirationDate) {
-    this.expirationDate = expirationDate;
-  }
+    public void setPartHash(String partHash) {
+      this.partHash = partHash;
+    }
 
-  public Map<String, String> getHeaders() {
-    return headers;
-  }
+    public int getEncryptedPartSize() {
+      return encryptedPartSize;
+    }
 
-  public void setHeaders(Map<String, String> headers) {
-    this.headers = headers;
-  }
+    public void setEncryptedPartSize(int encryptedPartSize) {
+      this.encryptedPartSize = encryptedPartSize;
+    }
+
+    public String getEncryptedPartHash() {
+      return encryptedPartHash;
+    }
+
+    public void setEncryptedPartHash(String encryptedPartHash) {
+      this.encryptedPartHash = encryptedPartHash;
+    }
+
+    public OffsetDateTime getExpirationDate() {
+        return expirationDate;
+    }
+
+    public void setExpirationDate(OffsetDateTime expirationDate) {
+        this.expirationDate = expirationDate;
+    }
 }
 

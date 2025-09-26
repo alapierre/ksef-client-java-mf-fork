@@ -8,50 +8,75 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import pl.akmf.ksef.sdk.api.services.DefaultKsefClient;
+import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
-import pl.akmf.ksef.sdk.client.model.invoice.AsyncInvoicesQueryStatus;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
 import pl.akmf.ksef.sdk.client.model.invoice.DownloadInvoiceRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
-import pl.akmf.ksef.sdk.client.model.invoice.InvoicesAsyncQueryRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceMetadataQueryRequest;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoiceMetadataResponse;
+import pl.akmf.ksef.sdk.util.ExampleApiProperties;
+import pl.akmf.ksef.sdk.util.HttpClientBuilder;
+
+import java.net.http.HttpClient;
+
+import static pl.akmf.ksef.sdk.client.Headers.AUTHORIZATION;
 
 @RestController
 @RequiredArgsConstructor
 public class InvoicesController {
-    private final DefaultKsefClient ksefClient;
+    private final ExampleApiProperties exampleApiProperties;
 
     @GetMapping("/invoices/ksef/{ksefReferenceNumber}")
     public byte[] getInvoice(@PathVariable String ksefReferenceNumber,
-                             @RequestHeader(name = "Authorization") String authToken) throws ApiException {
-        return ksefClient.getInvoice(ksefReferenceNumber, authToken);
+                             @RequestHeader(name = AUTHORIZATION) String authToken) throws ApiException {
+        try (HttpClient apiClient = HttpClientBuilder.createHttpBuilder().build()) {
+            KSeFClient ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties);
+
+            return ksefClient.getInvoice(ksefReferenceNumber, authToken);
+        }
     }
 
     @PostMapping("/invoices/")
     public byte[] getInvoice(@RequestBody DownloadInvoiceRequest downloadInvoiceRequest,
-                             @RequestHeader(name = "Authorization") String authToken) throws ApiException {
-        return ksefClient.getInvoice(downloadInvoiceRequest, authToken);
+                             @RequestHeader(name = AUTHORIZATION) String authToken) throws ApiException {
+        try (HttpClient apiClient = HttpClientBuilder.createHttpBuilder().build()) {
+            KSeFClient ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties);
+
+            return ksefClient.getInvoice(downloadInvoiceRequest, authToken);
+        }
     }
 
     @PostMapping("/invoices/metadata")
     QueryInvoiceMetadataResponse getInvoiceMetadata(@RequestParam Integer pageOffset,
-                                                   @RequestParam Integer pageSize,
-                                                   @RequestBody InvoiceMetadataQueryRequest request,
-                                                   @RequestHeader(name = "Authorization") String authToken) throws ApiException {
-        return ksefClient.queryInvoiceMetadata(pageOffset, pageSize, request, authToken);
+                                                    @RequestParam Integer pageSize,
+                                                    @RequestBody InvoiceMetadataQueryRequest request,
+                                                    @RequestHeader(name = AUTHORIZATION) String authToken) throws ApiException {
+        try (HttpClient apiClient = HttpClientBuilder.createHttpBuilder().build()) {
+            KSeFClient ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties);
+
+            return ksefClient.queryInvoiceMetadata(pageOffset, pageSize, request, authToken);
+        }
     }
 
     @PostMapping("/invoices/query/async")
-    InitAsyncInvoicesQueryResponse initAsyncInvoiceQuery(@RequestBody InvoicesAsyncQueryRequest request,
-                                                         @RequestHeader(name = "Authorization") String authToken) throws ApiException {
-        return ksefClient.initAsyncQueryInvoice(request, authToken);
+    InitAsyncInvoicesQueryResponse initAsyncInvoiceQuery(@RequestBody InvoiceExportRequest request,
+                                                         @RequestHeader(name = AUTHORIZATION) String authToken) throws ApiException {
+        try (HttpClient apiClient = HttpClientBuilder.createHttpBuilder().build()) {
+            KSeFClient ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties);
+
+            return ksefClient.initAsyncQueryInvoice(request, authToken);
+        }
     }
 
     @GetMapping("/invoices/query/async")
-    AsyncInvoicesQueryStatus checkStatusAsyncQueryInvoice(@RequestParam String operationReferenceNumber,
-                                                          @RequestHeader(name = "Authorization") String authToken) throws ApiException {
-        return ksefClient.checkStatusAsyncQueryInvoice(operationReferenceNumber, authToken);
-    }
+    InvoiceExportStatus checkStatusAsyncQueryInvoice(@RequestParam String operationReferenceNumber,
+                                                     @RequestHeader(name = AUTHORIZATION) String authToken) throws ApiException {
+        try (HttpClient apiClient = HttpClientBuilder.createHttpBuilder().build()) {
+            KSeFClient ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties);
 
+            return ksefClient.checkStatusAsyncQueryInvoice(operationReferenceNumber, authToken);
+        }
+    }
 }

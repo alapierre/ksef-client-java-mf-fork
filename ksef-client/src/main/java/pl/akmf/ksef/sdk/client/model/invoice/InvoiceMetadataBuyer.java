@@ -1,24 +1,19 @@
-
 package pl.akmf.ksef.sdk.client.model.invoice;
 
-/**
- * InvoiceMetadataBuyer
- */
+
 public class InvoiceMetadataBuyer {
-    private BuyerIdentifierType identifierType;
-
+    private IdentifierType identifierType;
     private String identifier;
-
     private String name;
 
     public InvoiceMetadataBuyer() {
     }
 
-    public BuyerIdentifierType getIdentifierType() {
+    public IdentifierType getIdentifierType() {
         return identifierType;
     }
 
-    public void setIdentifierType(BuyerIdentifierType identifierType) {
+    public void setIdentifierType(IdentifierType identifierType) {
         this.identifierType = identifierType;
     }
 

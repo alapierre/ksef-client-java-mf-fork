@@ -39,7 +39,7 @@
 	</Podmiot2>
 	<Fa>
 		<KodWaluty>PLN</KodWaluty>
-		<P_1>2025-06-15</P_1>
+		<P_1>#invoicing_date#</P_1>
 		<P_1M>Polanica-Zdrój</P_1M>
 		<P_2>FA/GRQMB-#invoice_number#/05/2025</P_2>
 		<P_6>2025-05-18</P_6>

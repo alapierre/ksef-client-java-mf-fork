@@ -4,39 +4,36 @@ package pl.akmf.ksef.sdk.client.model.invoice;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-/**
- * Gets or Sets InvoicingMode
- */
 public enum InvoicingMode {
-  
-  ONLINE("Online"),
-  
-  OFFLINE("Offline");
 
-  private String value;
+    ONLINE("Online"),
 
-  InvoicingMode(String value) {
-    this.value = value;
-  }
+    OFFLINE("Offline");
 
-  @JsonValue
-  public String getValue() {
-    return value;
-  }
+    private String value;
 
-  @Override
-  public String toString() {
-    return String.valueOf(value);
-  }
-
-  @JsonCreator
-  public static InvoicingMode fromValue(String value) {
-    for (InvoicingMode b : InvoicingMode.values()) {
-      if (b.value.equals(value)) {
-        return b;
-      }
+    InvoicingMode(String value) {
+        this.value = value;
     }
-    throw new IllegalArgumentException("Unexpected value '" + value + "'");
-  }
+
+    @JsonValue
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static InvoicingMode fromValue(String value) {
+        for (InvoicingMode b : InvoicingMode.values()) {
+            if (b.value.equals(value)) {
+                return b;
+            }
+        }
+        throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
 }
 

@@ -6,14 +6,20 @@ import org.junit.jupiter.api.Test;
 import pl.akmf.ksef.sdk.api.builders.permission.subunit.SubunitPermissionsGrantRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.permission.subunit.SubunitPermissionsQueryRequestBuilder;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.permission.PermissionStatusInfo;
+import pl.akmf.ksef.sdk.client.model.permission.OperationResponse;
+import pl.akmf.ksef.sdk.client.model.permission.search.QuerySubunitPermissionsResponse;
 import pl.akmf.ksef.sdk.client.model.permission.search.SubunitPermission;
+import pl.akmf.ksef.sdk.client.model.permission.search.SubunitPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.SubunitPermissionsSubunitIdentifier;
 import pl.akmf.ksef.sdk.client.model.permission.search.SubunitPermissionsSubunitIdentifierType;
 import pl.akmf.ksef.sdk.client.model.permission.subunit.ContextIdentifier;
 import pl.akmf.ksef.sdk.client.model.permission.subunit.ContextIdentifierType;
 import pl.akmf.ksef.sdk.client.model.permission.subunit.SubjectIdentifier;
 import pl.akmf.ksef.sdk.client.model.permission.subunit.SubjectIdentifierType;
+import pl.akmf.ksef.sdk.client.model.permission.subunit.SubunitPermissionsGrantRequest;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
+import pl.akmf.ksef.sdk.util.IdentifierGeneratorUtils;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -26,46 +32,47 @@ class SubUnitPermissionIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void subUnitPermissionE2EIntegrationTest() throws JAXBException, IOException, ApiException {
-        String contextNip = TestUtils.generateRandomNIP();
-        String subjectNip = TestUtils.generateRandomNIP();
-        String subUnitNip = contextNip + "-11111";
-        var authToken = authWithCustomNip(contextNip, contextNip).authToken();
+        String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
+        String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
 
-        var grantReferenceNumber = grantPermission(subjectNip, subUnitNip, authToken);
+        String unitValue = IdentifierGeneratorUtils.generateRandomNIP();
+        String subUnitNip = contextNip + "-11111";
+
+        String grantReferenceNumber = grantPermissionSubunit(unitValue, subUnitNip, accessToken);
 
         await()
                 .atMost(Duration.ofSeconds(30))
                 .pollInterval(Duration.ofSeconds(5))
-                .until(() -> isPermissionStatusReady(grantReferenceNumber, authToken));
+                .until(() -> isPermissionStatusReady(grantReferenceNumber, accessToken));
 
-        var permission = searchGrantedRole(subUnitNip, 1, authToken);
+        List<String> permission = searchGrantedRole(subUnitNip, 1, accessToken);
 
         permission.forEach(e -> {
-            var revokeReferenceNumber = revokePermission(e, authToken);
+            String revokeReferenceNumber = revokePermission(e, accessToken);
 
             await().atMost(30, SECONDS)
                     .pollInterval(5, SECONDS)
-                    .until(() -> isPermissionStatusReady(revokeReferenceNumber, authToken));
+                    .until(() -> isPermissionStatusReady(revokeReferenceNumber, accessToken));
         });
 
-        searchGrantedRole(subUnitNip, 0, authToken);
+        searchGrantedRole(subUnitNip, 0, accessToken);
     }
 
-    private Boolean isPermissionStatusReady(String grantReferenceNumber, String authToken) {
+    private Boolean isPermissionStatusReady(String grantReferenceNumber, String accessToken) {
         try {
-            var status = defaultKsefClient.permissionOperationStatus(grantReferenceNumber, authToken);
+            PermissionStatusInfo status = createKSeFClient().permissionOperationStatus(grantReferenceNumber, accessToken);
             return status != null && status.getStatus().getCode() == 200;
         } catch (ApiException e) {
             return false;
         }
     }
 
-    private List<String> searchGrantedRole(String subUnitNip, int expectedSize, String authToken) throws ApiException {
-        var request = new SubunitPermissionsQueryRequestBuilder()
+    private List<String> searchGrantedRole(String subUnitNip, int expectedSize, String accessToken) throws ApiException {
+        SubunitPermissionsQueryRequest request = new SubunitPermissionsQueryRequestBuilder()
                 .withSubunitIdentifier(new SubunitPermissionsSubunitIdentifier(SubunitPermissionsSubunitIdentifierType.INTERNALID, subUnitNip))
                 .build();
 
-        var response = defaultKsefClient.searchSubunitAdminPermissions(request, 0, 10, authToken);
+        QuerySubunitPermissionsResponse response = createKSeFClient().searchSubunitAdminPermissions(request, 0, 10, accessToken);
         Assertions.assertEquals(expectedSize, response.getPermissions().size());
 
         return response.getPermissions()
@@ -74,21 +81,21 @@ class SubUnitPermissionIntegrationTest extends BaseIntegrationTest {
                 .toList();
     }
 
-    private String grantPermission(String subjectNip, String contextNip, String authToken) throws ApiException {
-        var request = new SubunitPermissionsGrantRequestBuilder()
+    private String grantPermissionSubunit(String subjectNip, String contextNip, String accessToken) throws ApiException {
+        SubunitPermissionsGrantRequest request = new SubunitPermissionsGrantRequestBuilder()
                 .withSubjectIdentifier(new SubjectIdentifier(SubjectIdentifierType.NIP, subjectNip))
                 .withContextIdentifier(new ContextIdentifier(ContextIdentifierType.INTERNALID, contextNip))
-                .withDescription("e2e test")
+                .withDescription("e2e subunit test")
                 .build();
 
-        var response = defaultKsefClient.grantsPermissionSubUnit(request, authToken);
+        OperationResponse response = createKSeFClient().grantsPermissionSubUnit(request, accessToken);
         Assertions.assertNotNull(response);
         return response.getOperationReferenceNumber();
     }
 
-    private String revokePermission(String operationId, String authToken) {
+    private String revokePermission(String operationId, String accessToken) {
         try {
-            return defaultKsefClient.revokeCommonPermission(operationId, authToken).getOperationReferenceNumber();
+            return createKSeFClient().revokeCommonPermission(operationId, accessToken).getOperationReferenceNumber();
         } catch (ApiException e) {
             Assertions.fail(e.getMessage());
         }

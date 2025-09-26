@@ -2,6 +2,7 @@ package pl.akmf.ksef.sdk.configuration;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import jakarta.xml.bind.JAXBException;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,16 +12,25 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import pl.akmf.ksef.sdk.TestClientApplication;
+import pl.akmf.ksef.sdk.api.DefaultKsefClient;
 import pl.akmf.ksef.sdk.api.builders.auth.AuthTokenRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.auth.AuthTokenRequestSerializer;
 import pl.akmf.ksef.sdk.api.builders.certificate.CertificateBuilders;
-import pl.akmf.ksef.sdk.api.services.DefaultCertificateGenerator;
-import pl.akmf.ksef.sdk.api.services.DefaultKsefClient;
-import pl.akmf.ksef.sdk.api.services.DefaultSignatureService;
+import pl.akmf.ksef.sdk.client.interfaces.CertificateService;
+import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
+import pl.akmf.ksef.sdk.client.interfaces.QrCodeService;
+import pl.akmf.ksef.sdk.client.interfaces.SignatureService;
+import pl.akmf.ksef.sdk.client.interfaces.VerificationLinkService;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.auth.AuthStatus;
+import pl.akmf.ksef.sdk.client.model.auth.AuthenticationChallengeResponse;
+import pl.akmf.ksef.sdk.client.model.auth.SignatureResponse;
+import pl.akmf.ksef.sdk.client.model.auth.AuthOperationStatusResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.SelfSignedCertificate;
 import pl.akmf.ksef.sdk.client.model.xml.AuthTokenRequest;
 import pl.akmf.ksef.sdk.client.model.xml.SubjectIdentifierTypeEnum;
+import pl.akmf.ksef.sdk.util.ExampleApiProperties;
+import pl.akmf.ksef.sdk.util.HttpClientBuilder;
 
 import java.io.IOException;
 
@@ -39,13 +49,18 @@ public abstract class BaseIntegrationTest {
 
     @LocalServerPort
     protected int port;
-    protected int sleepTime = 350;
-
     @Autowired
     protected WireMockServer wireMock;
-
     @Autowired
-    protected DefaultKsefClient defaultKsefClient;
+    protected ExampleApiProperties exampleApiProperties;
+    @Autowired
+    protected CertificateService certificateService;
+    @Autowired
+    protected QrCodeService qrCodeService;
+    @Autowired
+    protected SignatureService signatureService;
+    @Autowired
+    protected VerificationLinkService verificationLinkService;
 
     @BeforeEach
     public void prepare() {
@@ -58,7 +73,7 @@ public abstract class BaseIntegrationTest {
     }
 
     protected AuthTokensPair authWithCustomNip(String context, String subject) throws ApiException, JAXBException, IOException {
-        var challenge = defaultKsefClient.getAuthChallenge();
+        AuthenticationChallengeResponse challenge = createKSeFClient().getAuthChallenge();
 
         AuthTokenRequest authTokenRequest = new AuthTokenRequestBuilder()
                 .withChallenge(challenge.getChallenge())
@@ -66,33 +81,60 @@ public abstract class BaseIntegrationTest {
                 .withSubjectType(SubjectIdentifierTypeEnum.CERTIFICATE_SUBJECT)
                 .build();
 
-        var xml = AuthTokenRequestSerializer.authTokenRequestSerializer(authTokenRequest);
+        String xml = AuthTokenRequestSerializer.authTokenRequestSerializer(authTokenRequest);
 
-        var x500 = new CertificateBuilders()
-                .buildForOrganization("Kowalski sp. z o.o", "VATPL-" + subject, "Kowalski");
+        X500Name x500 = new CertificateBuilders()
+                .buildForOrganization("Kowalski sp. z o.o", "VATPL-" + subject, "Kowalski", "PL");
 
-        SelfSignedCertificate cert = new DefaultCertificateGenerator().generateSelfSignedCertificateRsa(x500);
+        SelfSignedCertificate cert = certificateService.generateSelfSignedCertificateRsa(x500);
 
-        var signedXml = new DefaultSignatureService().sign(xml.getBytes(), cert.certificate(), cert.getPrivateKey());
+        String signedXml = signatureService.sign(xml.getBytes(), cert.certificate(), cert.getPrivateKey());
 
-        var submitAuthTokenResponse = defaultKsefClient.submitAuthTokenRequest(signedXml, false);
+        SignatureResponse submitAuthTokenResponse = createKSeFClient().submitAuthTokenRequest(signedXml, false);
 
         //Czekanie na zakończenie procesu
-        await().atMost(4, SECONDS)
+        await().atMost(14, SECONDS)
                 .pollInterval(1, SECONDS)
                 .until(() -> isSessionStatusReady(submitAuthTokenResponse.getReferenceNumber(), submitAuthTokenResponse.getAuthenticationToken().getToken()));
 
-        var tokenResponse = defaultKsefClient.redeemToken(submitAuthTokenResponse.getAuthenticationToken().getToken());
+        AuthOperationStatusResponse tokenResponse = createKSeFClient().redeemToken(submitAuthTokenResponse.getAuthenticationToken().getToken());
+
+        return new AuthTokensPair(tokenResponse.getAccessToken().getToken(), tokenResponse.getRefreshToken().getToken());
+    }
+
+    protected AuthTokensPair authWithCustomNip(AuthTokenRequestBuilder authTokenRequestBuilder, SelfSignedCertificate cert) throws ApiException, JAXBException, IOException {
+        AuthenticationChallengeResponse challenge = createKSeFClient().getAuthChallenge();
+
+        AuthTokenRequest authTokenRequest = authTokenRequestBuilder
+                .withChallenge(challenge.getChallenge())
+                .build();
+
+        String xml = AuthTokenRequestSerializer.authTokenRequestSerializer(authTokenRequest);
+
+        String signedXml = signatureService.sign(xml.getBytes(), cert.certificate(), cert.getPrivateKey());
+
+        SignatureResponse submitAuthTokenResponse = createKSeFClient().submitAuthTokenRequest(signedXml, false);
+
+        //Czekanie na zakończenie procesu
+        await().atMost(14, SECONDS)
+                .pollInterval(1, SECONDS)
+                .until(() -> isSessionStatusReady(submitAuthTokenResponse.getReferenceNumber(), submitAuthTokenResponse.getAuthenticationToken().getToken()));
+
+        AuthOperationStatusResponse tokenResponse = createKSeFClient().redeemToken(submitAuthTokenResponse.getAuthenticationToken().getToken());
 
         return new AuthTokensPair(tokenResponse.getAccessToken().getToken(), tokenResponse.getRefreshToken().getToken());
     }
 
     private boolean isSessionStatusReady(String referenceNumber, String tempAuthToken) throws ApiException {
-        var checkAuthStatus = defaultKsefClient.getAuthStatus(referenceNumber, tempAuthToken);
-        return checkAuthStatus != null && checkAuthStatus.getStatus().getCode() == 200;
+        AuthStatus checkAuthStatus = createKSeFClient().getAuthStatus(referenceNumber, tempAuthToken);
+        return checkAuthStatus.getStatus().getCode() == 200;
     }
 
-    public record AuthTokensPair(String authToken, String refreshToken) {
+    public record AuthTokensPair(String accessToken, String refreshToken) {
 
+    }
+
+    public KSeFClient createKSeFClient() {
+        return new DefaultKsefClient(HttpClientBuilder.createHttpBuilder().build(), exampleApiProperties);
     }
 }

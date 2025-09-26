@@ -48,6 +48,7 @@ val junitJupiterVersion = "5.10.3"
 val awaitilityVersion = "4.2.0"
 val googleZxingCodeVersion = "3.5.3"
 val googleZxingJavaseVersion = "3.5.3"
+val springRetry = "2.0.3"
 
 val xjc by configurations.creating
 
@@ -71,6 +72,7 @@ dependencies {
     implementation("com.google.zxing:core:$googleZxingCodeVersion")
     implementation("com.google.zxing:javase:$googleZxingJavaseVersion")
 
+    implementation("org.springframework.retry:spring-retry")
     implementation("org.springframework.boot:spring-boot-starter-web")
     compileOnly("org.projectlombok:lombok")
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")

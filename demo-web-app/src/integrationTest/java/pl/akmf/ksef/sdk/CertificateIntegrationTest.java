@@ -3,17 +3,26 @@ package pl.akmf.ksef.sdk;
 import jakarta.xml.bind.JAXBException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import pl.akmf.ksef.sdk.api.builders.certificate.CertificateMetadataListRequestBuilder;
-import pl.akmf.ksef.sdk.api.builders.certificate.RevokeCertificateRequestBuilder;
+import pl.akmf.ksef.sdk.api.builders.certificate.CertificateRevokeRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.certificate.SendCertificateEnrollmentRequestBuilder;
+import pl.akmf.ksef.sdk.api.builders.certificate.CertificateMetadataListRequestBuilder;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentStatusResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentsInfoResponse;
+import pl.akmf.ksef.sdk.client.model.certificate.CertificateLimitsResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateListRequest;
+import pl.akmf.ksef.sdk.client.model.certificate.CertificateListResponse;
+import pl.akmf.ksef.sdk.client.model.certificate.CertificateMetadataListResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateRevocationReason;
+import pl.akmf.ksef.sdk.client.model.certificate.CertificateRevokeRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateType;
+import pl.akmf.ksef.sdk.client.model.certificate.CsrResult;
+import pl.akmf.ksef.sdk.client.model.certificate.QueryCertificatesRequest;
+import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
+import pl.akmf.ksef.sdk.util.IdentifierGeneratorUtils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -26,90 +35,90 @@ class CertificateIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void certificateE2EIntegrationTest() throws JAXBException, IOException, ApiException {
-        String contextNip = TestUtils.generateRandomNIP();
-        var authToken = authWithCustomNip(contextNip, contextNip).authToken();
+        String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
+        String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
 
-        getCertificateLimitAsync(authToken);
+        getCertificateLimitAsync(accessToken);
 
-        var enrollmentInfo = getEnrolmentInfo(authToken);
+        CertificateEnrollmentsInfoResponse enrollmentInfo = getEnrolmentInfo(accessToken);
 
-        var referenceNumber = sendEnrollment(enrollmentInfo, authToken);
+        String referenceNumber = sendEnrollment(enrollmentInfo, accessToken);
 
         await().atMost(30, SECONDS)
                 .pollInterval(2, SECONDS)
-                .until(() -> isEnrolmentStatusReady(referenceNumber, authToken));
+                .until(() -> isEnrolmentStatusReady(referenceNumber, accessToken));
 
-        var enrolmentStatus = getEnrolmentStatus(referenceNumber, authToken);
+        CertificateEnrollmentStatusResponse enrolmentStatus = getEnrolmentStatus(referenceNumber, accessToken);
 
-        getCertificateList(enrolmentStatus.getCertificateSerialNumber(), authToken);
+        getCertificateList(enrolmentStatus.getCertificateSerialNumber(), accessToken);
 
-        revokeCertificate(enrolmentStatus.getCertificateSerialNumber(), authToken);
+        revokeCertificate(enrolmentStatus.getCertificateSerialNumber(), accessToken);
 
-        getMedataCertificateList(enrolmentStatus.getCertificateSerialNumber(), authToken);
+        getMedataCertificateList(enrolmentStatus.getCertificateSerialNumber(), accessToken);
     }
 
-    private Boolean isEnrolmentStatusReady(String referenceNumber, String authToken) {
+    private Boolean isEnrolmentStatusReady(String referenceNumber, String accessToken) {
         try {
-            var response = defaultKsefClient.getCertificateEnrollmentStatus(referenceNumber, authToken);
+            CertificateEnrollmentStatusResponse response = createKSeFClient().getCertificateEnrollmentStatus(referenceNumber, accessToken);
             return response != null &&
-                    response.getStatus().getCode() == 200;
+                   response.getStatus().getCode() == 200;
         } catch (Exception e) {
             return false;
         }
     }
 
-    private void getMedataCertificateList(String certificateSerialNumber, String authToken) throws ApiException {
-        var request = new CertificateMetadataListRequestBuilder()
+    private void getMedataCertificateList(String certificateSerialNumber, String accessToken) throws ApiException {
+        QueryCertificatesRequest request = new CertificateMetadataListRequestBuilder()
                 .build();
 
-        var response = defaultKsefClient.getCertificateMetadataList(request, 10, 0, authToken);
+        CertificateMetadataListResponse response = createKSeFClient().getCertificateMetadataList(request, 10, 0, accessToken);
 
         Assertions.assertNotNull(response);
         Assertions.assertEquals(response.getCertificates().getFirst().getCertificateSerialNumber(), certificateSerialNumber);
     }
 
-    private void revokeCertificate(String serialNumber, String authToken) throws ApiException {
-        var request = new RevokeCertificateRequestBuilder()
+    private void revokeCertificate(String serialNumber, String accessToken) throws ApiException {
+        CertificateRevokeRequest request = new CertificateRevokeRequestBuilder()
                 .withRevocationReason(CertificateRevocationReason.KEYCOMPROMISE)
                 .build();
 
-        defaultKsefClient.revokeCertificate(request, serialNumber, authToken);
+        createKSeFClient().revokeCertificate(request, serialNumber, accessToken);
     }
 
-    private void getCertificateList(String certificateSerialNumber, String authToken) throws ApiException {
-        var certificateResponse =
-                defaultKsefClient.getCertificateList(new CertificateListRequest(List.of(certificateSerialNumber)), authToken);
+    private void getCertificateList(String certificateSerialNumber, String accessToken) throws ApiException {
+        CertificateListResponse certificateResponse =
+                createKSeFClient().getCertificateList(new CertificateListRequest(List.of(certificateSerialNumber)), accessToken);
 
         Assertions.assertNotNull(certificateResponse);
         Assertions.assertEquals(1, certificateResponse.getCertificates().size());
     }
 
-    private CertificateEnrollmentStatusResponse getEnrolmentStatus(String referenceNumber, String authToken) throws ApiException {
-        var response = defaultKsefClient.getCertificateEnrollmentStatus(referenceNumber, authToken);
+    private CertificateEnrollmentStatusResponse getEnrolmentStatus(String referenceNumber, String accessToken) throws ApiException {
+        CertificateEnrollmentStatusResponse response = createKSeFClient().getCertificateEnrollmentStatus(referenceNumber, accessToken);
 
         Assertions.assertNotNull(response);
         Assertions.assertEquals(200, response.getStatus().getCode());
         return response;
     }
 
-    private String sendEnrollment(CertificateEnrollmentsInfoResponse enrollmentInfo, String authToken) throws ApiException {
-        var csr = new DefaultCryptographyService(defaultKsefClient).generateCsr(enrollmentInfo);
+    private String sendEnrollment(CertificateEnrollmentsInfoResponse enrollmentInfo, String accessToken) throws ApiException, IOException {
+        CsrResult csr = new DefaultCryptographyService(createKSeFClient()).generateCsr(enrollmentInfo);
 
-        var request = new SendCertificateEnrollmentRequestBuilder()
+        SendCertificateEnrollmentRequest request = new SendCertificateEnrollmentRequestBuilder()
                 .withValidFrom(LocalDateTime.now().toString())
                 .withCsr(csr.csr())
                 .withCertificateName("certificate")
                 .withCertificateType(CertificateType.Authentication)
                 .build();
 
-        var response = defaultKsefClient.sendCertificateEnrollment(request, authToken);
+        CertificateEnrollmentResponse response = createKSeFClient().sendCertificateEnrollment(request, accessToken);
         Assertions.assertNotNull(response);
 
         return response.getReferenceNumber();
     }
 
-    private CertificateEnrollmentsInfoResponse getEnrolmentInfo(String authToken) throws ApiException {
-        var response = defaultKsefClient.getCertificateEnrollmentInfo(authToken);
+    private CertificateEnrollmentsInfoResponse getEnrolmentInfo(String accessToken) throws ApiException {
+        CertificateEnrollmentsInfoResponse response = createKSeFClient().getCertificateEnrollmentInfo(accessToken);
 
         Assertions.assertNotNull(response);
         Assertions.assertNotNull(response.getOrganizationIdentifier());
@@ -117,8 +126,8 @@ class CertificateIntegrationTest extends BaseIntegrationTest {
         return response;
     }
 
-    private void getCertificateLimitAsync(String authToken) throws ApiException {
-        var response = defaultKsefClient.getCertificateLimits(authToken);
+    private void getCertificateLimitAsync(String accessToken) throws ApiException {
+        CertificateLimitsResponse response = createKSeFClient().getCertificateLimits(accessToken);
 
         Assertions.assertNotNull(response);
         Assertions.assertTrue(response.getCanRequest());

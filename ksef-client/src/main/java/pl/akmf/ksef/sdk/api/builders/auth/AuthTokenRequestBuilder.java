@@ -26,10 +26,6 @@ public class AuthTokenRequestBuilder {
     }
 
     public AuthTokenRequestBuilder withContextNip(String value) {
-        if (!challengeSet) {
-            throw new IllegalStateException("You must call withChallenge() before withContext().");
-        }
-
         if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException("Context value cannot be null or empty.");
         }
@@ -43,10 +39,6 @@ public class AuthTokenRequestBuilder {
     }
 
     public AuthTokenRequestBuilder withInternalId(String value) {
-        if (!challengeSet) {
-            throw new IllegalStateException("You must call withChallenge() before withContext().");
-        }
-
         if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException("Context value cannot be null or empty.");
         }
@@ -60,10 +52,6 @@ public class AuthTokenRequestBuilder {
     }
 
     public AuthTokenRequestBuilder withNipVatEu(String value) {
-        if (!challengeSet) {
-            throw new IllegalStateException("You must call withChallenge() before withContext().");
-        }
-
         if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException("Context value cannot be null or empty.");
         }
@@ -77,10 +65,6 @@ public class AuthTokenRequestBuilder {
     }
 
     public AuthTokenRequestBuilder withSubjectType(SubjectIdentifierTypeEnum value) {
-        if (!challengeSet) {
-            throw new IllegalStateException("You must call withChallenge() before withSubject().");
-        }
-
         this.subjectIdentifierTypeEnum = value;
         return this;
     }
