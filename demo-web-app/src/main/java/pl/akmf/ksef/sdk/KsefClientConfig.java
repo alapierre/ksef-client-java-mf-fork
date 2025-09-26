@@ -3,18 +3,42 @@ package pl.akmf.ksef.sdk;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import pl.akmf.ksef.sdk.api.services.DefaultKsefClient;
-import pl.akmf.ksef.sdk.client.HttpApiClient;
+import pl.akmf.ksef.sdk.api.services.DefaultCertificateService;
+import pl.akmf.ksef.sdk.api.services.DefaultQrCodeService;
+import pl.akmf.ksef.sdk.api.services.DefaultSignatureService;
+import pl.akmf.ksef.sdk.api.services.DefaultVerificationLinkService;
+import pl.akmf.ksef.sdk.client.interfaces.CertificateService;
+import pl.akmf.ksef.sdk.client.interfaces.QrCodeService;
+import pl.akmf.ksef.sdk.client.interfaces.SignatureService;
+import pl.akmf.ksef.sdk.client.interfaces.VerificationLinkService;
+import pl.akmf.ksef.sdk.util.ExampleApiProperties;
 
 @Configuration
 @RequiredArgsConstructor
 public class KsefClientConfig {
 
     @Bean
-    public DefaultKsefClient init() {
-        var httpClient = new HttpApiClient.Builder()
-                .build();
+    public ExampleApiProperties apiProperties() {
+        return new ExampleApiProperties();
+    }
 
-        return new DefaultKsefClient(httpClient);
+    @Bean
+    public CertificateService initDefaultCertificateService() {
+        return new DefaultCertificateService();
+    }
+
+    @Bean
+    public SignatureService initDefaultSignatureService() {
+        return new DefaultSignatureService();
+    }
+
+    @Bean
+    public VerificationLinkService initDefaultVerificationLinkService() {
+        return new DefaultVerificationLinkService();
+    }
+
+    @Bean
+    public QrCodeService initDefaultQrCodeService() {
+        return new DefaultQrCodeService();
     }
 }

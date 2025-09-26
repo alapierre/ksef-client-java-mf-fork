@@ -1,99 +1,148 @@
 package pl.akmf.ksef.sdk;
 
 import jakarta.xml.bind.JAXBException;
+import org.apache.logging.log4j.util.Strings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import pl.akmf.ksef.sdk.api.builders.session.OpenOnlineSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.session.AuthenticationListItem;
 import pl.akmf.ksef.sdk.client.model.session.AuthenticationListResponse;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
 import pl.akmf.ksef.sdk.client.model.session.FormCode;
-import pl.akmf.ksef.sdk.client.model.session.SessionStatusResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionType;
 import pl.akmf.ksef.sdk.client.model.session.SessionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.session.SessionsQueryResponse;
 import pl.akmf.ksef.sdk.client.model.session.SystemCode;
+import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionResponse;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
+import pl.akmf.ksef.sdk.util.IdentifierGeneratorUtils;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SessionIntegrationTest extends BaseIntegrationTest {
-    private EncryptionData encryptionData;
+    private String expectedErrorMessage = "\"exceptionCode\":21304,\"exceptionDescription\":\"Brak uwierzytelnienia.\",\"details\":[\"Nieprawidłowy token.\"]";
 
     @Test
-    public void searchSessionAndRevokeCurrentSession() throws JAXBException, IOException, ApiException, CertificateException {
-        String contextNip = TestUtils.generateRandomNIP();
-        var authToken = authWithCustomNip(contextNip, contextNip).authToken();
+    void createSessionSearchSessionAndRevokeCurrentSession() throws JAXBException, IOException, ApiException, CertificateException {
+        String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
+        AuthTokensPair accessTokensPair = authWithCustomNip(contextNip, contextNip);
+        String accessToken = accessTokensPair.accessToken();
 
-        var cryptographyService = new DefaultCryptographyService(defaultKsefClient);
-        encryptionData = cryptographyService.getEncryptionData();
+        EncryptionData encryptionData = new DefaultCryptographyService(createKSeFClient()).getEncryptionData();
 
         // Step 1: Open session and return referenceNumber
-        String sessionReferenceNumber = openOnlineSession(encryptionData, authToken);
-
-        // Wait for session to be ready
-        await().atMost(30, SECONDS)
-                .pollInterval(1, SECONDS)
-                .until(() -> isSessionInProgress(sessionReferenceNumber, authToken));
+        openOnlineSession(encryptionData, accessToken);
 
         // Step 2: get active sessions and check quantity
-        AuthenticationListResponse activeSessions = defaultKsefClient.getActiveSessions(10, null, authToken);
+        AuthenticationListResponse activeSessions = createKSeFClient().getActiveSessions(10, null, accessToken);
+        while (Strings.isNotBlank(activeSessions.getContinuationToken())) {
+            activeSessions = createKSeFClient().getActiveSessions(10, activeSessions.getContinuationToken(), accessToken);
+        }
+
         Assertions.assertEquals(1, activeSessions.getItems().size());
+        Assertions.assertEquals(true, activeSessions.getItems().get(0).getIsCurrent());
 
         // Step 3: revoke current session
-        defaultKsefClient.revokeCurrentSession(authToken);
+        createKSeFClient().revokeCurrentSession(accessToken);
 
         // Step 4: get active sessions and check quantity after revoked current session
-        AuthenticationListResponse activeSessionsAfterRevoke = defaultKsefClient.getActiveSessions(10, null, authToken);
+        AuthenticationListResponse activeSessionsAfterRevoke = createKSeFClient().getActiveSessions(10, null, accessToken);
         Assertions.assertEquals(0, activeSessionsAfterRevoke.getItems().size());
+        while (Strings.isNotBlank(activeSessionsAfterRevoke.getContinuationToken())) {
+            activeSessionsAfterRevoke = createKSeFClient().getActiveSessions(10, activeSessionsAfterRevoke.getContinuationToken(), accessToken);
+        }
+
+        // Step 5: refresh token should throw: 21304: Brak uwierzytelnienia. - Nieprawidłowy token.
+        ApiException apiException = assertThrows(ApiException.class, () -> createKSeFClient().refreshAccessToken(accessTokensPair.refreshToken()));
+        Assertions.assertTrue(apiException.getResponseBody().contains(expectedErrorMessage));
     }
 
     @Test
-    public void searchSessions() throws JAXBException, IOException, ApiException, CertificateException {
-        String contextNip = TestUtils.generateRandomNIP();
-        var authToken = authWithCustomNip(contextNip, contextNip).authToken();
+    void createSecondSessionAndRevokeSessionByReferenceNumber() throws JAXBException, IOException, ApiException, CertificateException {
+        String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
+        AuthTokensPair firstAccessTokensPair = authWithCustomNip(contextNip, contextNip);
 
-        var cryptographyService = new DefaultCryptographyService(defaultKsefClient);
-        encryptionData = cryptographyService.getEncryptionData();
+        EncryptionData encryptionData = new DefaultCryptographyService(createKSeFClient()).getEncryptionData();
 
         // Step 1: Open session and return referenceNumber
-        String sessionReferenceNumber = openOnlineSession(encryptionData, authToken);
+        openOnlineSession(encryptionData, firstAccessTokensPair.accessToken());
 
-        // Wait for session to be ready
-        await().atMost(30, SECONDS)
-                .pollInterval(1, SECONDS)
-                .until(() -> isSessionInProgress(sessionReferenceNumber, authToken));
+        // Step 2: get active sessions and check quantity
+        AuthenticationListResponse activeSessions = createKSeFClient().getActiveSessions(10, null, firstAccessTokensPair.accessToken());
+        Assertions.assertEquals(1, activeSessions.getItems().size());
+        while (Strings.isNotBlank(activeSessions.getContinuationToken())) {
+            activeSessions = createKSeFClient().getActiveSessions(10, activeSessions.getContinuationToken(), firstAccessTokensPair.accessToken());
+        }
+        String firstSessionReferenceNumber = activeSessions.getItems().get(0).getReferenceNumber();
 
+        AuthTokensPair secondAccessTokensPair = authWithCustomNip(contextNip, contextNip);
+
+        // Step 3: get active sessions after second auth and check quantity
+        activeSessions = createKSeFClient().getActiveSessions(10, null, firstAccessTokensPair.accessToken());
+        while (Strings.isNotBlank(activeSessions.getContinuationToken())) {
+            activeSessions = createKSeFClient().getActiveSessions(10, activeSessions.getContinuationToken(), firstAccessTokensPair.accessToken());
+        }
+        Assertions.assertEquals(2, activeSessions.getItems().size());
+        String secondSessionReferenceNumber = activeSessions.getItems()
+                .stream()
+                .filter(s -> !s.getIsCurrent())
+                .map(AuthenticationListItem::getReferenceNumber)
+                .findFirst()
+                .orElseThrow();
+
+        // first session is current
+        Assertions.assertTrue(activeSessions.getItems()
+                .stream()
+                .filter(s -> s.getReferenceNumber().equals(firstSessionReferenceNumber))
+                .map(AuthenticationListItem::getIsCurrent)
+                .findFirst()
+                .orElseThrow());
+
+        // Step 4: revoke second session by reference number
+        createKSeFClient().revokeSession(secondSessionReferenceNumber, firstAccessTokensPair.accessToken());
+
+        // Step 5: get active sessions and check quantity after revoked second session
+        AuthenticationListResponse activeSessionsAfterRevoke = createKSeFClient().getActiveSessions(10, null, firstAccessTokensPair.accessToken());
+        Assertions.assertEquals(1, activeSessionsAfterRevoke.getItems().size());
+        while (Strings.isNotBlank(activeSessionsAfterRevoke.getContinuationToken())) {
+            activeSessionsAfterRevoke = createKSeFClient().getActiveSessions(10, activeSessionsAfterRevoke.getContinuationToken(), firstAccessTokensPair.accessToken());
+        }
+
+        // Step 6: refresh token should throw: 21304: Brak uwierzytelnienia. - Nieprawidłowy token.
+        ApiException apiException = assertThrows(ApiException.class, () -> createKSeFClient().refreshAccessToken(secondAccessTokensPair.refreshToken()));
+        Assertions.assertTrue(apiException.getResponseBody().contains(expectedErrorMessage));
+    }
+
+    @Test
+    void searchSessions() throws JAXBException, IOException, ApiException, CertificateException {
+        String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
+        String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
+
+        EncryptionData encryptionData = new DefaultCryptographyService(createKSeFClient()).getEncryptionData();
+
+        // Step 1: Open session and return referenceNumber
+        openOnlineSession(encryptionData, accessToken);
 
         // Step 2: Search session
         SessionsQueryRequest request = new SessionsQueryRequest();
         request.setSessionType(SessionType.ONLINE);
-        SessionsQueryResponse sessionsQueryResponse = defaultKsefClient.getSessions(request, 10, null, authToken);
+        SessionsQueryResponse sessionsQueryResponse = createKSeFClient().getSessions(request, 10, null, accessToken);
         Assertions.assertEquals(1, sessionsQueryResponse.getSessions().size());
     }
 
-    // Helper methods to check conditions
-    private boolean isSessionInProgress(String sessionReferenceNumber, String authToken) throws ApiException {
-        SessionStatusResponse statusResponse = defaultKsefClient.getSessionStatus(sessionReferenceNumber, authToken);
-        if (statusResponse != null && statusResponse.getStatus() != null && statusResponse.getStatus().getCode() > 400) {
-            throw new RuntimeException("Could not open session: " + statusResponse.getStatus().getDescription());
-        }
-        return statusResponse != null && statusResponse.getStatus() != null && (statusResponse.getStatus().getCode() == 100 || statusResponse.getStatus().getCode() == 300);
-    }
-
-    private String openOnlineSession(EncryptionData encryptionData, String authToken) throws ApiException {
-        var request = new OpenOnlineSessionRequestBuilder()
+    private String openOnlineSession(EncryptionData encryptionData, String accessToken) throws ApiException {
+        OpenOnlineSessionRequest request = new OpenOnlineSessionRequestBuilder()
                 .withFormCode(new FormCode(SystemCode.FA_2, "1-0E", "FA"))
                 .withEncryptionInfo(encryptionData.encryptionInfo())
                 .build();
 
-        OpenOnlineSessionResponse openOnlineSessionResponse = defaultKsefClient.openOnlineSession(request, authToken);
+        OpenOnlineSessionResponse openOnlineSessionResponse = createKSeFClient().openOnlineSession(request, accessToken);
         Assertions.assertNotNull(openOnlineSessionResponse);
         Assertions.assertNotNull(openOnlineSessionResponse.getReferenceNumber());
         return openOnlineSessionResponse.getReferenceNumber();

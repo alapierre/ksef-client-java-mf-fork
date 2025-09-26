@@ -1,77 +1,101 @@
 package pl.akmf.ksef.sdk.api.builders.certificate;
 
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CertificateBuilders {
-    private final List<String> xnameList = new ArrayList<>();
+    X500NameBuilder nameBuilder = new X500NameBuilder(BCStyle.INSTANCE);
 
     public CertificateBuilders withOrganizationName(String organizationName) {
-        xnameList.add("2.5.4.10=" + organizationName);
+        if (StringUtils.isNotBlank(organizationName)) {
+            nameBuilder.addRDN(BCStyle.O, organizationName);
+        }
         return this;
     }
 
     public CertificateBuilders withOrganizationIdentifier(String organizationIdentifier) {
-        xnameList.add("2.5.4.97=" + organizationIdentifier);
+        if (StringUtils.isNotBlank(organizationIdentifier)) {
+            nameBuilder.addRDN(BCStyle.ORGANIZATION_IDENTIFIER, organizationIdentifier);
+        }
         return this;
     }
 
     public CertificateBuilders withCommonName(String commonName) {
-        xnameList.add("2.5.4.3=" + commonName);
+        if (StringUtils.isNotBlank(commonName)) {
+            nameBuilder.addRDN(BCStyle.CN, commonName);
+        }
         return this;
     }
 
     public CertificateBuilders withSerialNumber(String serialNumber) {
-        xnameList.add("2.5.4.5=" + serialNumber);
+        if (StringUtils.isNotBlank(serialNumber)) {
+            nameBuilder.addRDN(BCStyle.SERIALNUMBER, serialNumber);
+        }
         return this;
     }
 
     public CertificateBuilders withGivenName(String givenName) {
-        xnameList.add("2.5.4.42=" + givenName);
+        if (StringUtils.isNotBlank(givenName)) {
+            nameBuilder.addRDN(BCStyle.GIVENNAME, givenName);
+        }
+        return this;
+    }
+
+    public CertificateBuilders withGivenNames(List<String> givenNames) {
+        if (Objects.nonNull(givenNames)) {
+            givenNames.stream()
+                    .filter(StringUtils::isNotBlank)
+                    .forEach(z -> nameBuilder.addRDN(BCStyle.GIVENNAME, z));
+        }
         return this;
     }
 
     public CertificateBuilders withSurname(String surname) {
-        xnameList.add("2.5.4.4=" + surname);
+        if (StringUtils.isNotBlank(surname)) {
+            nameBuilder.addRDN(BCStyle.SURNAME, surname);
+        }
+        return this;
+    }
+
+    public CertificateBuilders withUniqueIdentifier(String uniqueIdentifier) {
+        if (StringUtils.isNotBlank(uniqueIdentifier)) {
+            nameBuilder.addRDN(BCStyle.UNIQUE_IDENTIFIER, uniqueIdentifier);
+        }
+        return this;
+    }
+
+    public CertificateBuilders withCountryCode(String countryCode) {
+        if (StringUtils.isNotBlank(countryCode)) {
+            nameBuilder.addRDN(BCStyle.C, countryCode);
+        }
         return this;
     }
 
     public X500Name build() {
-        xnameList.add("2.5.4.6=PL");
-        String value = xnameList.toString();
-
-        value = value.replace("[", "");
-        value = value.replace("]", "");
-        return new X500Name(value);
+        return nameBuilder.build();
     }
 
-    public X500Name buildForOrganization(String organizationName, String organizationIdentifier, String commonName) {
+    public X500Name buildForOrganization(String organizationName, String organizationIdentifier, String commonName, String countryCode) {
         withOrganizationIdentifier(organizationIdentifier);
         withOrganizationName(organizationName);
         withCommonName(commonName);
+        withCountryCode(countryCode);
 
-        xnameList.add("2.5.4.6=PL");
-        String value = xnameList.toString();
-
-        value = value.replace("[", "");
-        value = value.replace("]", "");
-        return new X500Name(value);
-
+        return build();
     }
 
-    public X500Name buildForPerson(String givenName, String surname, String serialNumber, String commonName) {
+    public X500Name buildForPerson(String givenName, String surname, String serialNumber, String commonName, String countryCode) {
         withGivenName(givenName);
         withSurname(surname);
         withSerialNumber(serialNumber);
         withCommonName(commonName);
-        xnameList.add("2.5.4.6=PL");
+        withCountryCode(countryCode);
 
-        String value = xnameList.toString();
-
-        value = value.replace("[", "");
-        value = value.replace("]", "");
-        return new X500Name(value);
+        return build();
     }
 }

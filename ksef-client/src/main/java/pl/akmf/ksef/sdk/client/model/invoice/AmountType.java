@@ -1,43 +1,39 @@
 package pl.akmf.ksef.sdk.client.model.invoice;
 
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-/**
- * Gets or Sets AmountType
- */
 public enum AmountType {
-  
-  BRUTTO("Brutto"),
-  
-  NETTO("Netto"),
-  
-  VAT("Vat");
 
-  private final String value;
+    BRUTTO("Brutto"),
 
-  AmountType(String value) {
-    this.value = value;
-  }
+    NETTO("Netto"),
 
-  @JsonValue
-  public String getValue() {
-    return value;
-  }
+    VAT("Vat");
 
-  @Override
-  public String toString() {
-    return String.valueOf(value);
-  }
+    private final String value;
 
-  @JsonCreator
-  public static AmountType fromValue(String value) {
-    for (AmountType b : AmountType.values()) {
-      if (b.value.equals(value)) {
-        return b;
-      }
+    AmountType(String value) {
+        this.value = value;
     }
-    throw new IllegalArgumentException("Unexpected value '" + value + "'");
-  }
+
+    @JsonValue
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static AmountType fromValue(String value) {
+        for (AmountType b : AmountType.values()) {
+            if (b.value.equals(value)) {
+                return b;
+            }
+        }
+        throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
 }

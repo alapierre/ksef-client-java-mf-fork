@@ -6,38 +6,51 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import pl.akmf.ksef.sdk.api.builders.permission.entity.GrantEntityPermissionsRequestBuilder;
-import pl.akmf.ksef.sdk.api.services.DefaultKsefClient;
+import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
-import pl.akmf.ksef.sdk.client.model.permission.PermissionsOperationResponse;
+import pl.akmf.ksef.sdk.client.model.permission.OperationResponse;
 import pl.akmf.ksef.sdk.client.model.permission.entity.EntityPermission;
 import pl.akmf.ksef.sdk.client.model.permission.entity.EntityPermissionType;
 import pl.akmf.ksef.sdk.client.model.permission.entity.SubjectIdentifier;
+import pl.akmf.ksef.sdk.util.ExampleApiProperties;
+import pl.akmf.ksef.sdk.util.HttpClientBuilder;
 
+import java.net.http.HttpClient;
 import java.util.List;
+
+import static pl.akmf.ksef.sdk.client.Headers.AUTHORIZATION;
 
 @RestController
 @RequiredArgsConstructor
 public class EntityPermissionsController {
-    private final DefaultKsefClient ksefClient;
+    private final ExampleApiProperties exampleApiProperties;
 
     @PostMapping("/grant-permissions-for-entity")
-    public PermissionsOperationResponse grantPermissionsEntity(@RequestBody SubjectIdentifier subjectIdentifier,
-                                                               @RequestHeader(name = "Authorization") String authToken) throws ApiException {
-        var request = new GrantEntityPermissionsRequestBuilder()
-                .withSubjectIdentifier(subjectIdentifier)
-                .withPermissions(List.of(
-                        new EntityPermission(EntityPermissionType.INVOICEREAD, true),
-                        new EntityPermission(EntityPermissionType.INVOICEREAD, false))
-                )
-                .withDescription("Access for quarterly review")
-                .build();
+    public OperationResponse grantPermissionsEntity(@RequestBody SubjectIdentifier subjectIdentifier,
+                                                    @RequestHeader(name = AUTHORIZATION) String authToken) throws ApiException {
+        try (HttpClient apiClient = HttpClientBuilder.createHttpBuilder().build()) {
+            KSeFClient ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties);
 
-        return ksefClient.grantsPermissionEntity(request, authToken);
+            var request = new GrantEntityPermissionsRequestBuilder()
+                    .withSubjectIdentifier(subjectIdentifier)
+                    .withPermissions(List.of(
+                            new EntityPermission(EntityPermissionType.INVOICEREAD, true),
+                            new EntityPermission(EntityPermissionType.INVOICEREAD, false))
+                    )
+                    .withDescription("Access for quarterly review")
+                    .build();
+
+            return ksefClient.grantsPermissionEntity(request, authToken);
+        }
     }
 
     @PostMapping("/revoke-permissions-for-entity")
-    public PermissionsOperationResponse revokePermissionsEntity(@RequestBody String permissionId,
-                                                                @RequestHeader(name = "Authorization") String authToken) throws ApiException {
-        return ksefClient.revokeCommonPermission(permissionId, authToken);
+    public OperationResponse revokePermissionsEntity(@RequestBody String permissionId,
+                                                     @RequestHeader(name = AUTHORIZATION) String authToken) throws ApiException {
+        try (HttpClient apiClient = HttpClientBuilder.createHttpBuilder().build()) {
+            KSeFClient ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties);
+
+            return ksefClient.revokeCommonPermission(permissionId, authToken);
+        }
     }
 }

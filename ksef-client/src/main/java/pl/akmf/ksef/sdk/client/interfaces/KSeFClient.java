@@ -2,13 +2,14 @@ package pl.akmf.ksef.sdk.client.interfaces;
 
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.auth.AuthKsefTokenRequest;
+import pl.akmf.ksef.sdk.client.model.auth.AuthStatus;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationChallengeResponse;
-import pl.akmf.ksef.sdk.client.model.auth.AuthenticationInitResponse;
-import pl.akmf.ksef.sdk.client.model.auth.AuthenticationOperationStatusResponse;
+import pl.akmf.ksef.sdk.client.model.auth.SignatureResponse;
+import pl.akmf.ksef.sdk.client.model.auth.AuthOperationStatusResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationToken;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenRefreshResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenStatus;
-import pl.akmf.ksef.sdk.client.model.auth.GenerateTokenRequest;
+import pl.akmf.ksef.sdk.client.model.auth.KsefTokenRequest;
 import pl.akmf.ksef.sdk.client.model.auth.GenerateTokenResponse;
 import pl.akmf.ksef.sdk.client.model.auth.QueryTokensResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentResponse;
@@ -22,20 +23,20 @@ import pl.akmf.ksef.sdk.client.model.certificate.CertificateRevokeRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.QueryCertificatesRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
-import pl.akmf.ksef.sdk.client.model.invoice.AsyncInvoicesQueryStatus;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
 import pl.akmf.ksef.sdk.client.model.invoice.DownloadInvoiceRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceMetadataQueryRequest;
-import pl.akmf.ksef.sdk.client.model.invoice.InvoicesAsyncQueryRequest;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoiceMetadataResponse;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionStatusInfo;
-import pl.akmf.ksef.sdk.client.model.permission.PermissionsOperationResponse;
+import pl.akmf.ksef.sdk.client.model.permission.OperationResponse;
 import pl.akmf.ksef.sdk.client.model.permission.entity.GrantEntityPermissionsRequest;
 import pl.akmf.ksef.sdk.client.model.permission.euentity.EuEntityPermissionsGrantRequest;
 import pl.akmf.ksef.sdk.client.model.permission.euentity.GrantEUEntityRepresentativePermissionsRequest;
-import pl.akmf.ksef.sdk.client.model.permission.indirect.IndirectPermissionsGrantRequest;
+import pl.akmf.ksef.sdk.client.model.permission.indirect.GrantIndirectEntityPermissionsRequest;
 import pl.akmf.ksef.sdk.client.model.permission.person.GrantPersonPermissionsRequest;
-import pl.akmf.ksef.sdk.client.model.permission.proxy.GrantProxyEntityPermissionsRequest;
+import pl.akmf.ksef.sdk.client.model.permission.proxy.GrantAuthorizationPermissionsRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.EntityAuthorizationPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.EuEntityPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.PersonPermissionsQueryRequest;
@@ -60,7 +61,7 @@ import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionResponse;
 import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionResponse;
-import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceRequest;
+import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceOnlineSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceResponse;
 
 import java.io.IOException;
@@ -77,7 +78,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, String authenticationToken) throws ApiException;
+    OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, String accessToken) throws ApiException;
 
     /**
      * Zamknięcie sesji wsadowej.
@@ -87,7 +88,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    void closeBatchSession(String referenceNumber, String authenticationToken) throws ApiException;
+    void closeBatchSession(String referenceNumber, String accessToken) throws ApiException;
 
     /**
      * Wysłanie części paczki faktur
@@ -117,7 +118,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, String authenticationToken) throws ApiException;
+    OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, String accessToken) throws ApiException;
 
     /**
      * Zamknięcie sesji interaktywnej
@@ -127,7 +128,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    void closeOnlineSession(String referenceNumber, String authenticationToken) throws ApiException;
+    void closeOnlineSession(String referenceNumber, String accessToken) throws ApiException;
 
     /**
      * Wysłanie faktury
@@ -139,7 +140,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    SendInvoiceResponse onlineSessionSendInvoice(String referenceNumber, SendInvoiceRequest body, String authenticationToken) throws ApiException;
+    SendInvoiceResponse onlineSessionSendInvoice(String referenceNumber, SendInvoiceOnlineSessionRequest body, String accessToken) throws ApiException;
 
     /**
      * Pobranie danych o limitach certyfikatów.
@@ -149,7 +150,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    CertificateLimitsResponse getCertificateLimits(String authenticationToken) throws ApiException;
+    CertificateLimitsResponse getCertificateLimits(String accessToken) throws ApiException;
 
     /**
      * Zwraca dane wymagane do przygotowania wniosku certyfikacyjnego.
@@ -158,7 +159,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    CertificateEnrollmentsInfoResponse getCertificateEnrollmentInfo(String authenticationToken) throws ApiException;
+    CertificateEnrollmentsInfoResponse getCertificateEnrollmentInfo(String accessToken) throws ApiException;
 
     /**
      * Przyjmuje wniosek certyfikacyjny i rozpoczyna jego przetwarzanie.
@@ -168,7 +169,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    CertificateEnrollmentResponse sendCertificateEnrollment(SendCertificateEnrollmentRequest body, String authenticationToken) throws ApiException;
+    CertificateEnrollmentResponse sendCertificateEnrollment(SendCertificateEnrollmentRequest body, String accessToken) throws ApiException;
 
     /**
      * Zwraca informacje o statusie wniosku certyfikacyjnego.
@@ -178,7 +179,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    CertificateEnrollmentStatusResponse getCertificateEnrollmentStatus(String referenceNumber, String authenticationToken) throws ApiException;
+    CertificateEnrollmentStatusResponse getCertificateEnrollmentStatus(String referenceNumber, String accessToken) throws ApiException;
 
     /**
      * Zwraca certyfikaty o podanych numerach seryjnych w formacie DER zakodowanym w Base64.
@@ -188,7 +189,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    CertificateListResponse getCertificateList(CertificateListRequest body, String authenticationToken) throws ApiException;
+    CertificateListResponse getCertificateList(CertificateListRequest body, String accessToken) throws ApiException;
 
     /**
      * Unieważnia certyfikat o podanym numerze seryjnym.
@@ -198,7 +199,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    void revokeCertificate(CertificateRevokeRequest body, String serialNumber, String authenticationToken) throws ApiException;
+    void revokeCertificate(CertificateRevokeRequest body, String serialNumber, String accessToken) throws ApiException;
 
     /**
      * Zwraca listę certyfikatów spełniających podane kryteria wyszukiwania. W przypadku braku podania kryteriów wyszukiwania zwrócona zostanie nieprzefiltrowana lista.
@@ -210,7 +211,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    CertificateMetadataListResponse getCertificateMetadataList(QueryCertificatesRequest body, int pageSize, int pageOffset, String authenticationToken) throws ApiException;
+    CertificateMetadataListResponse getCertificateMetadataList(QueryCertificatesRequest body, int pageSize, int pageOffset, String accessToken) throws ApiException;
 
     /**
      * Inicjalizacja mechanizmu uwierzytelnienia i autoryzacji
@@ -229,7 +230,7 @@ public interface KSeFClient {
      * @return AuthenticationInitResponse
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      */
-    AuthenticationInitResponse submitAuthTokenRequest(String signedXml, boolean verifyCertificateChain) throws ApiException;
+    SignatureResponse submitAuthTokenRequest(String signedXml, boolean verifyCertificateChain) throws ApiException;
 
     /**
      * Rozpoczyna operację uwierzytelniania z wykorzystaniem wcześniej wygenerowanego tokena KSeF.
@@ -238,7 +239,7 @@ public interface KSeFClient {
      * @return AuthenticationInitResponse
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      */
-    AuthenticationInitResponse authorizeByKSeFToken(AuthKsefTokenRequest body) throws ApiException;
+    SignatureResponse authenticateByKSeFToken(AuthKsefTokenRequest body) throws ApiException;
 
     /**
      * Sprawdza bieżący status operacji uwierzytelniania dla podanego tokena.
@@ -248,7 +249,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    pl.akmf.ksef.sdk.client.model.session.AuthenticationOperationStatusResponse getAuthStatus(String referenceNumber, String authenticationToken) throws ApiException;
+    AuthStatus getAuthStatus(String referenceNumber, String authenticationToken) throws ApiException;
 
     /**
      * Pobranie tokena dostępowego.
@@ -258,7 +259,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    AuthenticationOperationStatusResponse redeemToken(String authenticationToken) throws ApiException;
+    AuthOperationStatusResponse redeemToken(String authenticationToken) throws ApiException;
 
     /**
      * Odświeżanie tokenu dostępu
@@ -277,7 +278,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    void revokeAccessToken(String authenticationToken) throws ApiException;
+    void revokeAccessToken(String accessToken) throws ApiException;
 
     /**
      * Nadanie podmiotom uprawnień o charakterze upoważnień
@@ -287,7 +288,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    PermissionsOperationResponse grantsPermissionsProxyEntity(GrantProxyEntityPermissionsRequest body, String authenticationToken) throws ApiException;
+    OperationResponse grantsPermissionsProxyEntity(GrantAuthorizationPermissionsRequest body, String accessToken) throws ApiException;
 
     /**
      * Nadanie uprawnień w sposób pośredni
@@ -297,7 +298,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    PermissionsOperationResponse grantsPermissionIndirectEntity(IndirectPermissionsGrantRequest body, String authenticationToken) throws ApiException;
+    OperationResponse grantsPermissionIndirectEntity(GrantIndirectEntityPermissionsRequest body, String accessToken) throws ApiException;
 
     /**
      * Pobranie statusu operacji - uprawnienia
@@ -307,7 +308,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    PermissionStatusInfo permissionOperationStatus(String referenceNumber, String authenticationToken) throws ApiException;
+    PermissionStatusInfo permissionOperationStatus(String referenceNumber, String accessToken) throws ApiException;
 
     /**
      * Pobranie listy uprawnień do pracy w KSeF nadanych osobom fizycznym lub podmiotom.
@@ -319,7 +320,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    QueryPersonPermissionsResponse searchGrantedPersonPermissions(PersonPermissionsQueryRequest request, int pageOffset, int pageSize, String authenticationToken) throws ApiException;
+    QueryPersonPermissionsResponse searchGrantedPersonPermissions(PersonPermissionsQueryRequest request, int pageOffset, int pageSize, String accessToken) throws ApiException;
 
     /**
      * Pobranie listy uprawnień administratora podmiotu podrzędnego.
@@ -331,7 +332,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    QuerySubunitPermissionsResponse searchSubunitAdminPermissions(SubunitPermissionsQueryRequest request, int pageOffset, int pageSize, String authenticationToken) throws ApiException;
+    QuerySubunitPermissionsResponse searchSubunitAdminPermissions(SubunitPermissionsQueryRequest request, int pageOffset, int pageSize, String accessToken) throws ApiException;
 
     /**
      * Pobranie listy uprawnień administratora podmiotu podrzędnego.
@@ -342,7 +343,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    QueryEntityRolesResponse searchEntityInvoiceRoles(int pageOffset, int pageSize, String authenticationToken) throws ApiException;
+    QueryEntityRolesResponse searchEntityInvoiceRoles(int pageOffset, int pageSize, String accessToken) throws ApiException;
 
     /**
      * Pobranie listy uprawnień do obsługi faktur nadanych podmiotom.
@@ -354,7 +355,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    QuerySubordinateEntityRolesResponse searchSubordinateEntityInvoiceRoles(SubordinateEntityRolesQueryRequest request, int pageOffset, int pageSize, String authenticationToken) throws ApiException;
+    QuerySubordinateEntityRolesResponse searchSubordinateEntityInvoiceRoles(SubordinateEntityRolesQueryRequest request, int pageOffset, int pageSize, String accessToken) throws ApiException;
 
     /**
      * Pobranie listy uprawnień o charakterze uprawnień nadanych podmiotom.
@@ -366,7 +367,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    QueryEntityAuthorizationPermissionsResponse searchEntityAuthorizationGrants(EntityAuthorizationPermissionsQueryRequest request, int pageOffset, int pageSize, String authenticationToken) throws ApiException;
+    QueryEntityAuthorizationPermissionsResponse searchEntityAuthorizationGrants(EntityAuthorizationPermissionsQueryRequest request, int pageOffset, int pageSize, String accessToken) throws ApiException;
 
     /**
      * Pobranie listy uprawnień nadanych podmiotom unijnym.
@@ -378,7 +379,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    QueryEuEntityPermissionsResponse searchGrantedEuEntityPermissions(EuEntityPermissionsQueryRequest request, int pageOffset, int pageSize, String authenticationToken) throws ApiException;
+    QueryEuEntityPermissionsResponse searchGrantedEuEntityPermissions(EuEntityPermissionsQueryRequest request, int pageOffset, int pageSize, String accessToken) throws ApiException;
 
     /**
      * Nadanie uprawnień administratora podmiotu unijnego
@@ -388,7 +389,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    PermissionsOperationResponse grantsPermissionEUEntity(EuEntityPermissionsGrantRequest body, String authenticationToken) throws ApiException;
+    OperationResponse grantsPermissionEUEntity(EuEntityPermissionsGrantRequest body, String accessToken) throws ApiException;
 
     /**
      * Nadanie uprawnień administratora podmiotu unijnego
@@ -398,7 +399,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    PermissionsOperationResponse grantsPermissionEUEntityRepresentative(GrantEUEntityRepresentativePermissionsRequest body, String authenticationToken) throws ApiException;
+    OperationResponse grantsPermissionEUEntityRepresentative(GrantEUEntityRepresentativePermissionsRequest body, String accessToken) throws ApiException;
 
     /**
      * Pobranie statusu sesji
@@ -409,7 +410,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    SessionStatusResponse getSessionStatus(String referenceNumber, String authenticationToken) throws ApiException;
+    SessionStatusResponse getSessionStatus(String referenceNumber, String accessToken) throws ApiException;
 
     /**
      * Pobranie statusu faktury z sesji
@@ -421,7 +422,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    SessionInvoiceStatusResponse getSessionInvoiceStatus(String referenceNumber, String invoiceReferenceNumber, String authenticationToken) throws ApiException;
+    SessionInvoiceStatusResponse getSessionInvoiceStatus(String referenceNumber, String invoiceReferenceNumber, String accessToken) throws ApiException;
 
     /**
      * Pobranie UPO faktury z sesji na podstawie numeru referencyjnego faktury.
@@ -433,7 +434,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    byte[] getSessionInvoiceUpoByReferenceNumber(String referenceNumber, String invoiceReferenceNumber, String authenticationToken) throws ApiException;
+    byte[] getSessionInvoiceUpoByReferenceNumber(String referenceNumber, String invoiceReferenceNumber, String accessToken) throws ApiException;
 
     /**
      * Pobranie UPO faktuy z sesji na podstawie numeru KSeF
@@ -445,7 +446,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    byte[] getSessionInvoiceUpoByKsefNumber(String referenceNumber, String ksefNumber, String authenticationToken) throws ApiException;
+    byte[] getSessionInvoiceUpoByKsefNumber(String referenceNumber, String ksefNumber, String accessToken) throws ApiException;
 
     /**
      * Pobranie UPO dla sesji
@@ -457,20 +458,20 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    byte[] getSessionUpo(String referenceNumber, String upoReferenceNumber, String authenticationToken) throws ApiException;
+    byte[] getSessionUpo(String referenceNumber, String upoReferenceNumber, String accessToken) throws ApiException;
 
     /**
      * Pobranie statusów dokumentów sesji
-     * Zwraca listę dokumentów przesłanych w sesji wraz z ich statusami, oraz informacje na temat ilości poprawnie i niepoprawnie przetworzonych dokumentów.
+     * Zwraca listę faktur przesłanych w sesji wraz z ich statusami, oraz informacje na temat ilości poprawnie i niepoprawnie przetworzonych faktur.
      *
-     * @param referenceNumber - Numer referencyjny sesji
-     * @param pageOffset      - Index strony wyników (domyślnie 0)
-     * @param pageSize        - Ilość elementów na stronie (domyślnie 10)
+     * @param referenceNumber   - Numer referencyjny sesji
+     * @param continuationToken - token kontynuacji
+     * @param pageSize          - Ilość elementów na stronie (domyślnie 10)
      * @return SessionInvoicesResponse
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    SessionInvoicesResponse getSessionInvoices(String referenceNumber, Integer pageSize, Integer pageOffset, String authenticationToken) throws ApiException;
+    SessionInvoicesResponse getSessionInvoices(String referenceNumber, String continuationToken, Integer pageSize, String accessToken) throws ApiException;
 
     /**
      * Pobranie niepoprawnie przetworzonych dokumentów sesji
@@ -483,7 +484,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    SessionInvoicesResponse getSessionFailedInvoices(String referenceNumber, String continuationToken, Integer pageSize, String authenticationToken) throws ApiException;
+    SessionInvoicesResponse getSessionFailedInvoices(String referenceNumber, String continuationToken, Integer pageSize, String accessToken) throws ApiException;
 
     /**
      * Nadanie osobom fizycznym uprawnień do pracy w KSeF
@@ -493,7 +494,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    PermissionsOperationResponse grantsPermissionPerson(GrantPersonPermissionsRequest request, String authenticationToken) throws ApiException;
+    OperationResponse grantsPermissionPerson(GrantPersonPermissionsRequest request, String accessToken) throws ApiException;
 
     /**
      * Pobranie faktury po numerze KSeF
@@ -503,7 +504,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    byte[] getInvoice(String ksefReferenceNumber, String authenticationToken) throws ApiException;
+    byte[] getInvoice(String ksefReferenceNumber, String accessToken) throws ApiException;
 
     /**
      * Pobranie faktury na podstawie numeru KSeF oraz danych faktury.
@@ -513,7 +514,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    byte[] getInvoice(DownloadInvoiceRequest request, String authenticationToken) throws ApiException;
+    byte[] getInvoice(DownloadInvoiceRequest request, String accessToken) throws ApiException;
 
     /**
      * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania.
@@ -525,7 +526,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset, Integer pageSize, InvoiceMetadataQueryRequest request, String authenticationToken) throws ApiException;
+    QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset, Integer pageSize, InvoiceMetadataQueryRequest request, String accessToken) throws ApiException;
 
     /**
      * Rozpoczyna asynchroniczny proces wyszukiwania faktur w systemie KSeF na podstawie przekazanych filtrów
@@ -535,7 +536,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    InitAsyncInvoicesQueryResponse initAsyncQueryInvoice(InvoicesAsyncQueryRequest request, String authenticationToken) throws ApiException;
+    InitAsyncInvoicesQueryResponse initAsyncQueryInvoice(InvoiceExportRequest request, String accessToken) throws ApiException;
 
     /**
      * Pobiera status wcześniej zainicjalizowanego zapytania asynchronicznego na podstawie identyfikatora operacji.
@@ -546,7 +547,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    AsyncInvoicesQueryStatus checkStatusAsyncQueryInvoice(String operationReferenceNumber, String authenticationToken) throws ApiException;
+    InvoiceExportStatus checkStatusAsyncQueryInvoice(String operationReferenceNumber, String accessToken) throws ApiException;
 
     /**
      * Nadanie podmiotom uprawnień do pracy w KSeF
@@ -556,7 +557,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    PermissionsOperationResponse grantsPermissionEntity(GrantEntityPermissionsRequest body, String authenticationToken) throws ApiException;
+    OperationResponse grantsPermissionEntity(GrantEntityPermissionsRequest body, String accessToken) throws ApiException;
 
     // SUB ENTITY
 
@@ -568,7 +569,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    PermissionsOperationResponse grantsPermissionSubUnit(SubunitPermissionsGrantRequest body, String authenticationToken) throws ApiException;
+    OperationResponse grantsPermissionSubUnit(SubunitPermissionsGrantRequest body, String accessToken) throws ApiException;
 
     /**
      * Rozpoczyna asynchroniczną operację odbierania uprawnienia o podanym identyfikatorze.
@@ -578,7 +579,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    PermissionsOperationResponse revokeCommonPermission(String permissionId, String authenticationToken) throws ApiException;
+    OperationResponse revokeCommonPermission(String permissionId, String accessToken) throws ApiException;
 
     /**
      * Rozpoczyna asynchroniczną operacje odbierania uprawnienia o podanym identyfikatorze.
@@ -589,29 +590,29 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    PermissionsOperationResponse revokeAuthorizationsPermission(String permissionId, String authenticationToken) throws ApiException;
+    OperationResponse revokeAuthorizationsPermission(String permissionId, String accessToken) throws ApiException;
 
     /**
-     * Gneruje nowy token KSeF.
+     * Generuje nowy token KSeF.
      *
      * @param tokenRequest GenerateTokenRequest
      * @return GenerateTokenResponse
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    GenerateTokenResponse generateKsefToken(GenerateTokenRequest tokenRequest, String authenticationToken) throws ApiException;
+    GenerateTokenResponse generateKsefToken(KsefTokenRequest tokenRequest, String accessToken) throws ApiException;
 
     /**
      * Pobranie listy wygenerowanych tokenów.
      *
      * @param statuses          - Statusy
-     * @param continuationToken
+     * @param continuationToken - Token do kontynuowania paginacji wyników
      * @param pageSize          - Ilość elementów na stronie (domyślnie 10)
      * @return QueryTokensResponse
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    QueryTokensResponse queryKsefTokens(List<AuthenticationTokenStatus> statuses, String continuationToken, Integer pageSize, String authenticationToken) throws ApiException;
+    QueryTokensResponse queryKsefTokens(List<AuthenticationTokenStatus> statuses, String continuationToken, Integer pageSize, String accessToken) throws ApiException;
 
     /**
      * Pobranie statusu tokena
@@ -621,7 +622,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    AuthenticationToken getKsefToken(String referenceNumber, String authenticationToken) throws ApiException;
+    AuthenticationToken getKsefToken(String referenceNumber, String accessToken) throws ApiException;
 
     /**
      * Unieważnienie tokena.
@@ -630,7 +631,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    void revokeKsefToken(String referenceNumber, String authenticationToken) throws ApiException;
+    void revokeKsefToken(String referenceNumber, String accessToken) throws ApiException;
 
     /**
      * Zwraca informacje o kluczach publicznych używanych do szyfrowania danych przesyłanych do systemu KSeF.
@@ -638,22 +639,22 @@ public interface KSeFClient {
      * @return List<PublicKeyCertificate>
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      */
-    List<PublicKeyCertificate> retrievePublicKeyCertificate() throws ApiException;
+    List<PublicKeyCertificate> retrievePublicKeyCertificate() throws ApiException, IOException;
 
     /**
      * Zwraca listę sesji spełniających podane kryteria wyszukiwania.
      *
      * @param request           SessionsQueryRequest
      * @param pageSize          - Ilość elementów na stronie (domyślnie 10)
-     * @param continuationToken
+     * @param continuationToken - Token do kontynuowania paginacji wyników
      * @return SessionsQueryResponse
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    SessionsQueryResponse getSessions(SessionsQueryRequest request, Integer pageSize, String continuationToken, String authenticationToken) throws ApiException;
+    SessionsQueryResponse getSessions(SessionsQueryRequest request, Integer pageSize, String continuationToken, String accessToken) throws ApiException;
 
     /**
-     * Pobranie listy aktywnych sesji.
+     * Pobranie listy aktywnych sesji uwierzytelnienia.
      *
      * @param pageSize          - Ilość elementów na stronie (domyślnie 10)
      * @param continuationToken - Token do kontynuowania paginacji wyników
@@ -661,7 +662,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    AuthenticationListResponse getActiveSessions(Integer pageSize, String continuationToken, String authenticationToken) throws ApiException;
+    AuthenticationListResponse getActiveSessions(Integer pageSize, String continuationToken, String accessToken) throws ApiException;
 
     /**
      * Unieważnia sesję powiązaną z tokenem użytym do wywołania tej operacji.
@@ -671,7 +672,7 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    void revokeCurrentSession(String authenticationToken) throws ApiException;
+    void revokeCurrentSession(String accessToken) throws ApiException;
 
     /**
      * Unieważnia sesję o podanym numerze referencyjnym.
@@ -682,5 +683,5 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    void revokeSession(String referenceNumber, String authenticationToken) throws ApiException;
+    void revokeSession(String referenceNumber, String accessToken) throws ApiException;
 }

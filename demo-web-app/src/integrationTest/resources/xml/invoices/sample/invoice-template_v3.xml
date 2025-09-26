@@ -45,7 +45,7 @@
     </Podmiot2>
     <Fa>
         <KodWaluty>PLN</KodWaluty>
-        <P_1>2025-06-23</P_1>
+        <P_1>#invoicing_date#</P_1>
         <P_1M>Lidzbark</P_1M>
         <P_2>FA/GRQMB-#invoice_number#/05/2025</P_2>
         <P_6>2025-07-11</P_6>

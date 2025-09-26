@@ -6,6 +6,7 @@ import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import pl.akmf.ksef.sdk.client.interfaces.QrCodeService;
+import pl.akmf.ksef.sdk.client.model.ApiException;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -20,30 +21,30 @@ import java.util.Map;
 public class DefaultQrCodeService implements QrCodeService {
 
     @Override
-    public byte[] generateQrCode(String payloadUrl) throws WriterException, IOException {
+    public byte[] generateQrCode(String payloadUrl) throws ApiException {
         return generateQrCode(payloadUrl, 20, 300);
     }
 
     @Override
-    public byte[] addLabelToQrCode(byte[] qrCodePng, String label) throws IOException {
-        return addLabelToQrCode(qrCodePng, label, 14);
+    public byte[] addLabelToQrCode(byte[] qrCodePng, String label) throws ApiException {
+        return addLabelToQrCode(qrCodePng, label, 14, "Arial");
     }
 
     @Override
-    public byte[] generateQrCode(String payloadUrl, int pixelsPerModule, int qrCodeWidthAndHeight) throws IOException, WriterException {
+    public byte[] generateQrCode(String payloadUrl, int pixelsPerModule, int qrCodeWidthAndHeight) throws ApiException {
         BufferedImage qrImage = createQrImage(payloadUrl, pixelsPerModule);
         BufferedImage resized = resizePng(qrImage, qrCodeWidthAndHeight, qrCodeWidthAndHeight);
         return toByteArray(resized);
     }
 
     @Override
-    public byte[] addLabelToQrCode(byte[] qrPng, String label, int fontSizePx) throws IOException {
+    public byte[] addLabelToQrCode(byte[] qrPng, String label, int fontSizePx, String fontName) throws ApiException {
         // 1. Bitmapa QR z bajtów
         InputStream is = new ByteArrayInputStream(qrPng);
-        BufferedImage qrImage = ImageIO.read(is);
+        BufferedImage qrImage = getBufferedImage(is);
 
         // 2. Font + wysokość napisu
-        Font font = new Font("Arial", Font.BOLD, fontSizePx);
+        Font font = new Font(fontName, Font.BOLD, fontSizePx);
         int labelHeight = fontSizePx + 4;
 
         // 3. Nowa bitmapa = QR + pasek na tekst
@@ -68,17 +69,23 @@ public class DefaultQrCodeService implements QrCodeService {
         g.dispose();
 
         // 6. PNG → bajt[]
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(labeledImage, "PNG", baos);
-        return baos.toByteArray();
+        return toByteArray(labeledImage);
     }
 
-    private BufferedImage createQrImage(String payloadUrl, int scale) throws WriterException {
+    private static BufferedImage getBufferedImage(InputStream is) throws ApiException {
+        try {
+            return ImageIO.read(is);
+        } catch (IOException e) {
+            throw new ApiException(e.getMessage());
+        }
+    }
+
+    private BufferedImage createQrImage(String payloadUrl, int scale) throws ApiException {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
         Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
         hints.put(EncodeHintType.MARGIN, 1);
 
-        BitMatrix bitMatrix = qrCodeWriter.encode(payloadUrl, BarcodeFormat.QR_CODE, 0, 0, hints);
+        BitMatrix bitMatrix = createBitMatrix(payloadUrl, qrCodeWriter, hints);
 
         int width = bitMatrix.getWidth() * scale;
         int height = bitMatrix.getHeight() * scale;
@@ -100,6 +107,14 @@ public class DefaultQrCodeService implements QrCodeService {
         return image;
     }
 
+    private static BitMatrix createBitMatrix(String payloadUrl, QRCodeWriter qrCodeWriter, Map<EncodeHintType, Object> hints) throws ApiException {
+        try {
+            return qrCodeWriter.encode(payloadUrl, BarcodeFormat.QR_CODE, 0, 0, hints);
+        } catch (WriterException e) {
+            throw new ApiException(e.getMessage());
+        }
+    }
+
     private BufferedImage resizePng(BufferedImage original, int targetWidth, int targetHeight) {
         BufferedImage resized = new BufferedImage(targetWidth, targetHeight, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = resized.createGraphics();
@@ -109,9 +124,13 @@ public class DefaultQrCodeService implements QrCodeService {
         return resized;
     }
 
-    private byte[] toByteArray(BufferedImage image) throws IOException {
+    private byte[] toByteArray(BufferedImage image) throws ApiException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(image, "png", baos);
-        return baos.toByteArray();
+        try {
+            ImageIO.write(image, "png", baos);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new ApiException(e.getMessage());
+        }
     }
 }

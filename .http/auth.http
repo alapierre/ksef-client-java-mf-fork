@@ -9,6 +9,11 @@ Content-Type: application/json
     client.global.set("contextIdentifier", "1111111111");
 %}
 
+### prepare sample CertAuthRequest
+GET http://localhost:8082/prepare-sample-cert-auth-request
+Accept: application/json
+
+
 ### auth with ksef certificate
 POST http://localhost:8082/auth-with-ksef-certificate
 Accept: application/json

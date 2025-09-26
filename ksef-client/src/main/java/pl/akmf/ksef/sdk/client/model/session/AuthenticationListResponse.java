@@ -4,13 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-/**
- * AuthenticationListResponse
- */
 public class AuthenticationListResponse {
   private String continuationToken;
-
-  private List<AuthenticationOperationStatusResponse> items = new ArrayList<>();
+  private List<AuthenticationListItem> items = new ArrayList<>();
 
   public AuthenticationListResponse() { 
   }
@@ -23,11 +19,11 @@ public class AuthenticationListResponse {
     this.continuationToken = continuationToken;
   }
 
-  public List<AuthenticationOperationStatusResponse> getItems() {
+  public List<AuthenticationListItem> getItems() {
     return items;
   }
 
-  public void setItems(List<AuthenticationOperationStatusResponse> items) {
+  public void setItems(List<AuthenticationListItem> items) {
     this.items = items;
   }
 }

@@ -4,34 +4,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class QueryInvoiceMetadataResponse {
-
-    private Integer totalCount;
     private Boolean hasMore;
-
-    private List<InvoiceMetadata> invoices = new ArrayList<>();
+    private List<InvoiceSummary> invoices = new ArrayList<>();
 
     public QueryInvoiceMetadataResponse() {
     }
 
-    public QueryInvoiceMetadataResponse(Integer totalCount, Boolean hasMore, List<InvoiceMetadata> invoices) {
-        this.totalCount = totalCount;
+    public QueryInvoiceMetadataResponse(Boolean hasMore, List<InvoiceSummary> invoices) {
         this.hasMore = hasMore;
         this.invoices = invoices;
     }
 
-    public Integer getTotalCount() {
-        return totalCount;
-    }
-
-    public void setTotalCount(Integer totalCount) {
-        this.totalCount = totalCount;
-    }
-
-    public List<InvoiceMetadata> getInvoices() {
+    public List<InvoiceSummary> getInvoices() {
         return invoices;
     }
 
-    public void setInvoices(List<InvoiceMetadata> invoices) {
+    public void setInvoices(List<InvoiceSummary> invoices) {
         this.invoices = invoices;
     }
 

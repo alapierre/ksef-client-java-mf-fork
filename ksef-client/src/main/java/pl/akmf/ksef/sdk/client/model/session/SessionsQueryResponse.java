@@ -5,12 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-/**
- * SessionsQueryResponse
- */
 public class SessionsQueryResponse {
   private String continuationToken;
-
   private List<SessionsQueryResponseItem> sessions = new ArrayList<>();
 
   public SessionsQueryResponse() { 

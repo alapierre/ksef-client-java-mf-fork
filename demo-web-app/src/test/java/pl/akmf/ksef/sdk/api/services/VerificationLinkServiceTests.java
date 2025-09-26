@@ -1,5 +1,6 @@
 package pl.akmf.ksef.sdk.api.services;
 
+import org.bouncycastle.asn1.x500.X500Name;
 import org.junit.jupiter.api.Test;
 import pl.akmf.ksef.sdk.api.builders.certificate.CertificateBuilders;
 import pl.akmf.ksef.sdk.client.interfaces.VerificationLinkService;
@@ -23,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class VerificationLinkServiceTests {
+class VerificationLinkServiceTests {
 
     private final VerificationLinkService svc = new DefaultVerificationLinkService();
     private static final String BASE_URL = "https://ksef.mf.gov.pl/client-app";
@@ -53,11 +54,11 @@ public class VerificationLinkServiceTests {
     // • Krótsze podpisane URL-e → lepszy UX w QR i linkach
     // =============================================
     @Test
-    public void buildCertificateVerificationUrl_WithEmbeddedEcdsaKey_ShouldSucceed_Ecc() throws Exception {
+    void buildCertificateVerificationUrl_WithEmbeddedEcdsaKey_ShouldSucceed_Ecc() throws Exception {
         // Arrange: wygeneruj klucz ECDSA P-256 i self-signed certyfikat
-        var x500 = new CertificateBuilders()
-                .buildForOrganization("Kowalski sp. z o.o", "VATPL-1111111111", "FullEccCert");
-        SelfSignedCertificate cert = new DefaultCertificateGenerator().generateSelfSignedCertificateEcdsa(x500);
+        X500Name x500 = new CertificateBuilders()
+                .buildForOrganization("Kowalski sp. z o.o", "VATPL-1111111111", "FullEccCert", "PL");
+        SelfSignedCertificate cert = new DefaultCertificateService().generateSelfSignedCertificateEcdsa(x500);
 
         String nip = "0000000000";
         String xml = "<x/>";
@@ -84,9 +85,9 @@ public class VerificationLinkServiceTests {
         String serial = UUID.randomUUID().toString();
         String invoiceHash = computeUrlEncodedBase64Sha256(xml);
 
-        var x500 = new CertificateBuilders()
-                .buildForOrganization("Kowalski sp. z o.o", "VATPL-" + nip, "TestRSA");
-        SelfSignedCertificate selfSignedCertificate = new DefaultCertificateGenerator().generateSelfSignedCertificateRsa(x500);
+        X500Name x500 = new CertificateBuilders()
+                .buildForOrganization("Kowalski sp. z o.o", "VATPL-" + nip, "TestRSA", "PL");
+        SelfSignedCertificate selfSignedCertificate = new DefaultCertificateService().generateSelfSignedCertificateRsa(x500);
 
         String url = svc.buildCertificateVerificationUrl(nip, ContextIdentifierType.NIP, nip, serial, invoiceHash, selfSignedCertificate.getPrivateKey());
 
@@ -110,9 +111,9 @@ public class VerificationLinkServiceTests {
         String serial = UUID.randomUUID().toString();
         String invoiceHash = computeUrlEncodedBase64Sha256(xml);
 
-        var x500 = new CertificateBuilders()
-                .buildForOrganization("Kowalski sp. z o.o", "VATPL-" + nip, "TestECDSA");
-        SelfSignedCertificate selfSignedCertificate = new DefaultCertificateGenerator().generateSelfSignedCertificateEcdsa(x500);
+        X500Name x500 = new CertificateBuilders()
+                .buildForOrganization("Kowalski sp. z o.o", "VATPL-" + nip, "TestECDSA", "PL");
+        SelfSignedCertificate selfSignedCertificate = new DefaultCertificateService().generateSelfSignedCertificateEcdsa(x500);
 
         String url = svc.buildCertificateVerificationUrl(nip, ContextIdentifierType.NIP, nip, serial, invoiceHash, selfSignedCertificate.getPrivateKey());
 
@@ -170,3 +171,4 @@ public class VerificationLinkServiceTests {
         return Base64.getEncoder().encodeToString(hash);
     }
 }
+
