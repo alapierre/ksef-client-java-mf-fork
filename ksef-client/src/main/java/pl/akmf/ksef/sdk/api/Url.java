@@ -23,9 +23,9 @@ public enum Url {
     CERTIFICATE_RETRIEVE("/api/v2/certificates/retrieve", "apiV2CertificatesRetrievePost"),
 
     INVOICE_DOWNLOAD_BY_KSEF("/api/v2/invoices/ksef/{ksefReferenceNumber}", "apiV2InvoicesKsefKsefReferenceNumberGet"),
-    INVOICE_QUERY_STATUS("/api/v2/invoices/async-query/{operationReferenceNumber}",
-            "apiV2InvoicesAsyncQueryOperationReferenceNumberGet"),
-    INVOICE_QUERY_ASYNC("/api/v2/invoices/async-query", "apiV2InvoicesAsyncQueryPost"),
+    INVOICE_EXPORT_STATUS("/api/v2/invoices/exports/{operationReferenceNumber}",
+            "apiV2InvoicesExportDownload"),
+    INVOICE_EXPORT_INIT("/api/v2/invoices/exports", "apiV2InvoicesExportPost"),
     INVOICE_DOWNLOAD("/api/v2/invoices/download", "apiV2InvoicesDownloadPost"),
     INVOICE_QUERY_METADATA("/api/v2/invoices/query/metadata", "apiV2InvoicesQueryMetadataPost"),
 

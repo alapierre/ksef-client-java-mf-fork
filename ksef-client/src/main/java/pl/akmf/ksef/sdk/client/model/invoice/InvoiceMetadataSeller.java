@@ -1,11 +1,8 @@
 package pl.akmf.ksef.sdk.client.model.invoice;
 
-/**
- * InvoiceMetadataSeller
- */
 public class InvoiceMetadataSeller {
     private String identifier;
-
+    private String nip;
     private String name;
 
     public InvoiceMetadataSeller() {
@@ -17,6 +14,14 @@ public class InvoiceMetadataSeller {
 
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
+    }
+
+    public String getNip() {
+        return nip;
+    }
+
+    public void setNip(String nip) {
+        this.nip = nip;
     }
 
     public String getName() {

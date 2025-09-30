@@ -1,46 +1,42 @@
 package pl.akmf.ksef.sdk.client.model.invoice;
 
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-/**
- * Gets or Sets InvoiceQuerySubjectType
- */
 public enum InvoiceQuerySubjectType {
-  
-  SUBJECT1("Subject1"),
-  
-  SUBJECT2("Subject2"),
-  
-  SUBJECT3("Subject3"),
-  
-  SUBJECTAUTHORIZED("SubjectAuthorized");
 
-  private String value;
+    SUBJECT1("Subject1"),
 
-  InvoiceQuerySubjectType(String value) {
-    this.value = value;
-  }
+    SUBJECT2("Subject2"),
 
-  @JsonValue
-  public String getValue() {
-    return value;
-  }
+    SUBJECT3("Subject3"),
 
-  @Override
-  public String toString() {
-    return String.valueOf(value);
-  }
+    SUBJECTAUTHORIZED("SubjectAuthorized");
 
-  @JsonCreator
-  public static InvoiceQuerySubjectType fromValue(String value) {
-    for (InvoiceQuerySubjectType b : InvoiceQuerySubjectType.values()) {
-      if (b.value.equals(value)) {
-        return b;
-      }
+    private final String value;
+
+    InvoiceQuerySubjectType(String value) {
+        this.value = value;
     }
-    throw new IllegalArgumentException("Unexpected value '" + value + "'");
-  }
+
+    @JsonValue
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static InvoiceQuerySubjectType fromValue(String value) {
+        for (InvoiceQuerySubjectType b : InvoiceQuerySubjectType.values()) {
+            if (b.value.equals(value)) {
+                return b;
+            }
+        }
+        throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
 }
 

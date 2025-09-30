@@ -14,6 +14,8 @@ public class SessionInvoiceStatusResponse {
     private OffsetDateTime invoicingDate;
     private OffsetDateTime acquisitionDate;
     private StatusInfo status;
+    private OffsetDateTime permanentStorageDate;
+    private String upoDownloadUrl;
 
     public SessionInvoiceStatusResponse() {
 
@@ -89,6 +91,22 @@ public class SessionInvoiceStatusResponse {
 
     public void setStatus(StatusInfo status) {
         this.status = status;
+    }
+
+    public OffsetDateTime getPermanentStorageDate() {
+        return permanentStorageDate;
+    }
+
+    public void setPermanentStorageDate(OffsetDateTime permanentStorageDate) {
+        this.permanentStorageDate = permanentStorageDate;
+    }
+
+    public String getUpoDownloadUrl() {
+        return upoDownloadUrl;
+    }
+
+    public void setUpoDownloadUrl(String upoDownloadUrl) {
+        this.upoDownloadUrl = upoDownloadUrl;
     }
 }
 

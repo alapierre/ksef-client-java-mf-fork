@@ -1,17 +1,16 @@
 package pl.akmf.ksef.sdk.api.services;
 
-import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x500.X500NameBuilder;
-import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import pl.akmf.ksef.sdk.api.builders.certificate.CertificateBuilders;
 import pl.akmf.ksef.sdk.client.interfaces.CryptographyService;
+import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentsInfoResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CsrResult;
@@ -61,7 +60,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 
 public class DefaultCryptographyService implements CryptographyService {
     private static final String AES_CBC_PKCS_5_PADDING = "AES/CBC/PKCS5Padding";
@@ -70,6 +68,7 @@ public class DefaultCryptographyService implements CryptographyService {
     private static final String AES = "AES";
     private static final String RSA = "RSA";
     private static final String SHA_256_WITH_RSA = "SHA256withRSA";
+    private static final String SHA_256_WITH_ECDSA = "SHA256withECDSA";
     private static final String SHA_256 = "SHA-256";
     private static final String ECDH = "ECDH";
     private static final String MGF_1 = "MGF1";
@@ -84,7 +83,7 @@ public class DefaultCryptographyService implements CryptographyService {
     private final String ksefTokenPem;
 
 
-    public DefaultCryptographyService(DefaultKsefClient ksefClient) throws ApiException {
+    public DefaultCryptographyService(KSeFClient ksefClient) throws ApiException, IOException {
         List<PublicKeyCertificate> publicKeyCertificates = ksefClient.retrievePublicKeyCertificate();
 
         this.symmetricKeyEncryptionPem = publicKeyCertificates.stream()
@@ -127,7 +126,7 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public byte[] encryptKsefTokenWithRSAUsingPublicKey(String ksefToken, Instant challengeTimestamp) throws SystemKSeFSDKException, CertificateException, IOException {
-        var tokenWithTimestamp = (ksefToken + "|" + challengeTimestamp.toEpochMilli())
+        byte[] tokenWithTimestamp = (ksefToken + "|" + challengeTimestamp.toEpochMilli())
                 .getBytes(StandardCharsets.UTF_8);
 
         return encryptWithRSAUsingPublicKey(tokenWithTimestamp);
@@ -135,7 +134,7 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public byte[] encryptKsefTokenWithECDsaUsingPublicKey(String ksefToken, Instant challengeTimestamp) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InvalidKeyException, NoSuchPaddingException, IllegalBlockSizeException, BadPaddingException, CertificateException, IOException {
-        var tokenWithTimestamp = (ksefToken + "|" + challengeTimestamp.toEpochMilli())
+        byte[] tokenWithTimestamp = (ksefToken + "|" + challengeTimestamp.toEpochMilli())
                 .getBytes(StandardCharsets.UTF_8);
 
         return encryptWithECDsaUsingPublicKey(tokenWithTimestamp);
@@ -239,7 +238,31 @@ public class DefaultCryptographyService implements CryptographyService {
 
             PKCS10CertificationRequest csr = requestBuilder.build(signer);
 
-            var csrDer = csr.toASN1Structure().getEncoded(ASN1Encoding.DER);
+            byte[] csrDer = csr.toASN1Structure().getEncoded(ASN1Encoding.DER);
+
+            return new CsrResult(csrDer, keyPair.getPrivate().getEncoded());
+        } catch (IOException | OperatorCreationException | NoSuchAlgorithmException e) {
+            throw new SystemKSeFSDKException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public CsrResult generateCsrWithEcdsa(CertificateEnrollmentsInfoResponse certificateInfo) throws SystemKSeFSDKException, InvalidAlgorithmParameterException {
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(EC);
+            kpg.initialize(new ECGenParameterSpec(SECP_256_R_1));
+            KeyPair keyPair = kpg.generateKeyPair();
+
+            X500Name subject = getX500Name(certificateInfo);
+
+            JcaPKCS10CertificationRequestBuilder csrBuilder = new JcaPKCS10CertificationRequestBuilder(subject, keyPair.getPublic());
+
+            ContentSigner signer = new JcaContentSignerBuilder(SHA_256_WITH_ECDSA)
+                    .build(keyPair.getPrivate());
+
+            PKCS10CertificationRequest csr = csrBuilder.build(signer);
+
+            byte[] csrDer = csr.toASN1Structure().getEncoded(ASN1Encoding.DER);
 
             return new CsrResult(csrDer, keyPair.getPrivate().getEncoded());
         } catch (IOException | OperatorCreationException | NoSuchAlgorithmException e) {
@@ -309,43 +332,16 @@ public class DefaultCryptographyService implements CryptographyService {
     }
 
     private static X500Name getX500Name(CertificateEnrollmentsInfoResponse certificateInfo) {
-        X500NameBuilder nameBuilder = getX500NameBuilder(certificateInfo);
-
-        if (Objects.nonNull(certificateInfo.getGivenNames())) {
-            certificateInfo.getGivenNames()
-                    .stream()
-                    .filter(StringUtils::isNotBlank)
-                    .forEach(z -> nameBuilder.addRDN(BCStyle.GIVENNAME, z));
-        }
-
-        return nameBuilder.build();
-    }
-
-    private static X500NameBuilder getX500NameBuilder(CertificateEnrollmentsInfoResponse certificateInfo) {
-        X500NameBuilder nameBuilder = new X500NameBuilder(BCStyle.INSTANCE);
-
-        if (certificateInfo.getCommonName() != null && !certificateInfo.getCommonName().isEmpty()) {
-            nameBuilder.addRDN(BCStyle.CN, certificateInfo.getCommonName());
-        }
-        if (certificateInfo.getSurname() != null && !certificateInfo.getSurname().isEmpty()) {
-            nameBuilder.addRDN(BCStyle.SURNAME, certificateInfo.getSurname());
-        }
-        if (certificateInfo.getOrganizationName() != null && !certificateInfo.getOrganizationName().isEmpty()) {
-            nameBuilder.addRDN(BCStyle.O, certificateInfo.getOrganizationName());
-        }
-        if (certificateInfo.getOrganizationIdentifier() != null && !certificateInfo.getOrganizationIdentifier().isEmpty()) {
-            nameBuilder.addRDN(BCStyle.ORGANIZATION_IDENTIFIER, certificateInfo.getOrganizationIdentifier());
-        }
-        if (certificateInfo.getCountryName() != null && !certificateInfo.getCountryName().isEmpty()) {
-            nameBuilder.addRDN(BCStyle.C, certificateInfo.getCountryName());
-        }
-        if (certificateInfo.getSerialNumber() != null && !certificateInfo.getSerialNumber().isEmpty()) {
-            nameBuilder.addRDN(BCStyle.SERIALNUMBER, certificateInfo.getSerialNumber());
-        }
-        if (certificateInfo.getUniqueIdentifier() != null && !certificateInfo.getUniqueIdentifier().isEmpty()) {
-            nameBuilder.addRDN(BCStyle.UNIQUE_IDENTIFIER, certificateInfo.getUniqueIdentifier());
-        }
-        return nameBuilder;
+        return new CertificateBuilders()
+                .withCommonName(certificateInfo.getCommonName())
+                .withSurname(certificateInfo.getSurname())
+                .withOrganizationName(certificateInfo.getOrganizationName())
+                .withOrganizationIdentifier(certificateInfo.getOrganizationIdentifier())
+                .withCountryCode(certificateInfo.getCountryName())
+                .withSerialNumber(certificateInfo.getSerialNumber())
+                .withUniqueIdentifier(certificateInfo.getUniqueIdentifier())
+                .withGivenNames(certificateInfo.getGivenNames())
+                .build();
     }
 
     private byte[] generateRandom256BitsKey() throws NoSuchAlgorithmException {

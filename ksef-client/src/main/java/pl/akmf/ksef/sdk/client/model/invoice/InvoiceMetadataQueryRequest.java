@@ -4,31 +4,18 @@ import java.util.List;
 
 public class InvoiceMetadataQueryRequest {
     private InvoiceQuerySubjectType subjectType;
-
     private InvoiceQueryDateRange dateRange;
-
     private String ksefNumber;
-
     private String invoiceNumber;
-
     private InvoiceQueryAmount amount;
-
     private InvoiceQuerySeller seller;
-
     private InvoiceQueryBuyer buyer;
-
     private List<CurrencyCode> currencyCodes;
-
     private InvoicingMode invoicingMode;
-
     private Boolean isSelfInvoicing;
-
     private InvoiceQuerySchemaType schemaType;
-
     private InvoiceMetadataSchema invoiceSchema;
-
     private List<InvoiceMetadataInvoiceType> invoiceTypes;
-
     private Boolean hasAttachment;
 
     public InvoiceMetadataQueryRequest() {

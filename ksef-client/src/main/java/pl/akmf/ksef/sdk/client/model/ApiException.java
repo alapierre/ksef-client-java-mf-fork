@@ -1,13 +1,12 @@
 package pl.akmf.ksef.sdk.client.model;
 
 import java.net.http.HttpHeaders;
-import java.nio.charset.StandardCharsets;
 
 public class ApiException extends Exception {
     private static final long serialVersionUID = -7789526261274021206L;
     private int code = 0;
-    private HttpHeaders responseHeaders = null;
-    private String responseBody = null;
+    private HttpHeaders responseHeaders;
+    private String responseBody;
 
     public ApiException() {
     }
@@ -54,24 +53,11 @@ public class ApiException extends Exception {
         return code;
     }
 
-    public HttpHeaders getResponseHeaders() {
+    public HttpHeaders getResponseHeaders(){
         return responseHeaders;
     }
 
-    public String getResponseBody() {
+    public String getResponseBody(){
         return responseBody;
-    }
-
-    public static ApiException getApiException(String operationId, byte[] body, int statusCode, HttpHeaders headers) {
-        String responseBody = body == null ? null : new String(body, StandardCharsets.UTF_8);
-        String message = formatExceptionMessage(operationId, statusCode, responseBody);
-        return new ApiException(statusCode, message, headers, responseBody);
-    }
-
-    private static String formatExceptionMessage(String operationId, int statusCode, String body) {
-        if (body == null || body.isEmpty()) {
-            body = "[no body]";
-        }
-        return operationId + " call failed with: " + statusCode + " - " + body;
     }
 }

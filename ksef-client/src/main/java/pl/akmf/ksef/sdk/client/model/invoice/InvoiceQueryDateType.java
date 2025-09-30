@@ -5,36 +5,34 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum InvoiceQueryDateType {
-  
-  ISSUE("Issue"),
-  
-  INVOICING("Invoicing"),
-  
-  PERMANENTSTORAGE("PermanentStorage");
 
-  private String value;
+    ISSUE("Issue"),
+    INVOICING("Invoicing"),
+    PERMANENTSTORAGE("PermanentStorage");
 
-  InvoiceQueryDateType(String value) {
-    this.value = value;
-  }
+    private final String value;
 
-  @JsonValue
-  public String getValue() {
-    return value;
-  }
-
-  @Override
-  public String toString() {
-    return String.valueOf(value);
-  }
-
-  @JsonCreator
-  public static InvoiceQueryDateType fromValue(String value) {
-    for (InvoiceQueryDateType b : InvoiceQueryDateType.values()) {
-      if (b.value.equals(value)) {
-        return b;
-      }
+    InvoiceQueryDateType(String value) {
+        this.value = value;
     }
-    throw new IllegalArgumentException("Unexpected value '" + value + "'");
-  }
+
+    @JsonValue
+    public String getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return String.valueOf(value);
+    }
+
+    @JsonCreator
+    public static InvoiceQueryDateType fromValue(String value) {
+        for (InvoiceQueryDateType b : InvoiceQueryDateType.values()) {
+            if (b.value.equals(value)) {
+                return b;
+            }
+        }
+        throw new IllegalArgumentException("Unexpected value '" + value + "'");
+    }
 }

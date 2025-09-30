@@ -272,3 +272,172 @@
 | ➖ usunięte  | 12           |
 
 ---
+# Changelog zmian – `## 3.0.0 (2025-09-26)`
+
+## 1. ksef-client
+
+### 1.1 api.builders
+- **AuthTokenRequestBuilder.java**: 🔧 usunięcie nadmiarowego sprawdzania 
+- **CertificateBuilders.java**: 🔧 refaktory klasy 
+- **RevokeCertificateRequestBuilder.java**: 🔧 zmiana nazwy na `CertificateRevokeRequestBuilder.java` i zmiana var na konkretny typ (strong-type)
+- **SendCertificateEnrollmentRequestBuilder.java**: 🔧 dodanie `CertificateType certificateType`
+- **GrantEUEntityPermissionsRequestBuilder.java**: 🔧 dodanie `String subjectName`
+- **GrantIndirectEntityPermissionsRequestBuilder.java**: 🔧 zmiana typu `IndirectPermissionsGrantRequest` na `GrantIndirectEntityPermissionsRequest`
+- **GrantProxyEntityPermissionsRequestBuilder.java**: 🔧 zmiana nazwy na `GrantAuthorizationPermissionsRequestBuilder.java`, zmiana typu `GrantProxyEntityPermissionsRequest` na `GrantAuthorizationPermissionsRequest`
+- **SendInvoiceRequestBuilder.java**: 🔧 zmiana nazwy na `SendInvoiceOnlineSessionRequestBuilder.java`, zmiana typu `SendInvoiceRequest` na `SendInvoiceOnlineSessionRequest`
+- **GenerateTokenRequestBuilder.java**: 🔧 zmiana nazwy na `KsefTokenRequestBuilder.java`, zmiana typu `GenerateTokenRequest` na `KsefTokenRequest`
+- **InvoicesAsyncQueryRequestBuilder.java**: 🔧 zmiana nazwy na `InvoicesAsyncQueryFiltersBuilder.java`, dodanie pola `Boolean hasAttachment`, zmiana `InvoiceQuerySchemaType schemaType` na `InvoiceMetadataSchema formType` 
+
+### 1.2 api.services
+- **DefaultCertificateGenerator.java**: 🔧 zmiana nazwy na `DefaultCertificateService`, dodanie implementacji metod `String getSha256Fingerprint(X509Certificate certificate)`, `SelfSignedCertificate getPersonalCertificate(String givenName, String surname, String serialNumberPrefix, String serialNumber, String commonName)`, `SelfSignedCertificate getCompanySeal(String organizationName, String organizationIdentifier, String commonName)`
+- **DefaultCryptographyService.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, dodanie metod `CsrResult generateCsrWithEcdsa(CertificateEnrollmentsInfoResponse certificateInfo)`
+- **DefaultQrCodeService.java**: 🔧 dodanie parametru `String fontName` do metody `addLabelToQrCode`, obsługa wyjątków
+- **DefaultVerificationLinkService.java**: 🔧 obsługa wyjątków
+- **DefaultKsefClient.java**: 🔧 przeniesienie do pakietu wyżej
+
+### 1.3 api
+- **DefaultKsefClient.java**: 🔧 przeniesienie do głownego pakietu api, refaktoryzacja klienta, aktualizacja typów zgodnie ze zmianami w modelu api
+- **HttpStatus.java**: ➕ dodano klase zawierającą używane statusy HTTP
+- **HttpUtils.java**: ➕ dodano klase pomocniczą
+- **KsefApiProperties.java**: ➕ dodano klase z konfiguracją
+- **Url.java.**: 🔧 zmiana adresu usługi z `INVOICE_QUERY_STATUS("/api/v2/invoices/async-query/{operationReferenceNumber}"` na `INVOICE_EXPORT_STATUS("/api/v2/invoices/exports/{operationReferenceNumber}"`
+- **ActiveSessionApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **AuthenticationApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **BatchInvoiceApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **CertificateApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **DownloadInvoiceApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **EuSubjectAdministratorApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **EuSubjectRepresentationApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **ForAuthorizedSubjectApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **GrantDirectlyApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **InteractiveSessionApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **NaturalPersonKseFApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **OperationApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **PublicKeyCertificateApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **SearchPermissionApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **SendStatusAndUpoApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **SubjectForInvoiceApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **SubUnitSubjectAdministratorApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **TokensApi.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+- **UrlQueryParamsBuilder.java**: ➖ usunięcie klasy, przeniesienie metod do `DefaultKsefClient.java`
+
+### 1.4 client.interfaces
+- **CertificateGenerator.java**: 🔧 zmiana nazwy na `CertificateService`, dodanie metod `String getSha256Fingerprint(X509Certificate certificate)`, `SelfSignedCertificate getPersonalCertificate(String givenName, String surname, String serialNumberPrefix, String serialNumber, String commonName)`, `SelfSignedCertificate getCompanySeal(String organizationName, String organizationIdentifier, String commonName)`
+- **CryptographyService.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, dodanie metod `CsrResult generateCsrWithEcdsa(CertificateEnrollmentsInfoResponse certificateInfo)`
+- **QrCodeService.java**: 🔧 dodanie parametru `String fontName` do metody `addLabelToQrCode`, obsługa wyjątków
+- **VerificationLinkService.java**: 🔧 obsługa wyjątków
+- **KSeFClient.java**: 🔧 refaktoryzacja nazw parametrów, aktualizacja typów zgodnie ze zmianami w modelu api
+
+### 1.5 client.model
+- **auth.AuthenticationOperationStatusResponse.java**: 🔧 zmieniono nazwę klasy na `AuthOperationStatusResponse .java`
+- **AuthStatus.java**: ➕ dodano klasę
+- **GenerateTokenRequest.java**: 🔧 zmieniono nazwę klasy na `KsefTokenRequest.java`
+- **AuthenticationInitResponse.java**: 🔧 zmieniono nazwę klasy na `SignatureResponse.java`
+- **CertificateInfo.java**: 🔧 dodano parametr `CertificateType type`
+- **CertificateResponse.java**: 🔧 dodano parametr `CertificateType type`
+- **CertificateType.java**: ➕ dodano enuma
+- **SendCertificateEnrollmentRequest.java**: 🔧 dodano parametr `CertificateType type`
+- **AsyncInvoicesQueryStatus.java**: ➖ usunięto klasę
+- **AuthorizedSubject.java**: ➕ dodano klasę
+- **BuyerIdentifierType.java**: ➖ usunięto klasę
+- **DownloadInvoiceBuyer.java**: 🔧 zmieniono typ parametru z `BuyerIdentifierType identifierType` na `IdentifierType identifierType`
+- **IdentifierType.java**: ➕ dodano klasę
+- **InvoiceMetadataQueryRequest.java**: 🔧 zmieniono nazwę klasy na `InvoiceExportFilters.java`
+- **InvoiceExportPackage.java**: ➕ dodano klasę
+- **InvoiceExportRequest.java**: ➕ dodano klasę
+- **InvoiceExportStatus.java**: ➕ dodano klasę
+- **InvoiceMetadata.java**: ➖ usunięto klasę
+- **InvoiceMetadataBuyer.java**: 🔧 zmieniono `BuyerIdentifierType identifierType` na `IdentifierType identifierType`
+- **InvoiceMetadataSeller .java**: 🔧 dodano pole `String nip`
+- **InvoicePackagePart .java**: 🔧 dodano nowe pola
+- **InvoiceQueryBuyer.java**: 🔧 zmieniono `BuyerIdentifierType identifierType` na `IdentifierType identifierType`
+- **InvoicesAsyncQueryRequest.java**: 🔧 zmieniono nazwę klasy na `InvoiceSummary.java`, dodano dodatkowe pola
+- **QueryInvoiceMetadataResponse.java**: 🔧 dodano pola klasy `Boolean hasMore; List<InvoiceSummary> invoices` usunięto `List<InvoiceMetadata> invoices`
+- **ThirdSubject.java**: ➕ dodano klasę
+- **EuEntityPermissionsGrantRequest.java**: 🔧 dodano pole `String subjectName`
+- **IndirectPermissionsGrantRequest.java**: 🔧 zmieniono nazwę klasy na `GrantIndirectEntityPermissionsRequest.java`
+- **GrantProxyEntityPermissionsRequest.java**: 🔧 zmieniono nazwę klasy na `GrantAuthorizationPermissionsRequest.java`
+- **PermissionsOperationResponse.java**: 🔧 zmieniono nazwę klasy na `OperationResponse.java`
+- **SendInvoiceRequest.java**: 🔧 zmieniono nazwę klasy na `SendInvoiceOnlineSessionRequest.java`
+- **session.AuthenticationOperationStatusResponse.java**: 🔧 zmieniono nazwę klasy na `AuthenticationListItem.java`
+- **AuthenticationListResponse.java**: 🔧 zmieniono typ pola `List<AuthenticationOperationStatusResponse> items` na `List<AuthenticationListItem> items`
+- **SessionInvoicesResponse.java**: 🔧 dodano pole `Boolean hasMore`
+- **SessionInvoiceStatusResponse.java**: 🔧 dodano pola `OffsetDateTime permanentStorageDate; String upoDownloadUrl;`
+
+### 1.6 client
+- **Headers.java**: 🔧 dodano stałe dla nagłówków
+- **HttpApiClient.java**: ➖ usunięto klasę
+
+### 1.7 system
+- **KSeFNumberValidator.java**: ➖ usunięto klasę
+
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BaseIntegrationTest.java**: 🔧 dodanie przeciążonej metody `authWithCustomNip` w której subject przekazujemy w formie certyfikatów
+- **AuthorizationIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego
+- **BatchIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego, aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **CertificateIntegrationTest.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **EntityPermissionIntegrationTest.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **EuEntityPermissionIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego, aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **EuEntityRepresentativeE2EPermissionTest.java**: 🔧 rename na `EuEntityRepresentativePermissionIntegrationTest.java`, aktualizacja scenariusza testowego, aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **IndirectPermissionIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego, aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **TokensIntegrationTest.java**: 🔧 rename na `KsefTokenIntegrationTest.java`, aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **OnlineSessionIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego, aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **PersonPermissionIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego, aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **ProxyPermissionIntegrationTest.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **QrCodeOfflineIntegrationTest.java**: ➕ dodano klasę zawierającą scenariusze testowe z kodami qr do fv offline
+- **QrCodeOnlineIntegrationTest.java**: ➕ dodano klasę zawierającą scenariusze testowe z kodami qr do fv online
+- **QueryInvoiceIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego, aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **SessionIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego, aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **SubUnitPermissionIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego, aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- 
+### 2.1.1 integrationTest.resources
+- **invoice-template_v3.xml**: 🔧 - dodanie placeholdera do pola p_1 na fakturze
+- **invoice-template.xml**: 🔧 - dodanie placeholdera do pola p_1 na fakturze
+
+### 2.2 api
+- **ActiveSessionController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **AuthController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych, dodanie usługi `GET prepare-sample-cert-auth-request` przygotowującą testowe dane do usługi `POST auth-with-ksef-certificate`
+- **BatchSessionController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **CertificateController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **EntityPermissionsController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **EuEntityPermissionsController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **IndirectPermissionsEntityController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **InvoicesController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych, zmiany typów zmiennych wynikajacych z aktualizacji modelu api
+- **OnlineSessionController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **OperationStatusController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **PersonPermissionController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **ProxyPermissionsEntityController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **QrCodeController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **SearchPermissionTestEndpoint.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **SessionController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych, użycie `response.getContinuationToken()` przy pobieraniu fv/statusów w sesji
+- **SubUnitPermissionsController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych
+- **TokensController.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF, zmiany w nazwenictwie zmiennych, użycie `response.getContinuationToken()` przy pobieraniu tokenów
+- **StatusWaitingException.java**: ➕ dodano klasę
+- **ExampleApiProperties.java**: ➕ dodano klasę
+- **HttpClientBuilder.java**: ➕ dodano klasę
+- **IdentifierGeneratorUtils.java**: ➕ dodano testową klasę do generowania identyfikatorów (np. nip, pesel)
+- **KsefClientConfig.java**: 🔧 zmiana konfiguracji zgodnie z nową implementacja klienta
+
+### 2.2.1 resources
+- **invoice-template.xml**: 🔧 - dodanie placeholdera do pola p_1 na fakturze
+
+### 2.3 test - api.services
+- **QrCodeTests.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF
+- **VerificationLinkServiceTests.java**: 🔧 aktualizacja związana z refaktorem serwisów i kliena KSeF
+
+
+## 3. .http
+- 🔧 do `auth.http` dodano wywołanie usługi `GET prepare-sample-cert-auth-request` przygotowującą testowe dane do usługi `POST auth-with-ksef-certificate`
+
+## 4. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 25            |
+| 🔧 zmienione | 75            |
+| ➖ usunięte  | 31            |
+
+---

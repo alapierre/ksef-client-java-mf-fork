@@ -4,19 +4,17 @@ package pl.akmf.ksef.sdk.client.model.invoice;
  * Dane nabywcy.
  */
 public class InvoiceQueryBuyer {
-    private BuyerIdentifierType identifierType;
-
+    private IdentifierType identifierType;
     private String identifier;
-
 
     public InvoiceQueryBuyer() {
     }
 
-    public BuyerIdentifierType getIdentifierType() {
+    public IdentifierType getIdentifierType() {
         return identifierType;
     }
 
-    public void setIdentifierType(BuyerIdentifierType identifierType) {
+    public void setIdentifierType(IdentifierType identifierType) {
         this.identifierType = identifierType;
     }
 
