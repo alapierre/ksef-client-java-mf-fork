@@ -4,8 +4,8 @@ plugins {
     `maven-publish`
 }
 
-group = "io.alapierre.ksef-sdk"
-version = "2.1.0"
+group = rootProject.group
+version = rootProject.version
 
 java {
     toolchain {
@@ -25,24 +25,26 @@ repositories {
     mavenCentral()
 }
 
-val bouncycastleVersion = 1.76
+val bouncycastleVersion = 1.79
 val jsr310Version = "2.17.1"
 val junitVersion = "4.4"
 val junitEngineVersion = "5.8.2"
 val jsxbVarsion = "4.0.5"
 val jaxbFluentApiVersion = 3.0
 val xjc by configurations.creating
-val xadesVersion = "6.0"
+val xadesVersion = "6.0.1"
 val googleZxingCodeVersion = "3.5.3"
 val googleZxingJavaseVersion = "3.5.3"
 
 dependencies {
     // Validation
-    implementation("eu.europa.ec.joinup.sd-dss:dss-xades:$xadesVersion")
-    implementation("eu.europa.ec.joinup.sd-dss:dss-token:$xadesVersion")
-    implementation("eu.europa.ec.joinup.sd-dss:dss-utils-apache-commons:$xadesVersion")
+    api("eu.europa.ec.joinup.sd-dss:dss-xades:$xadesVersion")
+    api("eu.europa.ec.joinup.sd-dss:dss-token:$xadesVersion")
+    api("eu.europa.ec.joinup.sd-dss:dss-utils-apache-commons:$xadesVersion")
 
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jsr310Version")
+    api("org.apache.commons:commons-lang3:3.18.0")
+
+    api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jsr310Version")
 
     testImplementation("junit:junit:$junitVersion")
     testRuntimeOnly("org.junit.vintage:junit-vintage-engine:$junitEngineVersion")
