@@ -8,7 +8,7 @@ Forked (end patched) from: https://github.com/CIRFMF/ksef-client-java
 <dependency>
     <groupId>io.alapierre.ksef-sdk</groupId>
     <artifactId>ksef-client</artifactId>
-    <version>2.1.2</version>
+    <version>2.1.3</version>
 </dependency>
 ````
 

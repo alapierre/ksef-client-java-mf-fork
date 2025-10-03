@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.alapierre.ksef-sdk"
-version = "2.1.2"
+version = "2.1.3"
 
 jreleaser {
     configFile.set(layout.projectDirectory.file("jreleaser.yml"))

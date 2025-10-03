@@ -35,6 +35,7 @@ val xjc by configurations.creating
 val xadesVersion = "6.0.1"
 val googleZxingCodeVersion = "3.5.3"
 val googleZxingJavaseVersion = "3.5.3"
+val lombokVersion = "1.18.42"
 
 dependencies {
     // Validation
@@ -61,6 +62,12 @@ dependencies {
     //qr code
     implementation("com.google.zxing:core:$googleZxingCodeVersion")
     implementation("com.google.zxing:javase:$googleZxingJavaseVersion")
+
+    compileOnly("org.projectlombok:lombok:$lombokVersion")
+    annotationProcessor("org.projectlombok:lombok:$lombokVersion")
+
+    testCompileOnly("org.projectlombok:lombok:$lombokVersion")
+    testAnnotationProcessor("org.projectlombok:lombok:$lombokVersion")
 }
 
 tasks.withType<Test> {
