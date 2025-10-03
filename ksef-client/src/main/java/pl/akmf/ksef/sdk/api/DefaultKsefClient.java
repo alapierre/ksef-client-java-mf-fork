@@ -180,10 +180,7 @@ public class DefaultKsefClient implements KSeFClient {
     private static final String POST = "POST";
     private static final String PUT = "PUT";
     private static final String DELETE = "DELETE";
-    private static final ObjectMapper objectMapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    private final ObjectMapper objectMapper;
 
     private final HttpClient apiClient;
     private final String baseURl;
@@ -191,10 +188,18 @@ public class DefaultKsefClient implements KSeFClient {
     private final Map<String, String> defaultHeaders;
 
     public DefaultKsefClient(HttpClient httpClient, KsefApiProperties ksefApiProperties) {
+        this(httpClient, ksefApiProperties, new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false));
+    }
+
+    public DefaultKsefClient(HttpClient httpClient, KsefApiProperties ksefApiProperties, ObjectMapper objectMapper) {
         this.apiClient = httpClient;
         this.defaultHeaders = ksefApiProperties.getDefaultHeaders();
         this.timeout = ksefApiProperties.getRequestTimeout();
         this.baseURl = ksefApiProperties.getBaseUri();
+        this.objectMapper = objectMapper;
     }
 
     /**
