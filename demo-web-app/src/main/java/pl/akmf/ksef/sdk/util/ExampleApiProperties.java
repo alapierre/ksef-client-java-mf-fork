@@ -10,7 +10,7 @@ public class ExampleApiProperties extends KsefApiProperties {
 
     @Override
     public String getBaseUri() {
-        return "";
+        return "https://ksef-test.mf.gov.pl/";
     }
 
     @Override
@@ -20,8 +20,7 @@ public class ExampleApiProperties extends KsefApiProperties {
 
     @Override
     public Map<String, String> getDefaultHeaders() {
-        Map<String, String> headers = new HashMap<>();
 
-        return headers;
+        return new HashMap<>();
     }
 }
