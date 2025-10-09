@@ -10,6 +10,9 @@ public final class Parameter {
     public static final String PAGE_SIZE = "pageSize";
     public static final String PAGE_OFFSET = "pageOffset";
     public static final String STATUS = "status";
+    public static final String DESCRIPTION = "description";
+    public static final String AUTHOR_IDENTIFIER = "authorIdentifier";
+    public static final String AUTHOR_IDENTIFIER_TYPE = "authorIdentifierType";
     public static final String SESSION_TYPE = "sessionType";
     public static final String REFERENCE_NUMBER = "referenceNumber";
     public static final String DATE_CREATED_FROM = "dateCreatedFrom";

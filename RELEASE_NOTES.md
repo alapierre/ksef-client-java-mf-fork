@@ -329,7 +329,7 @@
 - **KSeFClient.java**: 🔧 refaktoryzacja nazw parametrów, aktualizacja typów zgodnie ze zmianami w modelu api
 
 ### 1.5 client.model
-- **auth.AuthenticationOperationStatusResponse.java**: 🔧 zmieniono nazwę klasy na `AuthOperationStatusResponse .java`
+- **auth.AuthenticationOperationStatusResponse.java**: 🔧 zmieniono nazwę klasy na `AuthOperationStatusResponse.java`
 - **AuthStatus.java**: ➕ dodano klasę
 - **GenerateTokenRequest.java**: 🔧 zmieniono nazwę klasy na `KsefTokenRequest.java`
 - **AuthenticationInitResponse.java**: 🔧 zmieniono nazwę klasy na `SignatureResponse.java`
@@ -348,8 +348,8 @@
 - **InvoiceExportStatus.java**: ➕ dodano klasę
 - **InvoiceMetadata.java**: ➖ usunięto klasę
 - **InvoiceMetadataBuyer.java**: 🔧 zmieniono `BuyerIdentifierType identifierType` na `IdentifierType identifierType`
-- **InvoiceMetadataSeller .java**: 🔧 dodano pole `String nip`
-- **InvoicePackagePart .java**: 🔧 dodano nowe pola
+- **InvoiceMetadataSeller.java**: 🔧 dodano pole `String nip`
+- **InvoicePackagePart.java**: 🔧 dodano nowe pola
 - **InvoiceQueryBuyer.java**: 🔧 zmieniono `BuyerIdentifierType identifierType` na `IdentifierType identifierType`
 - **InvoicesAsyncQueryRequest.java**: 🔧 zmieniono nazwę klasy na `InvoiceSummary.java`, dodano dodatkowe pola
 - **QueryInvoiceMetadataResponse.java**: 🔧 dodano pola klasy `Boolean hasMore; List<InvoiceSummary> invoices` usunięto `List<InvoiceMetadata> invoices`
@@ -439,5 +439,265 @@
 | ➕ dodane    | 25            |
 | 🔧 zmienione | 75            |
 | ➖ usunięte  | 31            |
+
+---
+# Changelog zmian – `## 3.0.1 (2025-10-09)`
+
+## 1. ksef-client
+
+### 1.1 api.builders
+- **CertificateBuilders.java**: 🔧 zmiana typów zwracanych metod
+- **CertificateMetadataListRequestBuilder.java**: 🔧 dodanie `private CertificateType type;` wraz z metodą ustawiającą wartość tego pola
+- **InvoiceMetadataQueryRequestBuilder.java**: ➖ usunięto klasę
+- **InvoiceQueryFiltersBuilder.java**: 🔧 zmiana nazwy z `InvoicesAsyncQueryFiltersBuilder`; zmiany pól `InvoiceQuerySeller seller;` na `String sellerNip;` i `InvoiceQueryBuyer buyer;` na `InvoiceBuyerIdentifier buyerIdentifier;`, zmiana `InvoiceMetadataSchema formType` na `InvoiceFormType formType`, dodanie `Boolean hasAttachment = false;` 
+- **InvoicesAsyncQueryFiltersBuilder.java**: 🔧 zmiany pól `InvoiceQuerySeller seller;` na `String sellerNip;` i `InvoiceQueryBuyer buyer;` na `InvoiceBuyerIdentifier buyerIdentifier;`, zmiana `InvoiceMetadataSchema formType` na `InvoiceFormType formType` 
+- **GrantEUEntityPermissionsRequestBuilder.java**: 🔧 zmiany pól `subjectName;` na `euEntityName` 
+- **PersonPermissionsQueryRequestBuilder.java**: 🔧 dodanie pola `private PersonPermissionsContextIdentifier contextIdentifier;` wraz z metodą ustawiającą wartość tego pola
+- **QueryPersonalGrantRequestBuilder.java**: ➕ dodano klasę
+- **GrantAuthorizationPermissionsRequestBuilder.java**: 🔧 zmiana pola `private ProxyEntityPermissionType permission;` na `private InvoicePermissionType permission;`
+- **SubunitPermissionsGrantRequestBuilder.java**: 🔧 dodanie pola `String subunitName;` wraz z metodą ustawiającą wartość tego pola
+
+### 1.2 api.services
+- **DefaultCertificateService.java**: 🔧 zmiany w przechwytywaniu wyjątków i zwracaniu typów
+- **DefaultCryptographyService.java**: 🔧 zmiany w przechwytywaniu wyjątków i zwracaniu typów, zmiana nazwy metody z `generateCsr` na `generateCsrWithRsa`, `parsePrivateKeyFromPem` na `parseRsaPrivateKeyFromPem`; dodanie metod ` FileMetadata getMetaData(InputStream inputStream)`, `PublicKey parsePublicKeyFromCertificatePem(String certificatePem)`, `PrivateKey parseEcdsaPrivateKeyFromPem(byte[] privateKey)`
+- **DefaultKsefClient.java**: 🔧 aktualizacje związane z modelem, dodanie usług zgodnie z api
+- **HttpStatus.java**: 🔧 dodanie kodów http ` UNSUPPORTED_MEDIA_TYPE(415), INTERNAL_ERROR(500);`  
+- **Url.java**: 🔧 dodanie usług zgodnie z api
+
+### 1.3 api
+
+### 1.4 client.interfaces
+- **CertificateService.java**: 🔧 zmiany w przechwytywaniu wyjątków i zwracaniu typów
+- **CryptographyService.java**: 🔧 zmiany w przechwytywaniu wyjątków i zwracaniu typów, zmiana nazwy metody z `generateCsr` na `generateCsrWithRsa`, `parsePrivateKeyFromPem` na `parseRsaPrivateKeyFromPem`; dodanie metod ` FileMetadata getMetaData(InputStream inputStream)`, `PublicKey parsePublicKeyFromCertificatePem(String certificatePem)`, `PrivateKey parseEcdsaPrivateKeyFromPem(byte[] privateKey)`
+- **KSeFClient.java**: 🔧 aktualizacje związane z modelem, dodanie usług zgodnie z api
+
+### 1.5 client.model
+- **auth/AuthenticationToken.java**: 🔧 zmieniono typ dla pola `SubjectIdentifier authorIdentifier` na `AuthorTokenIdentifier authorIdentifier`, dodano pola `OffsetDateTime lastUseDate` i `List<String> statusDetails`
+- **auth/AuthorTokenIdentifier.java**: ➕ dodano klasę
+- **auth/ContextIdentifier.java**: 🔧 zmieniono typ dla pola `ContextIdentifierType type` na `IdentifierType type;` zdefiniowano enuma `IdentifierType`
+- **auth/ContextIdentifierType.java**: ➖ usunięto klasę
+- **auth/SubjectIdentifier.java**: 🔧 zmieniono typ dla pola `SubjectIdentifierType type` na `IdentifierType type;` zdefiniowano enuma `IdentifierType`
+- **auth/TokenPermissionType.java**: 🔧 zmieniono nazwy enumów (wartości pozostają bez zmian), dodano 2 nowe wartości `SUBUNIT_MANAGE("SubunitManage")` i `ENFORCEMENT_OPERATION("EnforcementOperations")`
+- **certificate/CertificateEnrollmentsInfoResponse.java**: 🔧 zmieniono pole `List<String> givenNames` na `String givenName;`
+- **certificate/SubjectCertificateIdentifier.java**: ➕ dodano klasę
+- **certificate/CertificateInfo.java**: 🔧 pola `String subjectIdentifier` i `String subjectIdentifierType` zastąpiono `SubjectCertificateIdentifier subjectIdentifier`
+- **certificate/CertificateListResponse.java**: 🔧 zmieniono `List<CertificateResponse> certificates` na `List<RetrieveCertificatesListItem> certificates`
+- **certificate/CertificateType.java**: 🔧 dodanie do enuma pola z wartością
+- **certificate/QueryCertificatesRequest.java**: 🔧 dodanie pola `CertificateType type`
+- **certificate/CertificateResponse.java**: 🔧 zmiana nazwy na `RetrieveCertificatesListItem`
+- **certificate/SubjectCertificateIdentifierType.java**: ➕ dodano klasę
+- **invoice/InitAsyncInvoicesQueryResponse.java**: 🔧 usunięto pole `StatusInfo status`
+- **invoice/InvoiceBuyerIdentifier.java**: ➕ dodano klasę
+- **invoice/InvoiceExportFilters.java**: 🔧 zmieniono pole `InvoiceMetadataSchema formType` na `InvoiceFormType formType` i `InvoiceQuerySeller seller` na `String sellerNip`, usunięto `InvoiceQueryBuyer buyer`
+- **invoice/InvoiceExportPackage.java**: 🔧 dodano pole `OffsetDateTime lastInvoicingDate`
+- **invoice/InvoiceFormCode.java**: ➕ dodano klasę
+- **invoice/InvoiceMetadataSchema.java**: 🔧 zmieniono nazwę na `InvoiceFormType` i dodano wartości enuma `PEF("PEF"), RR("RR");`
+- **invoice/InvoiceSummary.java**: 🔧 zmieniono nazwę na `InvoiceMetadata`, dodano pole `String hashOfCorrectedInvoice`, zmieniono `FormCode formCode` na `InvoiceFormCode formCode`
+- **invoice/InvoiceMetadataBuyer.java**: 🔧 pola `IdentifierType identifierType` i `String identifier` zastąpiono `InvoiceBuyerIdentifier identifier`
+- **invoice/InvoiceMetadataInvoiceType.java**: 🔧 dodano nowe wartości enumów `VAT_PEF("VatPef"), KOR_PEF("KorPef"), VAT_RR("VatRr"), KOR_VAT_SP("KorVatRr");`
+- **invoice/InvoiceMetadataSeller.java**: 🔧 usunięto pole `String identifier`
+- **invoice/InvoiceQueryBuyer.java**: ➖ usunięto klasę
+- **invoice/InvoiceMetadataQueryRequest.java**: 🔧 zmieniono nazwę klasy na `InvoiceQueryFilters`, pola `InvoiceQuerySchemaType schemaType` i `InvoiceMetadataSchema invoiceSchema` zastąpiono `InvoiceFormType formType`, `InvoiceQuerySeller seller` zmieniono na `String sellerNip`, `InvoiceQueryBuyer buyer` zmieniono na `InvoiceBuyerIdentifier buyerIdentifier`    
+- **invoice/InvoiceQuerySeller.java**: ➖ usunięto klasę
+- **invoice/InvoicingMode.java**: 🔧 zmieniono zmienną na final    
+- **invoice/QueryInvoiceMetadataResponse.java**: 🔧 `List<InvoiceSummary> invoices` zmieniono na `List<InvoiceMetadata> invoices`, dodano pole `Boolean isTruncated`
+- **invoice/ThirdSubjectIdentifier.java**: ➕ dodano klasę
+- **invoice/ThirdSubjectIdentifierType.java**: ➕ dodano klasę
+- **invoice/ThirdSubject.java**: 🔧 pola `IdentifierType identifierType` i `String identifier` zastąpiono `ThirdSubjectIdentifier identifier`
+- **permission/entity/EntityPermissionType.java**: 🔧 zmiana nazw enumów (wartości pozostają bez zmian)
+- **permission/entity/SubjectIdentifier.java**: 🔧 `SubjectIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/entity/SubjectIdentifierType.java**: ➖ usunięto klasę
+- **permission/euentity/ContextIdentifier.java**: 🔧 `ContextIdentifierType type` zastąpiono `IdentifierType type` i zdefiniowano enuma `IdentifierType`
+- **permission/euentity/ContextIdentifierType.java**: ➖ usunięto klasę
+- **permission/euentity/EuEntityPermissionsGrantRequest.java**: 🔧 `String subjectName` zmieniono na `String euEntityName`
+- **permission/euentity/EuEntityPermissionType.java**: 🔧 zmiana nazw enumów (wartości pozostają bez zmian)
+- **permission/euentity/SubjectIdentifier.java**: 🔧 `SubjectIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/euentity/SubjectIdentifierType.java**: ➖ usunięto klasę
+- **permission/indirect/IndirectPermissionType.java**: 🔧 zmiana nazw enumów (wartości pozostają bez zmian)
+- **permission/indirect/SubjectIdentifier.java**: 🔧 `SubjectIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/indirect/SubjectIdentifierType.java**: ➖ usunięto klasę
+- **permission/indirect/TargetIdentifier.java**: 🔧 `TargetIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/indirect/TargetIdentifierType.java**: ➖ usunięto klasę
+- **permission/person/PersonPermissionsSubjectIdentifier.java**: 🔧 `PersonPermissionsSubjectIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/person/PersonPermissionsSubjectIdentifierType.java**: ➖ usunięto klasę
+- **permission/proxy/GrantAuthorizationPermissionsRequest.java**: 🔧 `ProxyEntityPermissionType permission` zmieniono na `InvoicePermissionType permission;`
+- **permission/proxy/SubjectIdentifier.java**: 🔧 `SubjectIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/proxy/SubjectIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/EntityAuthorizationGrant.java**: 🔧 `String authorIdentifier` i `EntityAuthorizationsAuthorIdentifierType authorIdentifierType` zmieniono na `EntityAuthorizationsAuthorIdentifier authorIdentifier`, `String authorizedEntityIdentifier` i `EntityAuthorizationsAuthorizedEntityIdentifierType authorizedEntityIdentifierType` zmieniono na `EntityAuthorizationsAuthorizedEntityIdentifier authorizedEntityIdentifier`, `String authorizingEntityIdentifier` i `EntityAuthorizationsAuthorizingEntityIdentifierType authorizingEntityIdentifierType` zmieniono na `EntityAuthorizationsAuthorizingEntityIdentifier authorizingEntityIdentifier`   
+- **permission/search/EntityAuthorizationsAuthorIdentifier.java**: ➕ dodano klasę
+- **permission/search/EntityAuthorizationsAuthorIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/EntityAuthorizationsAuthorizedEntityIdentifier.java**: 🔧 `EntityAuthorizationsAuthorizedEntityIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/search/EntityAuthorizationsAuthorizedEntityIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/EntityAuthorizationsAuthorizingEntityIdentifier.java**: 🔧 `EntityAuthorizationsAuthorizingEntityIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/search/EntityAuthorizationsAuthorizingEntityIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/EntityPermissionsSubordinateEntityIdentifier.java**: 🔧 `EntityPermissionsSubordinateEntityIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/search/EntityPermissionsSubordinateEntityIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/EntityRole.java**: 🔧 `String parentEntityIdentifier` i `EntityRolesParentEntityIdentifierType parentEntityIdentifierType` zmieniono na `EntityRoleQueryParentEntityIdentifier parentEntityIdentifier`
+- **permission/search/EntityRoleQueryParentEntityIdentifier.java**: ➕ dodano klasę
+- **permission/search/EntityRolesParentEntityIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/EntityRoleType.java**: 🔧 zmiana nazw enumów (wartości pozostają bez zmian)
+- **permission/search/EuEntityPermission.java**: 🔧 `String authorIdentifier` i `EuEntityPermissionsAuthorIdentifierType authorIdentifierType` zmieniono na `EuEntityPermissionsAuthorIdentifier authorIdentifier`
+- **permission/search/EuEntityPermissionsAuthorIdentifier.java**: ➕ dodano klasę
+- **permission/search/EuEntityPermissionsAuthorIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/InvoicePermissionType.java**: 🔧 zmiana nazw enumów (wartości pozostają bez zmian), dodano nową wartość enuma `PEF_INVOICING("PefInvoicing")`
+- **permission/search/PersonPermission.java**: 🔧 `String authorizedIdentifier` i `PersonPermissionsAuthorizedIdentifierType authorizedIdentifierType` zmieniono na `PersonPermissionsAuthorizedIdentifier authorizedIdentifier`, `String targetIdentifier` i `PersonPermissionsTargetIdentifierType targetIdentifierType` zmieniono na `PersonPermissionsTargetIdentifier targetIdentifier`, `String authorIdentifier` i `PersonPermissionsAuthorIdentifierType authorIdentifierType` zmieniono na `PersonPermissionsAuthorIdentifier authorIdentifier`, dodano `PersonPermissionsContextIdentifier contextIdentifier`, `PersonPermissionScope permissionScope` zmieniono na `PersonPermissionType permissionScope`
+- **permission/search/PersonPermissionsAuthorIdentifier.java**: 🔧 `PersonPermissionsAuthorIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/search/PersonPermissionsAuthorIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/PersonPermissionsAuthorizedIdentifier.java**: 🔧 `PersonPermissionsAuthorizedIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/search/PersonPermissionsAuthorizedIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/PersonPermissionsContextIdentifier.java**: ➕ dodano klasę
+- **permission/search/PersonPermissionsQueryRequest.java**: 🔧 dodano pole `PersonPermissionsContextIdentifier contextIdentifier`
+- **permission/search/PersonPermissionsTargetIdentifier.java**: 🔧 `PersonPermissionsTargetIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/search/PersonPermissionsTargetIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/QueryPersonalGrantAuthorizedIdentifier.java**: ➕ dodano klasę
+- **permission/search/QueryPersonalGrantContextIdentifier.java**: ➕ dodano klasę
+- **permission/search/QueryPersonalGrantItem.java**: ➕ dodano klasę
+- **permission/search/QueryPersonalGrantRequest.java**: ➕ dodano klasę
+- **permission/search/QueryPersonalGrantResponse.java**: ➕ dodano klasę
+- **permission/search/QueryPersonalGrantTargetIdentifier.java**: ➕ dodano klasę
+- **permission/search/PersonPermissionScope.java**: 🔧 zmiana nazwy klasy na `QueryPersonalPermissionTypes`, zmiana nazw enumów (wartości pozostają bez zmian), dodano nową wartość enuma `VAT_UE_MANAGE("VatUeManage")`, usunięto wartość enuma `OWNER("Owner")` 
+- **permission/search/SubordinateEntityRole.java**: 🔧 `String subordinateEntityIdentifier` i `SubordinateRoleSubordinateEntityIdentifierType subordinateEntityIdentifierType` zmieniono na `EntityRoleQueryParentEntityIdentifier subordinateEntityIdentifier`
+- **permission/search/QuerySubordinateEntityRolesResponse.java**: 🔧 zmiana nazwy klasy na `SubordinateEntityRolesQueryResponse` 
+- **permission/search/SubordinateEntityRoleType.java**: 🔧 zmiana nazw enumów (wartości pozostają bez zmian)
+- **permission/search/SubordinateRoleSubordinateEntityIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/SubunitPermission.java**: 🔧 `String authorizedIdentifier` i `SubunitPermissionsSubjectIdentifierType authorizedIdentifierType` zmieniono na `SubunitPermissionsAuthorizedIdentifier authorizedIdentifier`, `String subunitIdentifier` i `SubunitPermissionsSubunitIdentifierType subunitIdentifierType` zmieniono na `SubunitPermissionsSubunitIdentifier subunitIdentifier`, `String authorIdentifier` i `SubunitPermissionsAuthorIdentifierType authorIdentifierType` zmieniono na `SubunitPermissionsAuthorIdentifier authorIdentifier`, `SubunitPermissionScope permissionScope` zmieniono na `SubunitPermissionType permissionScope`, dodano pole `String subunitName`
+- **permission/search/SubunitPermissionsAuthorIdentifier.java**: ➕ dodano klasę
+- **permission/search/SubunitPermissionsAuthorIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/SubunitPermissionsAuthorizedIdentifier.java**: ➕ dodano klasę
+- **permission/search/SubunitPermissionsSubjectIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/SubunitPermissionsSubunitIdentifier.java**: 🔧 `SubunitPermissionsSubunitIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/search/SubunitPermissionsSubunitIdentifierType.java**: ➖ usunięto klasę
+- **permission/search/SubunitPermissionScope.java**: 🔧 nazwę klasy zmieniono na `SubunitPermissionType `, zmiana nazwy enuma (wartości pozostają bez zmian)
+- **permission/subunit/ContextIdentifier.java**: 🔧 `ContextIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/subunit/ContextIdentifierType.java**: ➖ usunięto klasę
+- **permission/subunit/SubjectIdentifier.java**: 🔧 `SubjectIdentifierType type` zmieniono na `IdentifierType type`, zdefiniowano enuma `IdentifierType`
+- **permission/subunit/SubjectIdentifierType.java**: ➖ usunięto klasę
+- **permission/subunit/SubunitPermissionsGrantRequest.java**: 🔧 dodano pole `String subunitName`
+- **session/AuthenticationMethod.java**: 🔧 dodano wartość enuma `PEPPOL_SIGNATURE("PeppolSignature")`
+- **session/BatchSessionLimit.java**: ➕ dodano klasę
+- **session/ChangeContextLimitRequest.java**: ➕ dodano klasę
+- **session/FormCode.java**: 🔧 `String schemaVersion` zmiana na `SchemaVersion schemaVersion`, `String value` zmiana na `SessionValue value`
+- **session/GetContextLimitResponse.java**: ➕ dodano klasę
+- **session/OnlineSessionLimit.java**: ➕ dodano klasę
+- **session/SchemaVersion.java**: ➕ dodano klasę
+- **session/SessionInvoicesResponse.java**: 🔧 usunięto pola `Integer totalCount` i `Boolean hasMore`
+- **session/SessionInvoiceStatusResponse.java**: 🔧 dodano pola `InvoicingMode invoicingMode`
+- **session/SessionValue.java**: ➕ dodano klasę
+- **session/SystemCode.java**: 🔧 dodano wartości enuma `FA_PEF_3("FA_PEF (3)"), FA_KOR_PEF_3("FA_KOR_PEF (3)")`
+- **testdata/SubjectTypeTestData.java**: ➕ dodano klasę
+- **testdata/Subunit.java**: ➕ dodano klasę
+- **testdata/TestDataAttachmentRemoveRequest.java**: ➕ dodano klasę
+- **testdata/TestDataAttachmentRequest.java**: ➕ dodano klasę
+- **testdata/TestDataAuthorizedIdentifier.java**: ➕ dodano klasę
+- **testdata/TestDataContextIdentifier.java**: ➕ dodano klasę
+- **testdata/TestDataPermission.java**: ➕ dodano klasę
+- **testdata/TestDataPermissionRemoveRequest.java**: ➕ dodano klasę
+- **testdata/TestDataPermissionRequest.java**: ➕ dodano klasę
+- **testdata/TestDataPersonCreateRequest.java**: ➕ dodano klasę
+- **testdata/TestDataPersonRemoveRequest.java**: ➕ dodano klasę
+- **testdata/TestDataSubjectCreateRequest.java**: ➕ dodano klasę
+- **testdata/TestDataSubjectRemoveRequest.java**: ➕ dodano klasę
+- **pepol/PeppolProvider.java**: ➕ dodano klasę
+- **pepol/PeppolProvidersListResponse.java**: ➕ dodano klasę
+
+### 1.6 client
+- **Parameter.java**: 🔧 dodano stałe `String DESCRIPTION = "description"`, `String AUTHOR_IDENTIFIER = "authorIdentifier"`, `String AUTHOR_IDENTIFIER_TYPE = "authorIdentifierType"`
+
+### 1.7 system
+
+### 1.8 resources
+- **ksefApi.yaml**: ➖ usunięto plik
+
+### 1.8 test
+- **AuthTokenRequestSerializerTest.java**: 🔧 zmiana wartości w `EXPECTED_XML_VALUE`
+
+- 🔧 build.gradle.kts - podbicie wersji bibliotek
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BaseIntegrationTest.java**: 🔧 ksefClient jako bean
+- **AuthorizationIntegrationTest.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java` 
+- **BatchIntegrationTest.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java` 
+- **CertificateIntegrationTest.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java` 
+- **ContextLimitIntegrationTest.java**: ➕ dodano klasę (tymczasowo test wyłączony)
+- **EntityPermissionIntegrationTest.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **EuEntityPermissionIntegrationTest.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **EuEntityRepresentativePermissionIntegrationTest.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **IndirectPermissionIntegrationTest.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu, poprawa testów
+- **KsefTokenIntegrationTest.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **OnlineSessionIntegrationTest.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **PeppolProviderIntegrationTest.java**: ➕ dodano nowe scenariusze testowe
+- **SearchEntityInvoiceRoleIntegrationTest.java**: ➕ dodano nowe scenariusze testowe
+- **SearchSubordinateQueryIntegrationTest.java**: ➕ dodano nowe scenariusze testowe
+- **PersonPermissionIntegrationTest.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **ProxyPermissionIntegrationTest.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **QrCodeOfflineIntegrationTest.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianami w `cryptographyService`, dodanie parametrów do tesótów z fa(2) i fa(3) z RSA i ECDSA
+- **QrCodeOnlineIntegrationTest.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`
+- **QueryInvoiceIntegrationTest.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **SearchPersonalGrantPermissionIntegrationTest.java**: ➕ dodano nowe scenariusze testowe
+- **SessionIntegrationTest.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **SubUnitPermissionIntegrationTest.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **EntityPermissionAccountingIntegrationTest.java**: ➕ dodano nowe scenariusze testowe
+### 2.1.1 integrationTest.resources
+-
+
+### 2.2 api
+- **ActiveSessionController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **AuthController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **BatchSessionController.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **CertificateController.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **EntityPermissionsController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **EuEntityPermissionsController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **EuEntityRepresentativePermissionsController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **IndirectPermissionsEntityController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **InvoicesController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **OnlineSessionController.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **OperationStatusController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`
+- **PersonPermissionController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **ProxyPermissionsEntityController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **QrCodeController.java**: 🔧 ksefClient i cryptographyService jako bean zgodnie z deklaracją w `KsefClientConfig.java`
+- **SearchPermissionTestEndpoint.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`
+- **SessionController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`
+- **SubUnitPermissionsController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`
+- **TokensController.java**: 🔧 ksefClient jako bean zgodnie z deklaracją w `KsefClientConfig.java`; aktualizacje związane ze zmianą w modelu
+- **ExampleApiProperties.java**: 🔧 dodanie adresu testowego środowiska
+- **HttpClientBuilder.java**: 🔧 użycie konfiguracji z `HttpClientConfig.java`
+- **HttpClientConfig.java**: ➕ dodanie konfiguracji do klienta http
+- **KsefClientConfig.java**: 🔧 inicjalizacja beanów dla KsefClient i CryptographyService
+
+### 2.2.1 resources
+-
+
+### 2.3 test - api.services
+- **QrCodeTests.java**: 🔧 zmiana typów
+- **VerificationLinkServiceTests.java**: 🔧 zmiana typów
+-
+
+## 3. .http
+- 🔧 do `auth.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `batch.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `certificate.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `entity-permission.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `eu-entity-permission.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `eu-entity-representative-permission.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `grantPermission.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `invoice.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `personalPremissions.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `searchPremissions.http` w usługach dodano nagłówek z tokenem; zmieniono pageSize na 10
+- 🔧 do `session.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `sessionAndUpo.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `subunit-subject-permission.http` w usługach dodano nagłówek z tokenem
+- 🔧 do `tokens.http` w usługach dodano nagłówek z tokenem
+
+- 🔧 build.gradle.kts - podbicie wersji bibliotek
+
+## 4. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 42            |
+| 🔧 zmienione | 128           |
+| ➖ usunięte  | 26            |
 
 ---
