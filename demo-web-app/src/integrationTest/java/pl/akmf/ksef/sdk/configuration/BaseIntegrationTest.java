@@ -101,7 +101,7 @@ public abstract class BaseIntegrationTest {
         //Czekanie na zakończenie procesu
         await().atMost(14, SECONDS)
                 .pollInterval(1, SECONDS)
-                .until(() -> isSessionStatusReady(submitAuthTokenResponse.getReferenceNumber(), submitAuthTokenResponse.getAuthenticationToken().getToken()));
+                .until(() -> isAuthProcessReady(submitAuthTokenResponse.getReferenceNumber(), submitAuthTokenResponse.getAuthenticationToken().getToken()));
 
         AuthOperationStatusResponse tokenResponse = ksefClient.redeemToken(submitAuthTokenResponse.getAuthenticationToken().getToken());
 
@@ -124,14 +124,14 @@ public abstract class BaseIntegrationTest {
         //Czekanie na zakończenie procesu
         await().atMost(14, SECONDS)
                 .pollInterval(1, SECONDS)
-                .until(() -> isSessionStatusReady(submitAuthTokenResponse.getReferenceNumber(), submitAuthTokenResponse.getAuthenticationToken().getToken()));
+                .until(() -> isAuthProcessReady(submitAuthTokenResponse.getReferenceNumber(), submitAuthTokenResponse.getAuthenticationToken().getToken()));
 
         AuthOperationStatusResponse tokenResponse = ksefClient.redeemToken(submitAuthTokenResponse.getAuthenticationToken().getToken());
 
         return new AuthTokensPair(tokenResponse.getAccessToken().getToken(), tokenResponse.getRefreshToken().getToken());
     }
 
-    private boolean isSessionStatusReady(String referenceNumber, String tempAuthToken) throws ApiException {
+    private boolean isAuthProcessReady(String referenceNumber, String tempAuthToken) throws ApiException {
         AuthStatus checkAuthStatus = ksefClient.getAuthStatus(referenceNumber, tempAuthToken);
         return checkAuthStatus.getStatus().getCode() == 200;
     }

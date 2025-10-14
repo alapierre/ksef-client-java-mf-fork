@@ -100,7 +100,7 @@ public class EntityPermissionAccountingIntegrationTest extends BaseIntegrationTe
         OperationResponse response = ksefClient.grantsPermissionEntity(request, accessToken);
         Assertions.assertNotNull(response);
 
-        return response.getOperationReferenceNumber();
+        return response.getReferenceNumber();
     }
 }
 

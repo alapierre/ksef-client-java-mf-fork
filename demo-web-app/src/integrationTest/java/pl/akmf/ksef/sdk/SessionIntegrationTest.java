@@ -10,6 +10,7 @@ import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.session.AuthenticationListItem;
 import pl.akmf.ksef.sdk.client.model.session.AuthenticationListResponse;
+import pl.akmf.ksef.sdk.client.model.session.CommonSessionStatus;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
 import pl.akmf.ksef.sdk.client.model.session.FormCode;
 import pl.akmf.ksef.sdk.client.model.session.SchemaVersion;
@@ -24,6 +25,7 @@ import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
 import pl.akmf.ksef.sdk.util.IdentifierGeneratorUtils;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -137,6 +139,7 @@ class SessionIntegrationTest extends BaseIntegrationTest {
         // Step 2: Search session
         SessionsQueryRequest request = new SessionsQueryRequest();
         request.setSessionType(SessionType.ONLINE);
+        request.setStatuses(List.of(CommonSessionStatus.INPROGRESS));
         SessionsQueryResponse sessionsQueryResponse = ksefClient.getSessions(request, 10, null, accessToken);
         Assertions.assertEquals(1, sessionsQueryResponse.getSessions().size());
     }

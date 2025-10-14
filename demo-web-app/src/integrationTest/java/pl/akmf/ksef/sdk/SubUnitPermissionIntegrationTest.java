@@ -88,12 +88,12 @@ class SubUnitPermissionIntegrationTest extends BaseIntegrationTest {
 
         OperationResponse response = ksefClient.grantsPermissionSubUnit(request, accessToken);
         Assertions.assertNotNull(response);
-        return response.getOperationReferenceNumber();
+        return response.getReferenceNumber();
     }
 
     private String revokePermission(String operationId, String accessToken) {
         try {
-            return ksefClient.revokeCommonPermission(operationId, accessToken).getOperationReferenceNumber();
+            return ksefClient.revokeCommonPermission(operationId, accessToken).getReferenceNumber();
         } catch (ApiException e) {
             Assertions.fail(e.getMessage());
         }

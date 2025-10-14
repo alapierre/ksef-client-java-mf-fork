@@ -61,7 +61,7 @@ class EntityPermissionIntegrationTest extends BaseIntegrationTest {
 
     private String revokePermission(String operationId, String accessToken) {
         try {
-            return ksefClient.revokeCommonPermission(operationId, accessToken).getOperationReferenceNumber();
+            return ksefClient.revokeCommonPermission(operationId, accessToken).getReferenceNumber();
         } catch (ApiException e) {
             Assertions.fail(e.getMessage());
         }
@@ -96,6 +96,6 @@ class EntityPermissionIntegrationTest extends BaseIntegrationTest {
         OperationResponse response = ksefClient.grantsPermissionEntity(request, accessToken);
         Assertions.assertNotNull(response);
 
-        return response.getOperationReferenceNumber();
+        return response.getReferenceNumber();
     }
 }

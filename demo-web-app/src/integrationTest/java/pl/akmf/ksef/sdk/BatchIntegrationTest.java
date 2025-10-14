@@ -72,7 +72,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
-    void batchSessionStreamE2EIntegrationTest() throws JAXBException, IOException, InterruptedException, ApiException {
+    void batchSessionStreamE2EIntegrationTest() throws JAXBException, IOException, ApiException {
         String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
         String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
 
@@ -226,7 +226,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         return response.getReferenceNumber();
     }
 
-    private String openBatchSessionAndSendInvoiceStream(String context, String accessToken) throws IOException, ApiException, InterruptedException {
+    private String openBatchSessionAndSendInvoiceStream(String context, String accessToken) throws IOException, ApiException {
         //when
         String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream("/xml/invoices/sample/invoice-template.xml"))
                 .readAllBytes(), StandardCharsets.UTF_8);

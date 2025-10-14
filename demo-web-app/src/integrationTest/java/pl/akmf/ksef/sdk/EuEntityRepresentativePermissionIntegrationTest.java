@@ -114,7 +114,7 @@ class EuEntityRepresentativePermissionIntegrationTest extends BaseIntegrationTes
 
     private String revokePermission(String operationId, String accessToken) {
         try {
-            return ksefClient.revokeCommonPermission(operationId, accessToken).getOperationReferenceNumber();
+            return ksefClient.revokeCommonPermission(operationId, accessToken).getReferenceNumber();
         } catch (ApiException e) {
             Assertions.fail(e.getMessage());
         }
@@ -147,7 +147,7 @@ class EuEntityRepresentativePermissionIntegrationTest extends BaseIntegrationTes
 
         Assertions.assertNotNull(response);
 
-        return response.getOperationReferenceNumber();
+        return response.getReferenceNumber();
     }
 
     private String grantEuEntityPermission(String ownerNipVatEu, String euEntityPersonalCertificateFingerprint, String accessToken) throws ApiException {
@@ -166,7 +166,7 @@ class EuEntityRepresentativePermissionIntegrationTest extends BaseIntegrationTes
 
         Assertions.assertNotNull(response);
 
-        return response.getOperationReferenceNumber();
+        return response.getReferenceNumber();
     }
 
     private Boolean isOperationFinish(String referenceNumber, String accessToken) throws ApiException {

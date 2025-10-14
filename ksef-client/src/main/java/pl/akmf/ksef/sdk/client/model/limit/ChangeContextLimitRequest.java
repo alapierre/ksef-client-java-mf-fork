@@ -1,16 +1,11 @@
-package pl.akmf.ksef.sdk.client.model.session;
+package pl.akmf.ksef.sdk.client.model.limit;
 
-public class GetContextLimitResponse {
+public class ChangeContextLimitRequest {
     private OnlineSessionLimit onlineSession;
     private BatchSessionLimit batchSession;
 
-    public GetContextLimitResponse() {
+    public ChangeContextLimitRequest() {
 
-    }
-
-    public GetContextLimitResponse(OnlineSessionLimit onlineSession, BatchSessionLimit batchSession) {
-        this.onlineSession = onlineSession;
-        this.batchSession = batchSession;
     }
 
     public OnlineSessionLimit getOnlineSession() {

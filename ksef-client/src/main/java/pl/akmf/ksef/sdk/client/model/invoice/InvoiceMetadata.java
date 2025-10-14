@@ -1,7 +1,5 @@
 package pl.akmf.ksef.sdk.client.model.invoice;
 
-import pl.akmf.ksef.sdk.client.model.session.FormCode;
-
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;

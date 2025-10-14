@@ -21,7 +21,7 @@ public enum Url {
     CERTIFICATE_RETRIEVE("/api/v2/certificates/retrieve", "apiV2CertificatesRetrievePost"),
 
     INVOICE_DOWNLOAD_BY_KSEF("/api/v2/invoices/ksef/{ksefReferenceNumber}", "apiV2InvoicesKsefKsefReferenceNumberGet"),
-    INVOICE_EXPORT_STATUS("/api/v2/invoices/exports/{operationReferenceNumber}", "apiV2InvoicesExportDownload"),
+    INVOICE_EXPORT_STATUS("/api/v2/invoices/exports/{referenceNumber}", "apiV2InvoicesExportDownload"),
     INVOICE_EXPORT_INIT("/api/v2/invoices/exports", "apiV2InvoicesExportPost"),
     INVOICE_DOWNLOAD("/api/v2/invoices/download", "apiV2InvoicesDownloadPost"),
     INVOICE_QUERY_METADATA("/api/v2/invoices/query/metadata", "apiV2InvoicesQueryMetadataPost"),
@@ -41,7 +41,7 @@ public enum Url {
     PERMISSION_STATUS("/api/v2/permissions/operations/{referenceNumber}", "apiV2PermissionsOperationsReferenceNumberGet"),
     PERMISSION_REVOKE_AUTHORIZATION("/api/v2/permissions/authorizations/grants/{permissionId}", "apiV2PermissionsAuthorizationsGrantsPermissionIdDelete"),
     PERMISSION_REVOKE_COMMON("/api/v2/permissions/common/grants/{permissionId}", "apiV2PermissionsCommonGrantsPermissionIdDelete"),
-
+    PERMISSION_ATTACHMENT_STATUS("/api/v2/permissions/attachments/status", "apiV2PermissionAttachmentStatus"),
     SECURITY_PUBLIC_KEY_CERTIFICATE("/api/v2/security/public-key-certificates", "apiV2SecurityPublicKeyCertificatesGet"),
     PUBLIC_KEY("/public-keys/publicKey.pem", "apiV2SPublicKeyGet"),
 
@@ -66,10 +66,13 @@ public enum Url {
     SESSION_ACTIVE_SESSIONS("/api/v2/auth/sessions", "apiV2AuthSessionsGet"),
     SESSION_REVOKE_SESSION("/api/v2/auth/sessions/{referenceNumber}", "apiV2AuthSessionsReferenceNumberDelete"),
 
-    LIMIT_CONTEXT("/api/v2/limits", "apiV2LimitsGet"),
+    LIMIT_CONTEXT("/api/v2/limits/context", "apiV2LimitsGet"),
+    LIMIT_SUBJECT_CERTIFICATE("/api/v2/limits/subject", "apiV2LimitsGet"),
 
-    LIMIT_CONTEXT_CHANGE_TEST("/api/v2/testdata/limits", "apiV2LimitsChange"),
-    LIMIT_CONTEXT_REST_TEST("/api/v2/testdata/limits", "apiV2LimitsReset"),
+    LIMIT_CONTEXT_CHANGE_TEST("/api/v2/testdata/limits/context/session", "apiV2LimitsChange"),
+    LIMIT_CONTEXT_RESET_TEST("/api/v2/testdata/limits/context/session", "apiV2LimitsReset"),
+    LIMIT_SUBJECT_CERTIFICATE_CHANGE_TEST("/api/v2/testdata/limits/subject/certificate", "apiV2LimitsChange"),
+    LIMIT_SUBJECT_CERTIFICATE_RESET_TEST("/api/v2/testdata/limits/subject/certificate", "apiV2LimitsReset"),
     TEST_SUBJECT_CREATE("/api/v2/testdata/subject", "subjectTestCreate"),
     TEST_SUBJECT_DELETE("/api/v2/testdata/subject/remove", "subjectTestRemove"),
     TEST_PERSON_CREATE("/api/v2/testdata/person", "personTestCreate"),

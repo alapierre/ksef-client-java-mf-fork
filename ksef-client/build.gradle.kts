@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "pl.akmf.ksef-sdk"
-version = "3.0.1"
+version = "3.0.2"
 
 java {
     toolchain {
@@ -64,7 +64,9 @@ tasks.withType<Test> {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(21)
+    options.release.set(11)
+
+    options.encoding = "UTF-8"
 }
 
 
@@ -91,7 +93,8 @@ tasks.register("generateJaxb") {
             )
             "xjc"(
                 "destdir" to "src/main/java",
-                "package" to "pl.akmf.ksef.sdk.client.model.xml"
+                "package" to "pl.akmf.ksef.sdk.client.model.xml",
+                "encoding" to "UTF-8"
             ) {
                 "arg"("value" to "-Xfluent-api")
                 "schema"(

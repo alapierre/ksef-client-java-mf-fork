@@ -21,6 +21,8 @@ import pl.akmf.ksef.sdk.util.ExampleApiProperties;
 import pl.akmf.ksef.sdk.util.HttpClientBuilder;
 import pl.akmf.ksef.sdk.util.HttpClientConfig;
 
+import java.net.http.HttpClient;
+
 @Configuration
 @RequiredArgsConstructor
 public class KsefClientConfig {
@@ -56,8 +58,9 @@ public class KsefClientConfig {
                 .registerModule(new JavaTimeModule())
                 .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
 
+        HttpClient apiClient = HttpClientBuilder.createHttpBuilder(new HttpClientConfig()).build();
         return new DefaultKsefClient(
-                HttpClientBuilder.createHttpBuilder(new HttpClientConfig()),
+                apiClient,
                 apiProperties(),
                 objectMapper);
     }
