@@ -57,7 +57,7 @@ class ProxyPermissionIntegrationTest extends BaseIntegrationTest {
 
     private String revokePermission(String operationId, String accessToken) {
         try {
-            return ksefClient.revokeAuthorizationsPermission(operationId, accessToken).getOperationReferenceNumber();
+            return ksefClient.revokeAuthorizationsPermission(operationId, accessToken).getReferenceNumber();
         } catch (ApiException e) {
             Assertions.fail(e.getMessage());
         }
@@ -73,7 +73,7 @@ class ProxyPermissionIntegrationTest extends BaseIntegrationTest {
 
         OperationResponse response = ksefClient.grantsPermissionsProxyEntity(request, accessToken);
         Assertions.assertNotNull(response);
-        return response.getOperationReferenceNumber();
+        return response.getReferenceNumber();
     }
 
     private List<String> searchRole(int expectedRole, String accessToken) throws ApiException {

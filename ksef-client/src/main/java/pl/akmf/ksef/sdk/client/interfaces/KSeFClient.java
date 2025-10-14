@@ -30,7 +30,12 @@ import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryFilters;
 import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoiceMetadataResponse;
+import pl.akmf.ksef.sdk.client.model.limit.ChangeContextLimitRequest;
+import pl.akmf.ksef.sdk.client.model.limit.ChangeSubjectCertificateLimitRequest;
+import pl.akmf.ksef.sdk.client.model.limit.GetContextLimitResponse;
+import pl.akmf.ksef.sdk.client.model.limit.GetSubjectLimitResponse;
 import pl.akmf.ksef.sdk.client.model.permission.OperationResponse;
+import pl.akmf.ksef.sdk.client.model.permission.PermissionAttachmentStatusResponse;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionStatusInfo;
 import pl.akmf.ksef.sdk.client.model.permission.entity.GrantEntityPermissionsRequest;
 import pl.akmf.ksef.sdk.client.model.permission.euentity.EuEntityPermissionsGrantRequest;
@@ -47,14 +52,12 @@ import pl.akmf.ksef.sdk.client.model.permission.search.QueryEuEntityPermissionsR
 import pl.akmf.ksef.sdk.client.model.permission.search.QueryPersonPermissionsResponse;
 import pl.akmf.ksef.sdk.client.model.permission.search.QueryPersonalGrantRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.QueryPersonalGrantResponse;
-import pl.akmf.ksef.sdk.client.model.permission.search.SubordinateEntityRolesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.permission.search.QuerySubunitPermissionsResponse;
 import pl.akmf.ksef.sdk.client.model.permission.search.SubordinateEntityRolesQueryRequest;
+import pl.akmf.ksef.sdk.client.model.permission.search.SubordinateEntityRolesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.permission.search.SubunitPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.subunit.SubunitPermissionsGrantRequest;
 import pl.akmf.ksef.sdk.client.model.session.AuthenticationListResponse;
-import pl.akmf.ksef.sdk.client.model.session.ChangeContextLimitRequest;
-import pl.akmf.ksef.sdk.client.model.session.GetContextLimitResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionInvoiceStatusResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionInvoicesResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionStatusResponse;
@@ -64,6 +67,7 @@ import pl.akmf.ksef.sdk.client.model.session.batch.BatchPartSendingInfo;
 import pl.akmf.ksef.sdk.client.model.session.batch.BatchPartStreamSendingInfo;
 import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionResponse;
+import pl.akmf.ksef.sdk.client.model.session.batch.PackagePartSignatureInitResponseType;
 import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionResponse;
 import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceOnlineSessionRequest;
@@ -568,12 +572,12 @@ public interface KSeFClient {
      * Pobiera status wcześniej zainicjalizowanego zapytania asynchronicznego na podstawie identyfikatora operacji.
      * Umożliwia śledzenie postępu przetwarzania zapytania oraz pobranie gotowych paczek z wynikami, jeśli są już dostępne.
      *
-     * @param operationReferenceNumber - Numer referencyjny operacji.
+     * @param referenceNumber - Numer referencyjny operacji.
      * @return AsyncInvoicesQueryStatus
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    InvoiceExportStatus checkStatusAsyncQueryInvoice(String operationReferenceNumber, String accessToken) throws ApiException;
+    InvoiceExportStatus checkStatusAsyncQueryInvoice(String referenceNumber, String accessToken) throws ApiException;
 
     /**
      * Nadanie podmiotom uprawnień do pracy w KSeF
@@ -617,6 +621,17 @@ public interface KSeFClient {
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
     OperationResponse revokeAuthorizationsPermission(String permissionId, String accessToken) throws ApiException;
+
+    /**
+     * Sprawdzenie czy obecny kontekst posiada zgodę na wystawianie faktur z załącznikiem.
+     * Wymagane uprawnienia: CredentialsManage, CredentialsRead.
+     *
+     * @param accessToken - token sesyjny
+     * @return PermissionAttachmentStatusResponse
+     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
+     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
+     */
+    PermissionAttachmentStatusResponse checkPermissionAttachmentInvoiceStatus(String accessToken) throws ApiException;
 
     /**
      * Generuje nowy token KSeF.
@@ -727,17 +742,24 @@ public interface KSeFClient {
     PeppolProvidersListResponse getPeppolProvidersList(int pageOffset, int pageSize) throws ApiException;
 
     /**
-     * Udostępnione w nabliższym czasie, aktualnie wyłączone
      * Zwraca wartości aktualnie obowiązujących limitów dla bieżącego kontekstu.
      *
      * @param accessToken
      * @return GetContextLimitResponse
      * @throws ApiException
      */
-    GetContextLimitResponse getContextLimit(String accessToken) throws ApiException;
+    GetContextLimitResponse getContextSessionLimit(String accessToken) throws ApiException;
 
     /**
-     * Udostępnione w nabliższym czasie, aktualnie wyłączone
+     * Zwraca wartoście aktualnie obowiązujących limitów dla bieżącego podmiotu.
+     *
+     * @param accessToken
+     * @return GetContextLimitResponse
+     * @throws ApiException
+     */
+    GetSubjectLimitResponse getSubjectCertificateLimit(String accessToken) throws ApiException;
+
+    /**
      * Zmienia wartości aktualnie obowiązujących limitów dla bieżącego kontekstu. Tylko na środowiskach testowych.
      *
      * @param changeContextLimitRequest
@@ -748,7 +770,16 @@ public interface KSeFClient {
     void changeContextLimitTest(ChangeContextLimitRequest changeContextLimitRequest, String accessToken) throws ApiException;
 
     /**
-     * Udostępnione w nabliższym czasie, aktualnie wyłączone
+     * Zmienia wartości aktualnie obowiązujących limitów certyfikatów dla bieżącego podmiotu. Tylko na środowiskach testowych.
+     *
+     * @param changeSubjectCertificateLimitRequest
+     * @param accessToken
+     * @return
+     * @throws ApiException
+     */
+    void changeSubjectLimitTest(ChangeSubjectCertificateLimitRequest changeSubjectCertificateLimitRequest, String accessToken) throws ApiException;
+
+    /**
      * Przywraca wartości aktualnie obowiązujących limitów dla bieżącego kontekstu do wartości domyślnych. Tylko na środowiskach testowych.
      *
      * @param accessToken
@@ -756,6 +787,15 @@ public interface KSeFClient {
      * @throws ApiException
      */
     void resetContextLimitTest(String accessToken) throws ApiException;
+
+    /**
+     * Przywraca wartości aktualnie obowiązujących limitów dla bieżącego kontekstu do wartości domyślnych. Tylko na środowiskach testowych.
+     *
+     * @param accessToken
+     * @return
+     * @throws ApiException
+     */
+    void resetSubjectCertificateLimit(String accessToken) throws ApiException;
 
     /**
      * Tworzenie nowego podmiotu testowego. W przypadku grupy VAT i JST istnieje możliwość stworzenia jednostek podrzędnych. W wyniku takiego działania w systemie powstanie powiązanie między tymi podmiotami.
@@ -820,4 +860,12 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      */
     void removeAttachmentPermissionTest(TestDataAttachmentRemoveRequest testDataAttachmentRemoveRequest) throws ApiException;
+
+    void singleBatchPartSendingProcess(BatchPartSendingInfo part,
+                                       PackagePartSignatureInitResponseType responsePart,
+                                       List<String> errors);
+
+    void singleBatchPartSendingProcessByStream(BatchPartStreamSendingInfo part,
+                                               PackagePartSignatureInitResponseType responsePart,
+                                               List<String> errors);
 }

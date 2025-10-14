@@ -116,8 +116,8 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
         try {
             SessionStatusResponse statusResponse = ksefClient.getSessionStatus(sessionReferenceNumber, accessToken);
             return statusResponse != null &&
-                   statusResponse.getSuccessfulInvoiceCount() != null &&
-                   statusResponse.getSuccessfulInvoiceCount() > 0;
+                    statusResponse.getSuccessfulInvoiceCount() != null &&
+                    statusResponse.getSuccessfulInvoiceCount() > 0;
         } catch (Exception e) {
             Assertions.fail(e.getMessage());
         }
@@ -194,11 +194,11 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
 
         await().atMost(30, SECONDS)
                 .pollInterval(1, SECONDS)
-                .until(() -> isInvoiceFetched(response.getOperationReferenceNumber(), accessToken));
+                .until(() -> isInvoiceFetched(response.getReferenceNumber(), accessToken));
     }
 
-    private Boolean isInvoiceFetched(String operationReferenceNumber, String accessToken) throws ApiException {
-        InvoiceExportStatus response = ksefClient.checkStatusAsyncQueryInvoice(operationReferenceNumber, accessToken);
+    private Boolean isInvoiceFetched(String referenceNumber, String accessToken) throws ApiException {
+        InvoiceExportStatus response = ksefClient.checkStatusAsyncQueryInvoice(referenceNumber, accessToken);
 
         Assertions.assertNotNull(response);
         Assertions.assertNotNull(response.getPackageParts());

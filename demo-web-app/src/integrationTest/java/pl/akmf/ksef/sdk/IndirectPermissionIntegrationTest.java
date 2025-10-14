@@ -52,7 +52,7 @@ class IndirectPermissionIntegrationTest extends BaseIntegrationTest {
 
     private String revokePermission(String operationId, String accessToken) {
         try {
-            return ksefClient.revokeCommonPermission(operationId, accessToken).getOperationReferenceNumber();
+            return ksefClient.revokeCommonPermission(operationId, accessToken).getReferenceNumber();
         } catch (ApiException e) {
             Assertions.fail(e.getMessage());
         }
@@ -89,7 +89,7 @@ class IndirectPermissionIntegrationTest extends BaseIntegrationTest {
 
         OperationResponse response = ksefClient.grantsPermissionIndirectEntity(request, accessToken);
         Assertions.assertNotNull(response);
-        return response.getOperationReferenceNumber();
+        return response.getReferenceNumber();
     }
 
     private Boolean isOperationFinish(String referenceNumber, String accessToken) throws ApiException {
