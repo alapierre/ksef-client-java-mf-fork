@@ -25,17 +25,18 @@ repositories {
     mavenCentral()
 }
 
-val bouncycastleVersion = 1.79
+val bouncycastleVersion = "1.82"
 val jsr310Version = "2.17.1"
 val junitVersion = "4.4"
 val junitEngineVersion = "5.8.2"
-val jsxbVarsion = "4.0.5"
-val jaxbFluentApiVersion = 3.0
+val jsxbVarsion = "4.0.6"
+val jaxbFluentApiVersion = "3.0"
 val xjc by configurations.creating
 val xadesVersion = "6.0.1"
 val googleZxingCodeVersion = "3.5.3"
 val googleZxingJavaseVersion = "3.5.3"
 val lombokVersion = "1.18.42"
+val commonsLangsVersion = "3.18.0"
 
 dependencies {
     // Validation
@@ -43,8 +44,7 @@ dependencies {
     api("eu.europa.ec.joinup.sd-dss:dss-token:$xadesVersion")
     api("eu.europa.ec.joinup.sd-dss:dss-utils-apache-commons:$xadesVersion")
 
-    api("org.apache.commons:commons-lang3:3.18.0")
-
+    api("org.apache.commons:commons-lang3:$commonsLangsVersion")
     api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jsr310Version")
 
     testImplementation("junit:junit:$junitVersion")
@@ -76,6 +76,7 @@ tasks.withType<Test> {
 
 tasks.withType<JavaCompile>().configureEach {
     options.release.set(11)
+    options.encoding = "UTF-8"
 }
 
 
@@ -96,7 +97,8 @@ tasks.register("generateJaxb") {
             )
             "xjc"(
                 "destdir" to "src/main/java",
-                "package" to "pl.akmf.ksef.sdk.client.model.xml"
+                "package" to "pl.akmf.ksef.sdk.client.model.xml",
+                "encoding" to "UTF-8"
             ) {
                 "arg"("value" to "-Xfluent-api")
                 "schema"(
