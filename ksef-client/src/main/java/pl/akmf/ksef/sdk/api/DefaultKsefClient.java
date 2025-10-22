@@ -35,6 +35,7 @@ import pl.akmf.ksef.sdk.client.model.invoice.DownloadInvoiceRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoicePackagePart;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryFilters;
 import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoiceMetadataResponse;
 import pl.akmf.ksef.sdk.client.model.limit.ChangeContextLimitRequest;
@@ -65,7 +66,6 @@ import pl.akmf.ksef.sdk.client.model.permission.search.SubordinateEntityRolesQue
 import pl.akmf.ksef.sdk.client.model.permission.search.SubunitPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.subunit.SubunitPermissionsGrantRequest;
 import pl.akmf.ksef.sdk.client.model.session.AuthenticationListResponse;
-import pl.akmf.ksef.sdk.client.model.session.CommonSessionStatus;
 import pl.akmf.ksef.sdk.client.model.session.SessionInvoiceStatusResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionInvoicesResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionStatusResponse;
@@ -103,7 +103,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static pl.akmf.ksef.sdk.api.HttpUtils.buildUrlWithParams;
 import static pl.akmf.ksef.sdk.api.HttpUtils.validateResponseStatus;
@@ -184,12 +183,10 @@ import static pl.akmf.ksef.sdk.client.Headers.ACCEPT;
 import static pl.akmf.ksef.sdk.client.Headers.APPLICATION_JSON;
 import static pl.akmf.ksef.sdk.client.Headers.AUTHORIZATION;
 import static pl.akmf.ksef.sdk.client.Headers.BEARER;
-import static pl.akmf.ksef.sdk.client.Headers.BLOCK_BLOB;
 import static pl.akmf.ksef.sdk.client.Headers.CONTENT_TYPE;
 import static pl.akmf.ksef.sdk.client.Headers.CONTINUATION_TOKEN;
 import static pl.akmf.ksef.sdk.client.Headers.OCTET_STREAM;
 import static pl.akmf.ksef.sdk.client.Headers.X_KSEF_FEATURE;
-import static pl.akmf.ksef.sdk.client.Headers.X_MS_BLOB_TYPE;
 import static pl.akmf.ksef.sdk.client.Parameter.AUTHOR_IDENTIFIER;
 import static pl.akmf.ksef.sdk.client.Parameter.AUTHOR_IDENTIFIER_TYPE;
 import static pl.akmf.ksef.sdk.client.Parameter.DATE_CLOSED_FROM;
@@ -1401,6 +1398,7 @@ public class DefaultKsefClient implements KSeFClient {
         headers.put(AUTHORIZATION, BEARER + accessToken);
         headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
+        headers.put("x-ksef-feature", "include-metadata"); //  Od 2025-10-27 zmienia się domyślne zachowanie endpointu - paczka eksportu będzie zawsze zawierać plik _metadata.json (nagłówek nie będzie wymagany).
 
         HttpResponse<byte[]> response = post(INVOICE_EXPORT_INIT.getUrl(), invoiceExportRequest, headers);
 
@@ -1801,50 +1799,46 @@ public class DefaultKsefClient implements KSeFClient {
                                              Integer pageSize,
                                              String continuationToken,
                                              String accessToken) throws ApiException {
-        HashMap<String, String> params = new HashMap<>();
-        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        List<HttpUtils.KeyValue> keyValues = new ArrayList<>();
+        keyValues.add(new HttpUtils.KeyValue(PAGE_SIZE, String.valueOf(pageSize)));
 
         if (Objects.nonNull(request.getSessionType())) {
-            params.put(SESSION_TYPE, request.getSessionType().getValue());
+            keyValues.add(new HttpUtils.KeyValue(SESSION_TYPE, request.getSessionType().getValue()));
         }
 
         if (Objects.nonNull(request.getReferenceNumber())) {
-            params.put(REFERENCE_NUMBER, request.getReferenceNumber());
+            keyValues.add(new HttpUtils.KeyValue(REFERENCE_NUMBER, request.getReferenceNumber()));
         }
 
         if (Objects.nonNull(request.getDateCreatedFrom())) {
-            params.put(DATE_CREATED_FROM, request.getDateCreatedFrom().toString());
+            keyValues.add(new HttpUtils.KeyValue(DATE_CREATED_FROM, request.getDateCreatedFrom().toString()));
         }
 
         if (Objects.nonNull(request.getDateCreatedTo())) {
-            params.put(DATE_CREATED_TO, request.getDateCreatedTo().toString());
+            keyValues.add(new HttpUtils.KeyValue(DATE_CREATED_TO, request.getDateCreatedTo().toString()));
         }
 
         if (Objects.nonNull(request.getDateClosedFrom())) {
-            params.put(DATE_CLOSED_FROM, request.getDateClosedFrom().toString());
+            keyValues.add(new HttpUtils.KeyValue(DATE_CLOSED_FROM, request.getDateClosedFrom().toString()));
         }
 
         if (Objects.nonNull(request.getDateClosedTo())) {
-            params.put(DATE_CLOSED_TO, request.getDateClosedTo().toString());
+            keyValues.add(new HttpUtils.KeyValue(DATE_CLOSED_TO, request.getDateClosedTo().toString()));
         }
 
         if (Objects.nonNull(request.getDateModifiedFrom())) {
-            params.put(DATE_MODIFIED_FROM, request.getDateModifiedFrom().toString());
+            keyValues.add(new HttpUtils.KeyValue(DATE_MODIFIED_FROM, request.getDateModifiedFrom().toString()));
         }
 
         if (Objects.nonNull(request.getDateModifiedFrom())) {
-            params.put(DATE_MODIFIED_TO, request.getDateModifiedTo().toString());
+            keyValues.add(new HttpUtils.KeyValue(DATE_MODIFIED_TO, request.getDateModifiedTo().toString()));
         }
 
         if (Objects.nonNull(request.getStatuses())) {
-            List<String> stringList = request.getStatuses()
-                    .stream()
-                    .map(CommonSessionStatus::getValue)
-                    .collect(Collectors.toList());
-            params.put(STATUSES, String.join(", ", stringList));
+            request.getStatuses().forEach(status -> keyValues.add(new HttpUtils.KeyValue(STATUSES, status.getValue())));
         }
 
-        String uri = buildUrlWithParams(SESSION_LIST.getUrl(), params);
+        String uri = buildUrlWithParams(SESSION_LIST.getUrl(), keyValues);
 
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
@@ -2091,22 +2085,6 @@ public class DefaultKsefClient implements KSeFClient {
      */
     @Override
     public void resetContextLimitTest(String accessToken) throws ApiException {
-        String uri = buildUrlWithParams(LIMIT_SUBJECT_CERTIFICATE_RESET_TEST.getUrl(), new HashMap<>());
-
-        Map<String, String> headers = new HashMap<>();
-        headers.put(AUTHORIZATION, BEARER + accessToken);
-
-        HttpResponse<byte[]> response = delete(uri, headers);
-
-        validateResponseStatus(LIMIT_SUBJECT_CERTIFICATE_RESET_TEST.getOperationId(), response);
-    }
-
-    /**
-     * @param accessToken
-     * @throws ApiException
-     */
-    @Override
-    public void resetSubjectCertificateLimit(String accessToken) throws ApiException {
         String uri = buildUrlWithParams(LIMIT_CONTEXT_RESET_TEST.getUrl(), new HashMap<>());
 
         Map<String, String> headers = new HashMap<>();
@@ -2115,6 +2093,22 @@ public class DefaultKsefClient implements KSeFClient {
         HttpResponse<byte[]> response = delete(uri, headers);
 
         validateResponseStatus(LIMIT_CONTEXT_RESET_TEST.getOperationId(), response);
+    }
+
+    /**
+     * @param accessToken
+     * @throws ApiException
+     */
+    @Override
+    public void resetSubjectCertificateLimit(String accessToken) throws ApiException {
+        String uri = buildUrlWithParams(LIMIT_SUBJECT_CERTIFICATE_RESET_TEST.getUrl(), new HashMap<>());
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+
+        HttpResponse<byte[]> response = delete(uri, headers);
+
+        validateResponseStatus(LIMIT_SUBJECT_CERTIFICATE_RESET_TEST.getOperationId(), response);
     }
 
     /**
@@ -2688,7 +2682,6 @@ public class DefaultKsefClient implements KSeFClient {
         return builder.build();
     }
 
-
     /**
      * Wysyłka strumieniowa pojedyńczego partu
      *
@@ -2701,11 +2694,8 @@ public class DefaultKsefClient implements KSeFClient {
                                                       PackagePartSignatureInitResponseType responsePart,
                                                       List<String> errors) {
         InputStream dataStream = part.getDataStream();
-
         Map<String, String> headers = new HashMap<>();
         headers.put(CONTENT_TYPE, OCTET_STREAM);
-        headers.put(X_MS_BLOB_TYPE, BLOCK_BLOB);
-
         String url = responsePart.getUrl().toString().replace(baseURl, "");
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -2714,13 +2704,12 @@ public class DefaultKsefClient implements KSeFClient {
 
         defaultHeaders.forEach(builder::header);
         headers.forEach(builder::header);
+        responsePart.getHeaders().forEach(builder::header);
 
-        builder.PUT(HttpRequest.BodyPublishers.ofInputStream(() -> dataStream));
-
+        builder.PUT(HttpRequest.BodyPublishers.fromPublisher(HttpRequest.BodyPublishers.ofInputStream(() -> dataStream), part.getMetadata().getFileSize()));
         HttpRequest request = builder.build();
 
         HttpResponse<byte[]> responseResult = sendHttpRequest(request, HttpResponse.BodyHandlers.ofByteArray());
-
         if (HttpStatus.getErrorCodes().contains(responseResult.statusCode())) {
             errors.add("Error sends part " + responsePart.getOrdinalNumber() + ": " + responseResult.statusCode());
         }
@@ -2738,10 +2727,8 @@ public class DefaultKsefClient implements KSeFClient {
                                               PackagePartSignatureInitResponseType responsePart,
                                               List<String> errors) {
         byte[] fileBytes = part.getData();
-
         Map<String, String> headers = new HashMap<>();
         headers.put(CONTENT_TYPE, OCTET_STREAM);
-        headers.put(X_MS_BLOB_TYPE, BLOCK_BLOB);
 
         String url = responsePart.getUrl().toString().replace(baseURl, "");
 
@@ -2750,6 +2737,7 @@ public class DefaultKsefClient implements KSeFClient {
                 .timeout(timeout);
 
         defaultHeaders.forEach(builder::header);
+        responsePart.getHeaders().forEach(builder::header);
 
         headers.forEach(builder::header);
         builder.PUT(HttpRequest.BodyPublishers.ofByteArray(fileBytes));
@@ -2759,6 +2747,34 @@ public class DefaultKsefClient implements KSeFClient {
         if (HttpStatus.getErrorCodes().contains(responseResult.statusCode())) {
             errors.add("Error sends part " + responsePart.getOrdinalNumber() + ": " + responseResult.statusCode());
         }
+    }
+
+    /**
+     * Pobiera pojedynczą część paczki eksportu z URL.
+     *
+     * @param part - Część paczki do pobrania.
+     * @return Tablica bajtów zawierająca pobraną część.
+     */
+    @Override
+    public byte[] downloadPackagePart(InvoicePackagePart part) {
+        String url = part.getUrl().toString().replace(baseURl, "");
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(baseURl + url))
+                .timeout(timeout);
+
+        defaultHeaders.forEach(builder::header);
+
+        builder.GET();
+        HttpRequest request = builder.build();
+
+        HttpResponse<byte[]> response = sendHttpRequest(request, HttpResponse.BodyHandlers.ofByteArray());
+
+        return new ApiResponse<>(
+                response.statusCode(),
+                response.headers(),
+                response.body()
+        ).getData();
     }
 
     protected HttpResponse<byte[]> sendHttpRequest(HttpRequest request, HttpResponse.BodyHandler<byte[]> bodyHandler) {

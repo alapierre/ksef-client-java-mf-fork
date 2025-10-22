@@ -18,6 +18,7 @@ import pl.akmf.ksef.sdk.client.model.session.SessionType;
 import pl.akmf.ksef.sdk.client.model.session.SessionValue;
 import pl.akmf.ksef.sdk.client.model.session.SessionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.session.SessionsQueryResponse;
+import pl.akmf.ksef.sdk.client.model.session.SessionsQueryResponseItem;
 import pl.akmf.ksef.sdk.client.model.session.SystemCode;
 import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionResponse;
@@ -127,6 +128,38 @@ class SessionIntegrationTest extends BaseIntegrationTest {
     }
 
     @Test
+    void searchSessionsByStatuses() throws JAXBException, IOException, ApiException {
+        String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
+        EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
+
+        AuthTokensPair firstAccessTokensPair = authWithCustomNip(contextNip, contextNip);
+        AuthTokensPair secondAccessTokensPair = authWithCustomNip(contextNip, contextNip);
+
+        String firstSessionRefNumber = openOnlineSession(encryptionData, firstAccessTokensPair.accessToken());
+        String secondSessionRefNumber = openOnlineSession(encryptionData, secondAccessTokensPair.accessToken());
+
+        ksefClient.closeOnlineSession(secondSessionRefNumber, firstAccessTokensPair.accessToken());
+
+        SessionsQueryRequest request = new SessionsQueryRequest();
+        request.setSessionType(SessionType.ONLINE);
+        request.setStatuses(List.of(CommonSessionStatus.INPROGRESS, CommonSessionStatus.CANCELLED));
+        SessionsQueryResponse sessionsQueryResponse = ksefClient.getSessions(request, 10, null, firstAccessTokensPair.accessToken());
+        Assertions.assertEquals(2, sessionsQueryResponse.getSessions().size());
+        SessionsQueryResponseItem firstSession = sessionsQueryResponse.getSessions().stream()
+                .filter(s -> s.getReferenceNumber().equals(firstSessionRefNumber))
+                .findFirst()
+                .orElseThrow();
+        SessionsQueryResponseItem secondSession = sessionsQueryResponse.getSessions().stream()
+                .filter(s -> s.getReferenceNumber().equals(secondSessionRefNumber))
+                .findFirst()
+                .orElseThrow();
+        Assertions.assertEquals(100, firstSession.getStatus().getCode());
+        Assertions.assertEquals("Sesja interaktywna otwarta", firstSession.getStatus().getDescription());
+        Assertions.assertEquals(440, secondSession.getStatus().getCode());
+        Assertions.assertEquals("Sesja anulowana, nie przesłano faktur", secondSession.getStatus().getDescription());
+    }
+
+    @Test
     void searchSessions() throws JAXBException, IOException, ApiException {
         String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
         String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
@@ -146,7 +179,7 @@ class SessionIntegrationTest extends BaseIntegrationTest {
 
     private String openOnlineSession(EncryptionData encryptionData, String accessToken) throws ApiException {
         OpenOnlineSessionRequest request = new OpenOnlineSessionRequestBuilder()
-                .withFormCode(new FormCode(SystemCode.FA_2, SchemaVersion.VERSION_1_0E,  SessionValue.FA))
+                .withFormCode(new FormCode(SystemCode.FA_2, SchemaVersion.VERSION_1_0E, SessionValue.FA))
                 .withEncryptionInfo(encryptionData.encryptionInfo())
                 .build();
 

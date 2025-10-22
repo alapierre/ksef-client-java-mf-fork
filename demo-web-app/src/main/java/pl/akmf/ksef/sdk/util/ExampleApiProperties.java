@@ -15,7 +15,7 @@ public class ExampleApiProperties extends KsefApiProperties {
 
     @Override
     public Duration getRequestTimeout() {
-        return Duration.ofSeconds(5);
+        return Duration.ofSeconds(100);
     }
 
     @Override

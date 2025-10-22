@@ -1002,3 +1002,96 @@
 | ➖ usunięte  | 1             |
 
 ---
+# Changelog zmian - `## 3.0.3 (2025-10-22)` - `API: 2.0.0 RC5.3`   
+## 1. ksef-client
+
+### 1.1 api.builders
+- **AuthTokenRequestBuilder.java**: 🔧 - aktualizacja zgodnie z modelem, zmiana pola `AuthTokenRequest.IpAddressPolicy ipPolicy` na `AuthTokenRequest.AuthorizationPolicy authorizationPolicy`, dodanie metody ` AuthTokenRequestBuilder withPeppolId(String value)`
+
+### 1.2 api.services
+- **DefaultCertificateService.java**: 🔧 - przeciążenie metod `SelfSignedCertificate getPersonalCertificate` i `SelfSignedCertificate getCompanySeal` o dodatkowy parametr `EncryptionMethod encryptionMethod` (Rsa i ECDsa)
+- **DefaultCryptographyService.java**: 🔧 - dodanie metod `byte[] decryptBytesWithAes256(byte[] encryptedPackagePart, byte[] cipherKey, byte[] cipherIv)` i `void decryptStreamBytesWithAes256(InputStream encryptedPackagePart, OutputStream output, byte[] cipherKey, byte[] cipherIv)`
+- **DefaultSignatureService.java**: 🔧 - zmiany związane z podpisywaniem dokumentów dla ECDsa
+
+### 1.3 api
+- **DefaultKsefClient.java**: 🔧 
+  - w `InitAsyncInvoicesQueryResponse initAsyncQueryInvoice` dodano nagłówek `"x-ksef-feature", "include-metadata"` który w API będzie domyślnym od 2025-10-27
+  - dla metody `SessionsQueryResponse getSessions(...)` zmieniono obsługę parametrów dla urla aby przyjmowała duplikaty kluczy, np `?statuses=InProgress&statuses=Succeeded`
+  - poprawki w urlach dla metod `resetContextLimitTest`, `resetSubjectCertificateLimit`
+  - dla metod `singleBatchPartSendingProcessByStream` i `singleBatchPartSendingProcess` wprowadzono poprawkę umożliwiającą przesyłanie dużych plików
+  - dodano metodę do pobierania części paczek eksportu ` byte[] downloadPackagePart(InvoicePackagePart part)`
+- **HttpUtils.java**: 🔧 - zmiany związane z obsługą parametrów dla urla aby przyjmowała duplikaty kluczy
+
+### 1.4 client.interfaces
+- **CertificateService.java**: 🔧 - przeciążenie metod `SelfSignedCertificate getPersonalCertificate` i `SelfSignedCertificate getCompanySeal` o dodatkowy parametr `EncryptionMethod encryptionMethod` (Rsa i ECDsa)
+- **CryptographyService.java**: 🔧 - dodanie definicji metod `byte[] decryptBytesWithAes256(byte[] encryptedPackagePart, byte[] cipherKey, byte[] cipherIv)` i `void decryptStreamBytesWithAes256(InputStream encryptedPackagePart, OutputStream output, byte[] cipherKey, byte[] cipherIv)`
+- **KSeFClient.java**: 🔧 - dodano definicję metody do pobierania części paczek eksportu ` byte[] downloadPackagePart(InvoicePackagePart part)`
+
+### 1.5 client.model
+
+- **invoice/InvoicePackageMetadata.java**: ➕ dodano klasę
+- **permission/proxy/SubjectIdentifier.java**: 🔧 dodano nową wartośc enuma `PEPPOL_ID("PeppolId")`
+- **session/SessionValue.java**: 🔧 zmiana wartości enumów dla faktury PEF
+- **session/SystemCode.java**: 🔧 zmiana wartości enumów dla faktury PEF
+- **xml/*.java**: 🔧 zmiany związane z aktualizacją xsd
+
+### 1.6 client
+- **Headers.java**: 🔧 usunięto `String BLOCK_BLOB = "BlockBlob"` i `String X_MS_BLOB_TYPE = "x-ms-blob-type"`
+
+### 1.7 sign
+- **CertUtil.java**: ➕ dodano klasę pomocniczą
+- **LocalSigningContext.java**: 🔧 zmiany związane z podpisywaniem dokumentów dla ECDsa
+
+### 1.8 system
+
+### 1.9 resources
+- **AuthTokenRequest.xsd**: 🔧 aktualizacja xsd
+
+### 1.10 test
+- **AuthTokenRequestSerializerTest.java**: 🔧 aktualizacja po zmianach w xsd
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+
+- **BaseIntegrationTest.java**: 🔧 
+  - dodano pole `ObjectMapper objectMapper`
+  - przeciążenie metody `AuthTokensPair authWithCustomNip(...)` o dodanie parametry `EncryptionMethod encryptionMethod` (Rsa i ECDsa)
+  - dodanie metody `AuthTokensPair authAsPeppolProvider(String peppolId)`
+- **BaseIntegrationTest.java**: 🔧 dodanie beana `ObjectMapper objectMapper()`
+- **AuthorizationIntegrationTest.java**: 🔧 dodanie testu z autentykacją dla ECDsa
+- **BatchIntegrationTest.java**: 🔧 rozbudowa scenariuszy testowych
+- **CertificateIntegrationTest.java**: 🔧 rozbudowa scenariuszy testowych
+- **ContextLimitIntegrationTest.java**: 🔧 zmiany w asercjach
+- **PeppolIIntegrationTest.java**: 🔧 zastąpiono `PeppolInvoiceIntegrationTest.java` + rozbudowa scenariuszy testowych
+- **QueryInvoiceIntegrationTest.java**: 🔧 rozbudowa scenariuszy testowych o pobranie części paczek
+- **SessionIntegrationTest.java**: 🔧 rozbudowa scenariuszy testowych o obsługę duplikatów w parametrze statuses dla `/api/v2/sessions` (`SessionsQueryResponse getSessions(...)`)
+- **SubjectLimitIntegrationTest.java**: 🔧 zmiany w asercjach
+
+### 2.1.1 integrationTest.resources
+- **invoice_template_pef_attachment.xml**:  ➕ dodano plik
+- **invoice_template_pef_correction.xml**:  ➕ dodano plik
+- **invoice_template_pef.xml**:  ➕ dodano plik
+
+### 2.2 api
+- **ExampleApiProperties.java**: 🔧 zmieniono wartość timeoutu (dla przesyłania dużych plików)
+- **FilesUtil.java**:  ➕ dodano klasę pomocniczą do obsługi plików/zipów
+- **IdentifierGeneratorUtils.java**: 🔧 dodano metody `String generatePeppolId()`, `String generateRandomPolishAccountNumber()`, `String generatePolishAccountNumber(String bankCode)`, `String generateIban()` + prywatne metody pomocnicze
+
+### 2.2.1 resources
+
+### 2.3 test - api.services
+
+## 3. .http
+
+- uwspólnienie wersji z demo-web-app z ksef-client
+
+## 4. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 7             |
+| 🔧 zmienione | 30            |
+| ➖ usunięte  | 1             |
+
+---

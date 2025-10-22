@@ -23,6 +23,7 @@ import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyAgreement;
@@ -34,6 +35,7 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -187,6 +189,65 @@ public class DefaultCryptographyService implements CryptographyService {
             return buffer.array();
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | InvalidKeyException |
                  NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
+            throw new SystemKSeFSDKException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public byte[] decryptBytesWithAes256(byte[] encryptedPackagePart, byte[] cipherKey, byte[] cipherIv) {
+        try {
+            Cipher cipher = Cipher.getInstance(AES_CBC_PKCS_5_PADDING);
+            SecretKeySpec secretKeySpec = new SecretKeySpec(cipherKey, AES);
+            IvParameterSpec ivSpec = new IvParameterSpec(cipherIv);
+            cipher.init(Cipher.DECRYPT_MODE, secretKeySpec, ivSpec);
+
+            try (InputStream inputStream = new ByteArrayInputStream(encryptedPackagePart);
+                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    byte[] decrypted = cipher.update(buffer, 0, bytesRead);
+                    if (decrypted != null) {
+                        outputStream.write(decrypted);
+                    }
+                }
+
+                byte[] finalBlock = cipher.doFinal();
+                if (finalBlock != null) {
+                    outputStream.write(finalBlock);
+                }
+
+                return outputStream.toByteArray();
+            } catch (IOException | BadPaddingException | IllegalBlockSizeException e) {
+                throw new SystemKSeFSDKException(e.getMessage(), e);
+            }
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
+                 InvalidAlgorithmParameterException e) {
+            throw new SystemKSeFSDKException(e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void decryptStreamBytesWithAes256(InputStream encryptedPackagePart, OutputStream output, byte[] cipherKey, byte[] cipherIv) {
+        try {
+            Cipher cipher = Cipher.getInstance(AES_CBC_PKCS_5_PADDING);
+            SecretKeySpec secretKey = new SecretKeySpec(cipherKey, AES);
+            IvParameterSpec ivSpec = new IvParameterSpec(cipherIv);
+            cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
+
+            try (CipherInputStream cipherInputStream = new CipherInputStream(encryptedPackagePart, cipher)) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = cipherInputStream.read(buffer)) != -1) {
+                    output.write(buffer, 0, bytesRead);
+                }
+                output.flush();
+            } catch (IOException e) {
+                throw new SystemKSeFSDKException(e.getMessage(), e);
+            }
+        } catch (NoSuchPaddingException | NoSuchAlgorithmException | InvalidKeyException |
+                 InvalidAlgorithmParameterException e) {
             throw new SystemKSeFSDKException(e.getMessage(), e);
         }
     }

@@ -1,5 +1,8 @@
 package pl.akmf.ksef.sdk.configuration;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,4 +17,12 @@ public class IntegrationConfig {
     WireMockServer wireMockServer(@Value("${server.port}") int wireMockServerPort) {
         return new WireMockServer(wireMockServerPort);
     }
+
+    @Bean
+    ObjectMapper objectMapper() {
+        return new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    }
+
 }

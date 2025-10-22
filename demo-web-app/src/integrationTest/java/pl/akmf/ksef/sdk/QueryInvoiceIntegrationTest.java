@@ -14,6 +14,8 @@ import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportFilters;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoicePackageMetadata;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoicePackagePart;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryDateRange;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryDateType;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryFilters;
@@ -33,6 +35,7 @@ import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionResponse;
 import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceOnlineSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceResponse;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
+import pl.akmf.ksef.sdk.util.FilesUtil;
 import pl.akmf.ksef.sdk.util.IdentifierGeneratorUtils;
 
 import java.io.IOException;
@@ -40,6 +43,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -64,31 +69,29 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
 
         String invoiceReferenceNumber = sendInvoiceOnlineSession(contextNip, sessionReferenceNumber, encryptionData, "/xml/invoices/sample/invoice-template_v3.xml", accessToken);
 
-        isInvoicesInSessionProcessed(sessionReferenceNumber, accessToken);
+        await().atMost(50, SECONDS)
+                .pollInterval(5, SECONDS)
+                .until(() -> isInvoicesInSessionProcessed(sessionReferenceNumber, accessToken));
 
-        isInvoiceProcessed(sessionReferenceNumber, invoiceReferenceNumber, accessToken);
+        await().atMost(50, SECONDS)
+                .pollInterval(5, SECONDS)
+                .until(() -> waitForStoringInvoice(sessionReferenceNumber, invoiceReferenceNumber, accessToken));
 
         throwWhileSendingInvoiceMetadataRequestWithWrongPageSize(accessToken);
 
-        waitForStoringInvoice();
-
         getInvoiceMetadata(accessToken);
 
-        fetchAsyncInvoice(accessToken);
-    }
+        InvoiceExportStatus invoiceExportStatus = fetchAsyncInvoiceExportStatus(accessToken, encryptionData);
 
-    private void waitForStoringInvoice() {
-        await().timeout(45, SECONDS)
-                .pollDelay(44, SECONDS)
-                .untilAsserted(() -> Assertions.assertTrue(true));
+        downloadAndProcessPackageAsync(invoiceExportStatus, encryptionData);
     }
 
     private void getInvoiceMetadata(String accessToken) throws ApiException {
         InvoiceQueryFilters request = new InvoiceQueryFiltersBuilder()
                 .withSubjectType(InvoiceQuerySubjectType.SUBJECT1)
                 .withDateRange(
-                        new InvoiceQueryDateRange(InvoiceQueryDateType.INVOICING, OffsetDateTime.now().minusYears(1),
-                                OffsetDateTime.now()))
+                        new InvoiceQueryDateRange(InvoiceQueryDateType.INVOICING, OffsetDateTime.now().minusDays(10),
+                                OffsetDateTime.now().plusDays(2)))
                 .build();
 
         QueryInvoiceMetadataResponse response = ksefClient.queryInvoiceMetadata(0, 10, request, accessToken);
@@ -116,18 +119,18 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
         try {
             SessionStatusResponse statusResponse = ksefClient.getSessionStatus(sessionReferenceNumber, accessToken);
             return statusResponse != null &&
-                    statusResponse.getSuccessfulInvoiceCount() != null &&
-                    statusResponse.getSuccessfulInvoiceCount() > 0;
+                   statusResponse.getSuccessfulInvoiceCount() != null &&
+                   statusResponse.getSuccessfulInvoiceCount() > 0;
         } catch (Exception e) {
             Assertions.fail(e.getMessage());
         }
         return false;
     }
 
-    private boolean isInvoiceProcessed(String sessionReferenceNumber, String invoiceReferenceNumber, String accessToken) {
+    private boolean waitForStoringInvoice(String sessionReferenceNumber, String invoiceReferenceNumber, String accessToken) {
         try {
             SessionInvoiceStatusResponse statusResponse = ksefClient.getSessionInvoiceStatus(sessionReferenceNumber, invoiceReferenceNumber, accessToken);
-            return statusResponse != null && statusResponse.getStatus().getCode() == 200;
+            return Objects.nonNull(statusResponse.getPermanentStorageDate());
         } catch (Exception e) {
             Assertions.fail(e.getMessage());
         }
@@ -179,7 +182,7 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
         return sendInvoiceResponse.getReferenceNumber();
     }
 
-    private void fetchAsyncInvoice(String accessToken) throws ApiException {
+    private InvoiceExportStatus fetchAsyncInvoiceExportStatus(String accessToken, EncryptionData encryptionData) throws ApiException {
         InvoiceExportFilters filters = new InvoicesAsyncQueryFiltersBuilder()
                 .withSubjectType(InvoiceQuerySubjectType.SUBJECT1)
                 .withDateRange(
@@ -192,17 +195,46 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
 
         InitAsyncInvoicesQueryResponse response = ksefClient.initAsyncQueryInvoice(request, accessToken);
 
-        await().atMost(30, SECONDS)
+        await().atMost(45, SECONDS)
                 .pollInterval(1, SECONDS)
                 .until(() -> isInvoiceFetched(response.getReferenceNumber(), accessToken));
+
+        return ksefClient.checkStatusAsyncQueryInvoice(response.getReferenceNumber(), accessToken);
     }
 
     private Boolean isInvoiceFetched(String referenceNumber, String accessToken) throws ApiException {
         InvoiceExportStatus response = ksefClient.checkStatusAsyncQueryInvoice(referenceNumber, accessToken);
 
         Assertions.assertNotNull(response);
-        Assertions.assertNotNull(response.getPackageParts());
-        Assertions.assertFalse(response.getPackageParts().getParts().isEmpty());
         return response.getStatus().getCode().equals(200);
+    }
+
+
+    private void downloadAndProcessPackageAsync(InvoiceExportStatus invoiceExportStatus, EncryptionData encryptionData) throws IOException {
+        List<InvoicePackagePart> parts = invoiceExportStatus.getPackageParts().getParts();
+        byte[] mergedZip = FilesUtil.mergeZipParts(
+                encryptionData,
+                parts,
+                (part) -> ksefClient.downloadPackagePart(part),
+                (encryptedPackagePart, key, iv) -> defaultCryptographyService.decryptBytesWithAes256(encryptedPackagePart, key, iv)
+        );
+        Map<String, String> downloadedFiles = FilesUtil.unzip(mergedZip);
+
+        String metadataJson = downloadedFiles.keySet()
+                .stream()
+                .filter(fileName -> fileName.endsWith(".json"))
+                .findFirst()
+                .map(downloadedFiles::get)
+                .orElse(null);
+        InvoicePackageMetadata invoicePackageMetadata = objectMapper.readValue(metadataJson, InvoicePackageMetadata.class);
+
+        List<String> invoices = downloadedFiles.keySet()
+                .stream()
+                .filter(fileName -> fileName.endsWith(".xml"))
+                .toList();
+
+        Assertions.assertEquals(1, invoices.size());
+        Assertions.assertEquals(1, invoicePackageMetadata.getInvoices().size());
+        Assertions.assertTrue(invoices.get(0).contains(invoicePackageMetadata.getInvoices().get(0).getKsefNumber()));
     }
 }
