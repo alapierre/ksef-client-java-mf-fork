@@ -76,6 +76,26 @@ public interface CryptographyService {
     byte[] encryptWithECDsaUsingPublicKey(byte[] content) throws SystemKSeFSDKException;
 
     /**
+     * Deszyfrowanie danych przy użyciu AES-256 w trybie CBC z PKCS7.
+     *
+     * @param encryptedPackagePart - Zaszyfrowany plik w formie tablicy bajtów.
+     * @param cipherKey            - Klucz symetryczny
+     * @param cipherIv             - Wektor inicjalizujący (IV) klucza symetrycznego
+     * @return - Odszyfrowany plik w formie tablicy bajtów.
+     */
+    byte[] decryptBytesWithAes256(byte[] encryptedPackagePart, byte[] cipherKey, byte[] cipherIv);
+
+    /**
+     * Deszyfrowanie danych przy użyciu AES-256 w trybie CBC z PKCS7.
+     *
+     * @param encryptedPackagePart - Input stream - zaszyfrowany.
+     * @param output               - Output stream - odszyfrowany.
+     * @param cipherKey            - Klucz symetryczny.
+     * @param cipherIv             - Wektor inicjalizujący (IV) klucza symetrycznego.
+     */
+    void decryptStreamBytesWithAes256(InputStream encryptedPackagePart, OutputStream output, byte[] cipherKey, byte[] cipherIv);
+
+    /**
      * Szyfrowanie danych przy użyciu AES-256 w trybie CBC z PKCS7 paddingiem.
      *
      * @param content - Plik w formie byte array

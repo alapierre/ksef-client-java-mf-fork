@@ -23,6 +23,17 @@ public class IdentifierGeneratorUtils {
         return sb.toString();
     }
 
+    public static String generatePeppolId() {
+        StringBuilder sb = new StringBuilder(10);
+
+        sb.append("PPL");
+        for (int i = 0; i < 6; i++) {
+            sb.append(random.nextInt(0, 10));
+        }
+
+        return sb.toString();
+    }
+
     public static String generateRandomVatEu() {
         StringBuilder sb = new StringBuilder(10);
         sb.append("DE");
@@ -103,6 +114,73 @@ public class IdentifierGeneratorUtils {
         return getRandomNipVatEU(nip);
     }
 
+    public static String generateRandomPolishAccountNumber() {
+        // Generate random 8-digit bank code
+        StringBuilder bankCode = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            bankCode.append(random.nextInt(10));
+        }
+
+        return generatePolishAccountNumber(bankCode.toString());
+    }
+
+    public static String generatePolishAccountNumber(String bankCode) {
+        if (bankCode == null || bankCode.length() != 8) {
+            throw new IllegalArgumentException("Bank code must be 8 digits");
+        }
+
+        // Generate 16 random digits for account number
+        StringBuilder accountPart = new StringBuilder();
+        for (int i = 0; i < 16; i++) {
+            accountPart.append(random.nextInt(10));
+        }
+
+        // Calculate check digits for the account
+        String accountWithoutCheck = bankCode + accountPart;
+        String checkDigits = calculateAccountCheckDigits(accountWithoutCheck);
+
+        return checkDigits + bankCode + accountPart;
+    }
+
+    private static String calculateAccountCheckDigits(String accountNumber) {
+        int[] weights = {3, 9, 7, 1, 3, 9, 7, 1, 3, 9, 7, 1, 3, 9, 7, 1, 3, 9, 7, 1, 3, 9, 7, 1};
+
+        int sum = 0;
+        for (int i = 0; i < 24; i++) {
+            int digit = Character.getNumericValue(accountNumber.charAt(i));
+            sum += digit * weights[i];
+        }
+
+        int checksum = sum % 10;
+        int checkDigit = (10 - checksum) % 10;
+
+        return String.format("%02d", checkDigit);
+    }
+
+    public static String generateIban() {
+        String accountNumber = generateRandomPolishAccountNumber();
+
+        String checkDigits = calculateIbanCheckDigits(accountNumber);
+        return "PL" + checkDigits + accountNumber;
+    }
+
+    private static String calculateIbanCheckDigits(String accountNumber) {
+        // P=25, L=21, append 00 as placeholder
+        String forCalculation = accountNumber + "252100";
+        int checksum = 98 - mod97(forCalculation);
+        return String.format("%02d", checksum);
+    }
+
+    private static int mod97(String number) {
+        int remainder = 0;
+        for (int i = 0; i < number.length(); i++) {
+            int digit = Character.getNumericValue(number.charAt(i));
+            remainder = (remainder * 10 + digit) % 97;
+        }
+        return remainder;
+    }
+
+
     public static String getRandomNipVatEU(String nip) {
         return getRandomNipVatEU(nip, "ES");
     }
@@ -133,7 +211,7 @@ public class IdentifierGeneratorUtils {
             case "ES" -> vatPart = generateEsVat();
             case "FI" -> vatPart = getRandomDigits(8);
             case "FR" -> vatPart = randomString("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", 2)
-                                   + getRandomDigits(9);
+                    + getRandomDigits(9);
             case "HR" -> vatPart = String.valueOf(ThreadLocalRandom.current()
                     .nextLong(10_000_000_000L, 100_000_000_000L));
             case "HU" -> vatPart = getRandomDigits(8);
@@ -231,8 +309,8 @@ public class IdentifierGeneratorUtils {
             }
             default -> {
                 return randomChar("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-                       + getRandomDigits(7)
-                       + randomChar("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+                        + getRandomDigits(7)
+                        + randomChar("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
             }
         }
     }

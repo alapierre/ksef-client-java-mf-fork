@@ -28,6 +28,7 @@ import pl.akmf.ksef.sdk.client.model.invoice.DownloadInvoiceRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoicePackagePart;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryFilters;
 import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoiceMetadataResponse;
 import pl.akmf.ksef.sdk.client.model.limit.ChangeContextLimitRequest;
@@ -868,4 +869,6 @@ public interface KSeFClient {
     void singleBatchPartSendingProcessByStream(BatchPartStreamSendingInfo part,
                                                PackagePartSignatureInitResponseType responsePart,
                                                List<String> errors);
+
+    byte[] downloadPackagePart(InvoicePackagePart part);
 }

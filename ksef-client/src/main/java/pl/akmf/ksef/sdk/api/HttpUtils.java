@@ -6,6 +6,7 @@ import pl.akmf.ksef.sdk.client.model.ApiException;
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 public class HttpUtils {
@@ -40,6 +41,32 @@ public class HttpUtils {
         return url.toString();
     }
 
+    public static String buildUrlWithParams(String baseUrl, List<KeyValue> keyValues) {
+        if (keyValues == null || keyValues.isEmpty()) {
+            return baseUrl;
+        }
+
+        StringBuilder url = new StringBuilder(baseUrl);
+        url.append("?");
+
+        boolean first = true;
+        for (KeyValue keyValue : keyValues) {
+            if (StringUtils.isNotBlank(keyValue.getKey()) && StringUtils.isNotBlank(keyValue.getValue())) {
+
+                if (!first) {
+                    url.append("&");
+                }
+
+                url.append(URLEncoder.encode(keyValue.getKey(), StandardCharsets.UTF_8));
+                url.append("=");
+                url.append(URLEncoder.encode(keyValue.getValue(), StandardCharsets.UTF_8));
+                first = false;
+
+            }
+        }
+        return url.toString();
+    }
+
     public static void validateResponseStatus(String operationId,
                                               HttpResponse<byte[]> response) throws ApiException {
         int statusCode = response.statusCode();
@@ -56,5 +83,23 @@ public class HttpUtils {
             body = "[no body]";
         }
         return operationId + " call failed with: " + statusCode + " - " + body;
+    }
+
+    static class KeyValue {
+        private String key;
+        private String value;
+
+        public KeyValue(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
 }
