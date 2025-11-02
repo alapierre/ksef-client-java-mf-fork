@@ -1,5 +1,6 @@
 package pl.akmf.ksef.sdk.sign;
 
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
@@ -43,7 +44,7 @@ public class LocalSigningContext implements SignContextProvider {
 
             DSSPrivateKeyEntry dssPrivateKeyEntry = getPrivateKeyEntry(keystore);
             try (Pkcs12SignatureToken token = createPkcs12Token(keystoreBytes)) {
-                return token.sign(toBeSigned, SignatureAlgorithm.RSA_SHA256, dssPrivateKeyEntry);
+                return token.sign(toBeSigned, DigestAlgorithm.SHA256, dssPrivateKeyEntry);
             }
         } catch (UnrecoverableEntryException | CertificateException | IOException | NoSuchAlgorithmException |
                  KeyStoreException e) {

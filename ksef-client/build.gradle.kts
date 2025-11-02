@@ -80,11 +80,19 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 
-sourceSets["main"].java.srcDir("${buildDir}/generated/src/main/java")
+sourceSets["main"].java.srcDir("${layout.buildDirectory}/generated/src/main/java")
 
 
 tasks.named("compileJava") {
     dependsOn("generateJaxb")
+}
+
+tasks.named<Jar>("jar") {
+    manifest {
+        attributes(
+            "Automatic-Module-Name" to "io.alapierre.ksef.client"
+        )
+    }
 }
 
 tasks.register("generateJaxb") {
