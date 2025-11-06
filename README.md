@@ -54,4 +54,4 @@ Projekt ksef-client jest dostępny jako pakiet maven w GitHub Packages organizac
 
 Należy najpierw skonfigurować dostęp do paczek Maven opublikowanych w GitHub Packages organizacji CIRFMF.
 Wymaga to autoryzacji przy pomocy osobistego tokena dostępu (Personal Access Token – PAT) z uprawnieniem read:packages.
-Dokładny poradnik jest dostępny w pliku [*maven-packege.md*](https://github.com/CIRFMF/ksef-client-java/blob/main/maven-packege.md).
+Dokładny poradnik jest dostępny w pliku [*maven-packege.md*](https://github.com/CIRFMF/ksef-client-java/blob/main/maven-package.md).
