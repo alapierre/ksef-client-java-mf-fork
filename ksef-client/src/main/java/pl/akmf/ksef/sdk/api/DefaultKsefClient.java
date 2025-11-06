@@ -31,7 +31,6 @@ import pl.akmf.ksef.sdk.client.model.certificate.CertificateRevokeRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.QueryCertificatesRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
-import pl.akmf.ksef.sdk.client.model.invoice.DownloadInvoiceRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
@@ -41,6 +40,7 @@ import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoiceMetadataResponse;
 import pl.akmf.ksef.sdk.client.model.limit.ChangeContextLimitRequest;
 import pl.akmf.ksef.sdk.client.model.limit.ChangeSubjectCertificateLimitRequest;
 import pl.akmf.ksef.sdk.client.model.limit.GetContextLimitResponse;
+import pl.akmf.ksef.sdk.client.model.limit.GetRateLimitResponse;
 import pl.akmf.ksef.sdk.client.model.limit.GetSubjectLimitResponse;
 import pl.akmf.ksef.sdk.client.model.permission.OperationResponse;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionAttachmentStatusResponse;
@@ -88,6 +88,7 @@ import pl.akmf.ksef.sdk.client.model.testdata.TestDataPersonCreateRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataPersonRemoveRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataSubjectCreateRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataSubjectRemoveRequest;
+import pl.akmf.ksef.sdk.client.model.util.SortOrder;
 import pl.akmf.ksef.sdk.client.peppol.PeppolProvidersListResponse;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
 
@@ -99,11 +100,16 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static pl.akmf.ksef.sdk.api.HttpStatus.ACCEPTED;
+import static pl.akmf.ksef.sdk.api.HttpStatus.CREATED;
+import static pl.akmf.ksef.sdk.api.HttpStatus.NO_CONTENT;
+import static pl.akmf.ksef.sdk.api.HttpStatus.OK;
 import static pl.akmf.ksef.sdk.api.HttpUtils.buildUrlWithParams;
 import static pl.akmf.ksef.sdk.api.HttpUtils.validateResponseStatus;
 import static pl.akmf.ksef.sdk.api.Url.AUTH_CHALLENGE;
@@ -120,6 +126,7 @@ import static pl.akmf.ksef.sdk.api.Url.CERTIFICATE_METADATA;
 import static pl.akmf.ksef.sdk.api.Url.CERTIFICATE_RETRIEVE;
 import static pl.akmf.ksef.sdk.api.Url.CERTIFICATE_REVOKE;
 import static pl.akmf.ksef.sdk.api.Url.CERTIFICATE_STATUS;
+import static pl.akmf.ksef.sdk.api.Url.GET_RATE_LIMIT;
 import static pl.akmf.ksef.sdk.api.Url.GRANT_AUTHORIZED_SUBJECT_PERMISSION;
 import static pl.akmf.ksef.sdk.api.Url.GRANT_EU_ADMINISTRATOR_PERMISSION;
 import static pl.akmf.ksef.sdk.api.Url.GRANT_EU_REPRESENTATIVE;
@@ -127,7 +134,6 @@ import static pl.akmf.ksef.sdk.api.Url.GRANT_INDIRECT_PERMISSION;
 import static pl.akmf.ksef.sdk.api.Url.GRANT_INVOICE_SUBJECT_PERMISSION;
 import static pl.akmf.ksef.sdk.api.Url.GRANT_PERSON_PERMISSION;
 import static pl.akmf.ksef.sdk.api.Url.GRANT_SUBUNIT_PERMISSION;
-import static pl.akmf.ksef.sdk.api.Url.INVOICE_DOWNLOAD;
 import static pl.akmf.ksef.sdk.api.Url.INVOICE_DOWNLOAD_BY_KSEF;
 import static pl.akmf.ksef.sdk.api.Url.INVOICE_EXPORT_INIT;
 import static pl.akmf.ksef.sdk.api.Url.INVOICE_EXPORT_STATUS;
@@ -186,7 +192,6 @@ import static pl.akmf.ksef.sdk.client.Headers.BEARER;
 import static pl.akmf.ksef.sdk.client.Headers.CONTENT_TYPE;
 import static pl.akmf.ksef.sdk.client.Headers.CONTINUATION_TOKEN;
 import static pl.akmf.ksef.sdk.client.Headers.OCTET_STREAM;
-import static pl.akmf.ksef.sdk.client.Headers.X_KSEF_FEATURE;
 import static pl.akmf.ksef.sdk.client.Parameter.AUTHOR_IDENTIFIER;
 import static pl.akmf.ksef.sdk.client.Parameter.AUTHOR_IDENTIFIER_TYPE;
 import static pl.akmf.ksef.sdk.client.Parameter.DATE_CLOSED_FROM;
@@ -207,6 +212,7 @@ import static pl.akmf.ksef.sdk.client.Parameter.PATH_REFERENCE_NUMBER;
 import static pl.akmf.ksef.sdk.client.Parameter.PATH_UPO_REFERENCE_NUMBER;
 import static pl.akmf.ksef.sdk.client.Parameter.REFERENCE_NUMBER;
 import static pl.akmf.ksef.sdk.client.Parameter.SESSION_TYPE;
+import static pl.akmf.ksef.sdk.client.Parameter.SORT_ORDER;
 import static pl.akmf.ksef.sdk.client.Parameter.STATUS;
 import static pl.akmf.ksef.sdk.client.Parameter.STATUSES;
 import static pl.akmf.ksef.sdk.client.Parameter.VERIFY_CERTIFICATE_CHAIN;
@@ -250,7 +256,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(GRANT_AUTHORIZED_SUBJECT_PERMISSION.getUrl(), entityAuthorizationPermissionsGrantRequest, headers);
 
-        validateResponseStatus(GRANT_AUTHORIZED_SUBJECT_PERMISSION.getOperationId(), response);
+        validateResponseStatus(GRANT_AUTHORIZED_SUBJECT_PERMISSION.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -281,7 +287,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(GRANT_INDIRECT_PERMISSION.getUrl(), grantIndirectEntityPermissionsRequest, headers);
 
-        validateResponseStatus(GRANT_INDIRECT_PERMISSION.getOperationId(), response);
+        validateResponseStatus(GRANT_INDIRECT_PERMISSION.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -313,7 +319,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(BATCH_SESSION_OPEN.getUrl(), openBatchSessionRequest, headers);
 
-        validateResponseStatus(BATCH_SESSION_OPEN.getOperationId(), response);
+        validateResponseStatus(BATCH_SESSION_OPEN.getOperationId(), response, CREATED);
         try {
             return new ApiResponse<>(
                     response.statusCode(),
@@ -348,7 +354,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, null, headers);
 
-        validateResponseStatus(BATCH_SESSION_CLOSE.getOperationId(), response);
+        validateResponseStatus(BATCH_SESSION_CLOSE.getOperationId(), response, NO_CONTENT);
     }
 
     /**
@@ -430,7 +436,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(SESSION_OPEN.getUrl(), openOnlineSessionRequest, headers);
 
-        validateResponseStatus(SESSION_OPEN.getOperationId(), response);
+        validateResponseStatus(SESSION_OPEN.getOperationId(), response, CREATED);
 
         try {
             return new ApiResponse<>(
@@ -467,7 +473,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, null, headers);
 
-        validateResponseStatus(SESSION_CLOSE.getOperationId(), response);
+        validateResponseStatus(SESSION_CLOSE.getOperationId(), response, NO_CONTENT);
     }
 
     /**
@@ -495,7 +501,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, sendInvoiceOnlineSessionRequest, headers);
 
-        validateResponseStatus(SESSION_INVOICE_SEND.getOperationId(), response);
+        validateResponseStatus(SESSION_INVOICE_SEND.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -524,7 +530,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(CERTIFICATE_LIMIT.getUrl(), headers);
 
-        validateResponseStatus(CERTIFICATE_LIMIT.getOperationId(), response);
+        validateResponseStatus(CERTIFICATE_LIMIT.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -553,7 +559,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(CERTIFICATE_ENROLLMENT_DATA.getUrl(), headers);
 
-        validateResponseStatus(CERTIFICATE_ENROLLMENT_DATA.getOperationId(), response);
+        validateResponseStatus(CERTIFICATE_ENROLLMENT_DATA.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -585,7 +591,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(CERTIFICATE_ENROLLMENT.getUrl(), enrollCertificateRequest, headers);
 
-        validateResponseStatus(CERTIFICATE_ENROLLMENT.getOperationId(), response);
+        validateResponseStatus(CERTIFICATE_ENROLLMENT.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -618,7 +624,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(CERTIFICATE_STATUS.getOperationId(), response);
+        validateResponseStatus(CERTIFICATE_STATUS.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -649,7 +655,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(CERTIFICATE_RETRIEVE.getUrl(), certificateListRequest, headers);
 
-        validateResponseStatus(CERTIFICATE_RETRIEVE.getOperationId(), response);
+        validateResponseStatus(CERTIFICATE_RETRIEVE.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -686,7 +692,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, certificateRevokeRequest, headers);
 
-        validateResponseStatus(CERTIFICATE_REVOKE.getOperationId(), response);
+        validateResponseStatus(CERTIFICATE_REVOKE.getOperationId(), response, NO_CONTENT);
     }
 
     /**
@@ -714,7 +720,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, queryCertificatesRequest, headers);
 
-        validateResponseStatus(CERTIFICATE_METADATA.getOperationId(), response);
+        validateResponseStatus(CERTIFICATE_METADATA.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -740,7 +746,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(AUTH_CHALLENGE.getUrl(), null, headers);
 
-        validateResponseStatus(AUTH_CHALLENGE.getOperationId(), response);
+        validateResponseStatus(AUTH_CHALLENGE.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -777,7 +783,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, signedXml, headers);
 
-        validateResponseStatus(AUTH_TOKEN_SIGNATURE.getOperationId(), response);
+        validateResponseStatus(AUTH_TOKEN_SIGNATURE.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -807,7 +813,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(AUTH_KSEF_TOKEN.getUrl(), body, headers);
 
-        validateResponseStatus(AUTH_KSEF_TOKEN.getOperationId(), response);
+        validateResponseStatus(AUTH_KSEF_TOKEN.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -844,7 +850,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(AUTH_TOKEN_STATUS.getOperationId(), response);
+        validateResponseStatus(AUTH_TOKEN_STATUS.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -873,7 +879,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(AUTH_TOKEN_REEDEM.getUrl(), null, headers);
 
-        validateResponseStatus(AUTH_TOKEN_REEDEM.getOperationId(), response);
+        validateResponseStatus(AUTH_TOKEN_REEDEM.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -901,7 +907,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(JWT_TOKEN_REFRESH.getUrl(), null, headers);
 
-        validateResponseStatus(JWT_TOKEN_REFRESH.getOperationId(), response);
+        validateResponseStatus(JWT_TOKEN_REFRESH.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -930,7 +936,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(JWT_TOKEN_REVOKE.getUrl(), null, headers);
 
-        validateResponseStatus(JWT_TOKEN_REVOKE.getOperationId(), response);
+        validateResponseStatus(JWT_TOKEN_REVOKE.getOperationId(), response, OK);
 
     }
 
@@ -952,7 +958,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(PERMISSION_STATUS.getOperationId(), response);
+        validateResponseStatus(PERMISSION_STATUS.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -990,7 +996,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, personPermissionsQueryRequest, headers);
 
-        validateResponseStatus(PERMISSION_SEARCH_PERSON_PERMISSION.getOperationId(), response);
+        validateResponseStatus(PERMISSION_SEARCH_PERSON_PERMISSION.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1028,7 +1034,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, subunitPermissionsQueryRequest, headers);
 
-        validateResponseStatus(PERMISSION_SEARCH_SUBUNIT_GRANT.getOperationId(), response);
+        validateResponseStatus(PERMISSION_SEARCH_SUBUNIT_GRANT.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1066,7 +1072,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, request, headers);
 
-        validateResponseStatus(PERMISSION_SEARCH_PERSONAL_GRANTS.getOperationId(), response);
+        validateResponseStatus(PERMISSION_SEARCH_PERSONAL_GRANTS.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1101,7 +1107,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(PERMISSION_SEARCH_ENTITY_ROLES.getOperationId(), response);
+        validateResponseStatus(PERMISSION_SEARCH_ENTITY_ROLES.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1139,7 +1145,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, subordinateEntityRolesQueryRequest, headers);
 
-        validateResponseStatus(PERMISSION_SEARCH_SUBORDINATE_PERMISSION.getOperationId(), response);
+        validateResponseStatus(PERMISSION_SEARCH_SUBORDINATE_PERMISSION.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1177,7 +1183,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, entityAuthorizationPermissionsQueryRequest, headers);
 
-        validateResponseStatus(PERMISSION_SEARCH_AUTHORIZATIONS_GRANT.getOperationId(), response);
+        validateResponseStatus(PERMISSION_SEARCH_AUTHORIZATIONS_GRANT.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1215,7 +1221,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, euEntityPermissionsQueryRequest, headers);
 
-        validateResponseStatus(PERMISSION_SEARCH_EU_ENTITY_GRANT.getOperationId(), response);
+        validateResponseStatus(PERMISSION_SEARCH_EU_ENTITY_GRANT.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1245,7 +1251,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(GRANT_EU_ADMINISTRATOR_PERMISSION.getUrl(), euEntityPermissionsGrantRequest, headers);
 
-        validateResponseStatus(GRANT_EU_ADMINISTRATOR_PERMISSION.getOperationId(), response);
+        validateResponseStatus(GRANT_EU_ADMINISTRATOR_PERMISSION.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -1276,7 +1282,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(GRANT_EU_REPRESENTATIVE.getUrl(), grantEUEntityRepresentativePermissionsRequest, headers);
 
-        validateResponseStatus(GRANT_EU_REPRESENTATIVE.getOperationId(), response);
+        validateResponseStatus(GRANT_EU_REPRESENTATIVE.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -1308,39 +1314,13 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(INVOICE_DOWNLOAD_BY_KSEF.getOperationId(), response);
+        validateResponseStatus(INVOICE_DOWNLOAD_BY_KSEF.getOperationId(), response, OK);
 
         return new ApiResponse<>(
                 response.statusCode(),
                 response.headers(),
                 response.body()
         ).getData();
-    }
-
-    /**
-     * Pobranie faktury  na podstawie numeru KSeF oraz danych faktury
-     * Faktura zostanie zwrócona wyłącznie, jeśli wszystkie dane wejściowe są zgodne z danymi faktury w systemie.
-     *
-     * @param downloadInvoiceRequest (optional)
-     * @return ApiResponse&lt;String&gt;
-     * @throws ApiException if fails to make API call
-     */
-    @Override
-    public byte[] getInvoice(DownloadInvoiceRequest downloadInvoiceRequest, String accessToken) throws ApiException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put(AUTHORIZATION, BEARER + accessToken);
-        headers.put(CONTENT_TYPE, APPLICATION_JSON);
-        headers.put(ACCEPT, APPLICATION_JSON);
-
-        HttpResponse<byte[]> response = post(INVOICE_DOWNLOAD.getUrl(), downloadInvoiceRequest, headers);
-
-        validateResponseStatus(INVOICE_DOWNLOAD.getOperationId(), response);
-
-        return new ApiResponse<>(
-                response.statusCode(),
-                response.headers(),
-                response.body())
-                .getData();
     }
 
     /**
@@ -1354,7 +1334,8 @@ public class DefaultKsefClient implements KSeFClient {
      * @throws ApiException if fails to make API call
      */
     @Override
-    public QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset, Integer pageSize,
+    public QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset,
+                                                             Integer pageSize,
                                                              InvoiceQueryFilters invoiceQueryFilters,
                                                              String accessToken) throws ApiException {
         HashMap<String, String> params = new HashMap<>();
@@ -1369,7 +1350,51 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(uri, invoiceQueryFilters, headers);
 
-        validateResponseStatus(INVOICE_QUERY_METADATA.getOperationId(), response);
+        validateResponseStatus(INVOICE_QUERY_METADATA.getOperationId(), response, OK);
+
+        try {
+            return new ApiResponse<>(
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            QueryInvoiceMetadataResponse.class
+                    )).getData();
+        } catch (IOException e) {
+            throw new ApiException(e);
+        }
+    }
+
+    /**
+     * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania.
+     *
+     * @param pageOffset          - Index strony wyników (domyślnie 0)
+     * @param pageSize            - Ilość elementów na stronie (domyślnie 10)
+     * @param sortOrder           - Kolejność sortowania wyników.
+     * @param invoiceQueryFilters InvoicesQueryRequest - zestaw filtrów
+     * @return QueryInvoicesReponse
+     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
+     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
+     */
+    @Override
+    public QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset,
+                                                             Integer pageSize,
+                                                             SortOrder sortOrder,
+                                                             InvoiceQueryFilters invoiceQueryFilters,
+                                                             String accessToken) throws ApiException {
+        HashMap<String, String> params = new HashMap<>();
+        params.put(PAGE_SIZE, String.valueOf(pageSize));
+        params.put(PAGE_OFFSET, String.valueOf(pageOffset));
+        params.put(SORT_ORDER, sortOrder.getValue());
+        String uri = buildUrlWithParams(INVOICE_QUERY_METADATA.getUrl(), params);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        HttpResponse<byte[]> response = post(uri, invoiceQueryFilters, headers);
+
+        validateResponseStatus(INVOICE_QUERY_METADATA.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1398,11 +1423,10 @@ public class DefaultKsefClient implements KSeFClient {
         headers.put(AUTHORIZATION, BEARER + accessToken);
         headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
-        headers.put("x-ksef-feature", "include-metadata"); //  Od 2025-10-27 zmienia się domyślne zachowanie endpointu - paczka eksportu będzie zawsze zawierać plik _metadata.json (nagłówek nie będzie wymagany).
 
         HttpResponse<byte[]> response = post(INVOICE_EXPORT_INIT.getUrl(), invoiceExportRequest, headers);
 
-        validateResponseStatus(INVOICE_EXPORT_INIT.getOperationId(), response);
+        validateResponseStatus(INVOICE_EXPORT_INIT.getOperationId(), response, CREATED);
 
         try {
             return new ApiResponse<>(
@@ -1439,45 +1463,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(INVOICE_EXPORT_STATUS.getOperationId(), response);
-
-        try {
-            return new ApiResponse<>(
-                    response.statusCode(),
-                    response.headers(),
-                    response.body() == null ? null : objectMapper.readValue(response.body(),
-                            InvoiceExportStatus.class
-                    )).getData();
-        } catch (IOException e) {
-            throw new ApiException(e);
-        }
-    }
-
-    @Deprecated
-    /**
-     * Sprawdza status asynchronicznego zapytania o pobranie faktur
-     * Metoda dostępna tymczasowo w celu testów odbioru paczki faktur z plikiem metadata.json
-     * @param referenceNumber Unikalny identyfikator operacji zwrócony podczas inicjalizacji zapytania. (required)
-     * @return ApiResponse&lt;AsyncInvoicesQueryStatus&gt;
-     * @throws ApiException if fails to make API call
-     */
-    public InvoiceExportStatus checkStatusAsyncQueryInvoiceWithMetadata(String referenceNumber,
-                                                                        String accessToken) throws ApiException {
-        if (referenceNumber == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST.getCode(), "Missing the required parameter 'operationReferenceNumber' when calling checkStatusAsyncQueryInvoice");
-        }
-
-        String uri = buildUrlWithParams(INVOICE_EXPORT_STATUS.getUrl(), new HashMap<>())
-                .replace(PATH_REFERENCE_NUMBER, referenceNumber);
-
-        Map<String, String> headers = new HashMap<>();
-        headers.put(AUTHORIZATION, BEARER + accessToken);
-        headers.put(ACCEPT, APPLICATION_JSON);
-        headers.put(X_KSEF_FEATURE, "include-metadata");
-
-        HttpResponse<byte[]> response = get(uri, headers);
-
-        validateResponseStatus(INVOICE_EXPORT_STATUS.getOperationId(), response);
+        validateResponseStatus(INVOICE_EXPORT_STATUS.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1497,7 +1483,7 @@ public class DefaultKsefClient implements KSeFClient {
      * @param grantEntityPermissionsRequest (optional)
      * @return ApiResponse&lt;PermissionsOperationResponse&gt;
      * @throws ApiException if fails to make API call
-     */
+     **/
     @Override
     public OperationResponse grantsPermissionEntity(GrantEntityPermissionsRequest grantEntityPermissionsRequest, String accessToken) throws ApiException {
         Map<String, String> headers = new HashMap<>();
@@ -1507,7 +1493,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(GRANT_INVOICE_SUBJECT_PERMISSION.getUrl(), grantEntityPermissionsRequest, headers);
 
-        validateResponseStatus(GRANT_INVOICE_SUBJECT_PERMISSION.getOperationId(), response);
+        validateResponseStatus(GRANT_INVOICE_SUBJECT_PERMISSION.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -1540,7 +1526,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(SESSION_STATUS.getOperationId(), response);
+        validateResponseStatus(SESSION_STATUS.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1577,7 +1563,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(SESSION_INVOICE_GET_BY_REFERENCE_NUMBER.getOperationId(), response);
+        validateResponseStatus(SESSION_INVOICE_GET_BY_REFERENCE_NUMBER.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1614,7 +1600,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(SESSION_INVOICE_UPO_BY_INVOICE_REFERENCE.getOperationId(), response);
+        validateResponseStatus(SESSION_INVOICE_UPO_BY_INVOICE_REFERENCE.getOperationId(), response, OK);
 
         return new ApiResponse<>(
                 response.statusCode(),
@@ -1646,7 +1632,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(SESSION_INVOICE_UPO_BY_KSEF.getOperationId(), response);
+        validateResponseStatus(SESSION_INVOICE_UPO_BY_KSEF.getOperationId(), response, OK);
 
         return new ApiResponse<>(
                 response.statusCode(),
@@ -1685,7 +1671,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(SESSION_UPO.getOperationId(), response);
+        validateResponseStatus(SESSION_UPO.getOperationId(), response, OK);
 
         return new ApiResponse<>(
                 response.statusCode(),
@@ -1725,7 +1711,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(SESSION_INVOICE.getOperationId(), response);
+        validateResponseStatus(SESSION_INVOICE.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1770,7 +1756,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(SESSION_INVOICE_FAILED.getOperationId(), response);
+        validateResponseStatus(SESSION_INVOICE_FAILED.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1842,7 +1828,6 @@ public class DefaultKsefClient implements KSeFClient {
 
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
-        headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
 
         if (continuationToken != null) {
@@ -1851,7 +1836,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(SESSION_LIST.getOperationId(), response);
+        validateResponseStatus(SESSION_LIST.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1892,7 +1877,7 @@ public class DefaultKsefClient implements KSeFClient {
         }
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(SESSION_ACTIVE_SESSIONS.getOperationId(), response);
+        validateResponseStatus(SESSION_ACTIVE_SESSIONS.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1919,7 +1904,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = delete(SESSION_REVOKE_CURRENT_SESSION.getUrl(), headers);
 
-        validateResponseStatus(SESSION_REVOKE_CURRENT_SESSION.getOperationId(), response);
+        validateResponseStatus(SESSION_REVOKE_CURRENT_SESSION.getOperationId(), response, NO_CONTENT);
     }
 
     /**
@@ -1940,7 +1925,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = delete(uri, headers);
 
-        validateResponseStatus(SESSION_REVOKE_SESSION.getOperationId(), response);
+        validateResponseStatus(SESSION_REVOKE_SESSION.getOperationId(), response, NO_CONTENT);
     }
 
     /**
@@ -1958,12 +1943,11 @@ public class DefaultKsefClient implements KSeFClient {
         String uri = buildUrlWithParams(PEPPOL_QUERY.getUrl(), params);
 
         Map<String, String> headers = new HashMap<>();
-        headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(PEPPOL_QUERY.getOperationId(), response);
+        validateResponseStatus(PEPPOL_QUERY.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -1988,10 +1972,11 @@ public class DefaultKsefClient implements KSeFClient {
 
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(LIMIT_CONTEXT.getOperationId(), response);
+        validateResponseStatus(LIMIT_CONTEXT.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -2018,10 +2003,11 @@ public class DefaultKsefClient implements KSeFClient {
 
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(LIMIT_SUBJECT_CERTIFICATE.getOperationId(), response);
+        validateResponseStatus(LIMIT_SUBJECT_CERTIFICATE.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -2052,7 +2038,7 @@ public class DefaultKsefClient implements KSeFClient {
         String url = LIMIT_CONTEXT_CHANGE_TEST.getUrl();
         HttpResponse<byte[]> response = post(url, changeContextLimitRequest, headers);
 
-        validateResponseStatus(LIMIT_CONTEXT_CHANGE_TEST.getOperationId(), response);
+        validateResponseStatus(LIMIT_CONTEXT_CHANGE_TEST.getOperationId(), response, OK);
     }
 
     /**
@@ -2072,7 +2058,7 @@ public class DefaultKsefClient implements KSeFClient {
         String url = LIMIT_SUBJECT_CERTIFICATE_CHANGE_TEST.getUrl();
         HttpResponse<byte[]> response = post(url, changeSubjectCertificateLimitRequest, headers);
 
-        validateResponseStatus(LIMIT_SUBJECT_CERTIFICATE_CHANGE_TEST.getOperationId(), response);
+        validateResponseStatus(LIMIT_SUBJECT_CERTIFICATE_CHANGE_TEST.getOperationId(), response, OK);
     }
 
     /**
@@ -2092,7 +2078,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = delete(uri, headers);
 
-        validateResponseStatus(LIMIT_CONTEXT_RESET_TEST.getOperationId(), response);
+        validateResponseStatus(LIMIT_CONTEXT_RESET_TEST.getOperationId(), response, OK);
     }
 
     /**
@@ -2108,7 +2094,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = delete(uri, headers);
 
-        validateResponseStatus(LIMIT_SUBJECT_CERTIFICATE_RESET_TEST.getOperationId(), response);
+        validateResponseStatus(LIMIT_SUBJECT_CERTIFICATE_RESET_TEST.getOperationId(), response, OK);
     }
 
     /**
@@ -2125,7 +2111,7 @@ public class DefaultKsefClient implements KSeFClient {
         String url = TEST_SUBJECT_CREATE.getUrl();
         HttpResponse<byte[]> response = post(url, testDataSubjectCreateRequest, headers);
 
-        validateResponseStatus(TEST_SUBJECT_CREATE.getOperationId(), response);
+        validateResponseStatus(TEST_SUBJECT_CREATE.getOperationId(), response, OK);
     }
 
     /**
@@ -2142,7 +2128,7 @@ public class DefaultKsefClient implements KSeFClient {
         String url = TEST_SUBJECT_DELETE.getUrl();
         HttpResponse<byte[]> response = post(url, testDataSubjectRemoveRequest, headers);
 
-        validateResponseStatus(TEST_SUBJECT_DELETE.getOperationId(), response);
+        validateResponseStatus(TEST_SUBJECT_DELETE.getOperationId(), response, OK);
     }
 
     /**
@@ -2159,7 +2145,7 @@ public class DefaultKsefClient implements KSeFClient {
         String url = TEST_PERSON_CREATE.getUrl();
         HttpResponse<byte[]> response = post(url, testDataPersonCreateRequest, headers);
 
-        validateResponseStatus(TEST_PERSON_CREATE.getOperationId(), response);
+        validateResponseStatus(TEST_PERSON_CREATE.getOperationId(), response, OK);
     }
 
     /**
@@ -2176,7 +2162,37 @@ public class DefaultKsefClient implements KSeFClient {
         String url = TEST_PERSON_DELETE.getUrl();
         HttpResponse<byte[]> response = post(url, testDataPersonRemoveRequest, headers);
 
-        validateResponseStatus(TEST_PERSON_DELETE.getOperationId(), response);
+        validateResponseStatus(TEST_PERSON_DELETE.getOperationId(), response, OK);
+    }
+
+    /**
+     * Zwraca wartości aktualnie obowiązujących limitów ilości żądań przesyłanych do API.
+     *
+     * @param accessToken
+     * @return GetRateLimitResponse
+     */
+    @Override
+    public GetRateLimitResponse getRateLimit(String accessToken) throws ApiException {
+        String uri = buildUrlWithParams(GET_RATE_LIMIT.getUrl(), new HashMap<>());
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        HttpResponse<byte[]> response = get(uri, headers);
+
+        validateResponseStatus(GET_RATE_LIMIT.getOperationId(), response, OK);
+
+        try {
+            return new ApiResponse<>(
+                    response.statusCode(),
+                    response.headers(),
+                    response.body() == null ? null : objectMapper.readValue(response.body(),
+                            GetRateLimitResponse.class
+                    )).getData();
+        } catch (IOException e) {
+            throw new ApiException(e);
+        }
     }
 
     /**
@@ -2193,7 +2209,7 @@ public class DefaultKsefClient implements KSeFClient {
         String url = TEST_PERMISSION.getUrl();
         HttpResponse<byte[]> response = post(url, testDataPermissionRequest, headers);
 
-        validateResponseStatus(TEST_PERMISSION.getOperationId(), response);
+        validateResponseStatus(TEST_PERMISSION.getOperationId(), response, OK);
     }
 
     /**
@@ -2210,7 +2226,7 @@ public class DefaultKsefClient implements KSeFClient {
         String url = TEST_PERMISSION_REVOKE.getUrl();
         HttpResponse<byte[]> response = post(url, testDataPermissionRemoveRequest, headers);
 
-        validateResponseStatus(TEST_PERMISSION_REVOKE.getOperationId(), response);
+        validateResponseStatus(TEST_PERMISSION_REVOKE.getOperationId(), response, OK);
     }
 
     /**
@@ -2227,7 +2243,7 @@ public class DefaultKsefClient implements KSeFClient {
         String url = TEST_ATTACHMENT.getUrl();
         HttpResponse<byte[]> response = post(url, testDataAttachmentRequest, headers);
 
-        validateResponseStatus(TEST_ATTACHMENT.getOperationId(), response);
+        validateResponseStatus(TEST_ATTACHMENT.getOperationId(), response, OK);
     }
 
     /**
@@ -2244,7 +2260,7 @@ public class DefaultKsefClient implements KSeFClient {
         String url = TEST_ATTACHMENT_REVOKE.getUrl();
         HttpResponse<byte[]> response = post(url, testDataAttachmentRemoveRequest, headers);
 
-        validateResponseStatus(TEST_ATTACHMENT_REVOKE.getOperationId(), response);
+        validateResponseStatus(TEST_ATTACHMENT_REVOKE.getOperationId(), response, OK);
     }
 
     /**
@@ -2264,7 +2280,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(GRANT_PERSON_PERMISSION.getUrl(), grantPersonPermissionsRequest, headers);
 
-        validateResponseStatus(GRANT_PERSON_PERMISSION.getOperationId(), response);
+        validateResponseStatus(GRANT_PERSON_PERMISSION.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -2295,7 +2311,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(GRANT_SUBUNIT_PERMISSION.getUrl(), subunitPermissionsGrantRequest, headers);
 
-        validateResponseStatus(GRANT_SUBUNIT_PERMISSION.getOperationId(), response);
+        validateResponseStatus(GRANT_SUBUNIT_PERMISSION.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -2328,7 +2344,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = delete(uri, headers);
 
-        validateResponseStatus(PERMISSION_REVOKE_COMMON.getOperationId(), response);
+        validateResponseStatus(PERMISSION_REVOKE_COMMON.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -2361,7 +2377,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = delete(uri, headers);
 
-        validateResponseStatus(PERMISSION_REVOKE_AUTHORIZATION.getOperationId(), response);
+        validateResponseStatus(PERMISSION_REVOKE_AUTHORIZATION.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -2390,9 +2406,9 @@ public class DefaultKsefClient implements KSeFClient {
         headers.put(AUTHORIZATION, BEARER + accessToken);
         headers.put(ACCEPT, APPLICATION_JSON);
 
-        HttpResponse<byte[]> response = delete(PERMISSION_ATTACHMENT_STATUS.getUrl(), headers);
+        HttpResponse<byte[]> response = get(PERMISSION_ATTACHMENT_STATUS.getUrl(), headers);
 
-        validateResponseStatus(PERMISSION_ATTACHMENT_STATUS.getOperationId(), response);
+        validateResponseStatus(PERMISSION_ATTACHMENT_STATUS.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -2422,7 +2438,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = post(TOKEN_GENERATE.getUrl(), ksefTokenRequest, headers);
 
-        validateResponseStatus(TOKEN_GENERATE.getOperationId(), response);
+        validateResponseStatus(TOKEN_GENERATE.getOperationId(), response, ACCEPTED);
 
         try {
             return new ApiResponse<>(
@@ -2475,7 +2491,6 @@ public class DefaultKsefClient implements KSeFClient {
 
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
-        headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
 
         if (continuationToken != null) {
@@ -2484,7 +2499,7 @@ public class DefaultKsefClient implements KSeFClient {
         }
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(TOKEN_LIST.getOperationId(), response);
+        validateResponseStatus(TOKEN_LIST.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -2516,7 +2531,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = get(uri, headers);
 
-        validateResponseStatus(TOKEN_STATUS.getOperationId(), response);
+        validateResponseStatus(TOKEN_STATUS.getOperationId(), response, OK);
 
         try {
             return new ApiResponse<>(
@@ -2548,7 +2563,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         HttpResponse<byte[]> response = delete(uri, headers);
 
-        validateResponseStatus(TOKEN_REVOKE.getOperationId(), response);
+        validateResponseStatus(TOKEN_REVOKE.getOperationId(), response, NO_CONTENT);
     }
 
     /**
@@ -2565,7 +2580,7 @@ public class DefaultKsefClient implements KSeFClient {
         headers.put(ACCEPT, APPLICATION_JSON);
         HttpResponse<byte[]> response = get(SECURITY_PUBLIC_KEY_CERTIFICATE.getUrl(), headers);
 
-        validateResponseStatus(SECURITY_PUBLIC_KEY_CERTIFICATE.getOperationId(), response);
+        validateResponseStatus(SECURITY_PUBLIC_KEY_CERTIFICATE.getOperationId(), response, OK);
         try {
             return new ApiResponse<>(
                     response.statusCode(),
@@ -2710,7 +2725,7 @@ public class DefaultKsefClient implements KSeFClient {
         HttpRequest request = builder.build();
 
         HttpResponse<byte[]> responseResult = sendHttpRequest(request, HttpResponse.BodyHandlers.ofByteArray());
-        if (HttpStatus.getErrorCodes().contains(responseResult.statusCode())) {
+        if (!Arrays.asList(CREATED.getCode(), OK.getCode()).contains(responseResult.statusCode())) {
             errors.add("Error sends part " + responsePart.getOrdinalNumber() + ": " + responseResult.statusCode());
         }
     }
@@ -2744,7 +2759,7 @@ public class DefaultKsefClient implements KSeFClient {
         HttpRequest request = builder.build();
 
         HttpResponse<byte[]> responseResult = sendHttpRequest(request, HttpResponse.BodyHandlers.ofByteArray());
-        if (HttpStatus.getErrorCodes().contains(responseResult.statusCode())) {
+        if (!Arrays.asList(CREATED.getCode(), OK.getCode()).contains(responseResult.statusCode())) {
             errors.add("Error sends part " + responsePart.getOrdinalNumber() + ": " + responseResult.statusCode());
         }
     }

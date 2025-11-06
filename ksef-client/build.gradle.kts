@@ -1,9 +1,22 @@
 plugins {
     `java-library`
+    `maven-publish`
 }
 
+
+val appVersion = "3.0.4"
+val artifactName = "ksef-client"
+
+val githubRepositoryToken = "token"
+val githubRepositoryOwner = "CIRFMF"
+val githubRepository = "$githubRepositoryOwner/ksef-client-java"
+
+val tagVersion = System.getenv("GITHUB_REF_NAME")
+val cleanVersion = tagVersion?.removePrefix("v") ?: appVersion
+
 group = "pl.akmf.ksef-sdk"
-version = "3.0.3"
+version = cleanVersion
+
 
 java {
     toolchain {
@@ -105,7 +118,56 @@ tasks.register("generateJaxb") {
     }
 }
 
+publishing {
+    publications {
+        create<MavenPublication>("mavenJava") {
+            from(components["java"])
+            groupId = group.toString()
+            artifactId = artifactName
+            version = project.version.toString()
 
+            pom {
+                name.set("KSeF Client")
+                description.set("A Java library that simplifies integration with the Polish National e-Invoicing System (KSeF)")
+                url.set("https://github.com/$githubRepository")
 
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
 
+                developers {
+                    developer {
+                        id.set(githubRepositoryOwner)
+                        name.set("Centrum Informatyki Resortu Finansów")
+                        organization.set("Centrum Informatyki Resortu Finansów")
+                    }
+                }
 
+                scm {
+                    connection.set("scm:git:https://github.com/$githubRepository.git")
+                    developerConnection.set("scm:git:ssh://github.com/$githubRepository.git")
+                    url.set("https://github.com/$githubRepository")
+                }
+
+                withXml {
+                    asNode().appendNode("properties").apply {
+                        appendNode("tags", "KSeF;Poland;e-Invoicing;Client;API")
+                    }
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "github"
+            url = uri("https://maven.pkg.github.com/${githubRepository}")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") ?: githubRepositoryOwner
+                password = System.getenv("GITHUB_TOKEN") ?: githubRepositoryToken
+            }
+        }
+    }
+}

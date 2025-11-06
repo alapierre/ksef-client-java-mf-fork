@@ -68,10 +68,11 @@ public class HttpUtils {
     }
 
     public static void validateResponseStatus(String operationId,
-                                              HttpResponse<byte[]> response) throws ApiException {
+                                              HttpResponse<byte[]> response,
+                                              HttpStatus expectedStatus) throws ApiException {
         int statusCode = response.statusCode();
 
-        if (HttpStatus.getErrorCodes().contains(statusCode)) {
+        if (expectedStatus.getCode() != statusCode) {
             String responseBody = response.body() == null ? null : new String(response.body(), StandardCharsets.UTF_8);
             String message = formatExceptionMessage(operationId, statusCode, responseBody);
             throw new ApiException(statusCode, message, response.headers(), responseBody);

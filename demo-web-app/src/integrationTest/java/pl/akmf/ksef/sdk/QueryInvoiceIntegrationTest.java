@@ -34,6 +34,7 @@ import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionResponse;
 import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceOnlineSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceResponse;
+import pl.akmf.ksef.sdk.client.model.util.SortOrder;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
 import pl.akmf.ksef.sdk.util.FilesUtil;
 import pl.akmf.ksef.sdk.util.IdentifierGeneratorUtils;
@@ -52,18 +53,17 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertThrows;
 
-public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
+class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private DefaultCryptographyService defaultCryptographyService;
-    private EncryptionData encryptionData;
 
     @Test
     void queryInvoiceE2ETest() throws JAXBException, IOException, ApiException {
         String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
         String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
 
-        encryptionData = defaultCryptographyService.getEncryptionData();
+        EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
         String sessionReferenceNumber = openOnlineSession(encryptionData, SystemCode.FA_3, SchemaVersion.VERSION_1_0E, SessionValue.FA, accessToken);
 
@@ -94,7 +94,7 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
                                 OffsetDateTime.now().plusDays(2)))
                 .build();
 
-        QueryInvoiceMetadataResponse response = ksefClient.queryInvoiceMetadata(0, 10, request, accessToken);
+        QueryInvoiceMetadataResponse response = ksefClient.queryInvoiceMetadata(0, 10, SortOrder.ASC, request, accessToken);
 
         Assertions.assertNotNull(response);
         Assertions.assertEquals(1, response.getInvoices().size());
@@ -109,7 +109,7 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
 
 
         ApiException apiException = assertThrows(ApiException.class, () ->
-                ksefClient.queryInvoiceMetadata(0, 5, request, accessToken)
+                ksefClient.queryInvoiceMetadata(0, 5, SortOrder.ASC, request, accessToken)
         );
         Assertions.assertEquals(400, apiException.getCode());
         Assertions.assertTrue(apiException.getResponseBody().contains("must be between 10 and 250. You entered 5"));
@@ -119,8 +119,8 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
         try {
             SessionStatusResponse statusResponse = ksefClient.getSessionStatus(sessionReferenceNumber, accessToken);
             return statusResponse != null &&
-                   statusResponse.getSuccessfulInvoiceCount() != null &&
-                   statusResponse.getSuccessfulInvoiceCount() > 0;
+                    statusResponse.getSuccessfulInvoiceCount() != null &&
+                    statusResponse.getSuccessfulInvoiceCount() > 0;
         } catch (Exception e) {
             Assertions.fail(e.getMessage());
         }
@@ -137,7 +137,10 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
         return false;
     }
 
-    private String openOnlineSession(EncryptionData encryptionData, SystemCode systemCode, SchemaVersion schemaVersion, SessionValue value, String accessToken) throws ApiException {
+    private String openOnlineSession(EncryptionData encryptionData, SystemCode systemCode,
+                                     SchemaVersion schemaVersion,
+                                     SessionValue value,
+                                     String accessToken) throws ApiException {
         OpenOnlineSessionRequest request = new OpenOnlineSessionRequestBuilder()
                 .withFormCode(new FormCode(systemCode, schemaVersion, value))
                 .withEncryptionInfo(encryptionData.encryptionInfo())
@@ -215,7 +218,7 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
         byte[] mergedZip = FilesUtil.mergeZipParts(
                 encryptionData,
                 parts,
-                (part) -> ksefClient.downloadPackagePart(part),
+                part -> ksefClient.downloadPackagePart(part),
                 (encryptedPackagePart, key, iv) -> defaultCryptographyService.decryptBytesWithAes256(encryptedPackagePart, key, iv)
         );
         Map<String, String> downloadedFiles = FilesUtil.unzip(mergedZip);
@@ -235,6 +238,6 @@ public class QueryInvoiceIntegrationTest extends BaseIntegrationTest {
 
         Assertions.assertEquals(1, invoices.size());
         Assertions.assertEquals(1, invoicePackageMetadata.getInvoices().size());
-        Assertions.assertTrue(invoices.get(0).contains(invoicePackageMetadata.getInvoices().get(0).getKsefNumber()));
+        Assertions.assertTrue(invoices.getFirst().contains(invoicePackageMetadata.getInvoices().getFirst().getKsefNumber()));
     }
 }
