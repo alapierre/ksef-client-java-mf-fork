@@ -16,6 +16,8 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 
 public interface CryptographyService {
@@ -157,4 +159,5 @@ public interface CryptographyService {
 
     PrivateKey parseEcdsaPrivateKeyFromPem(byte[] privateKey) throws SystemKSeFSDKException;
 
+    X509Certificate parseCertificateFromBytes(byte[] certBytes) throws CertificateException;
 }

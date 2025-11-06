@@ -83,7 +83,7 @@ class SubUnitPermissionIntegrationTest extends BaseIntegrationTest {
                 .withSubjectIdentifier(new SubjectIdentifier(SubjectIdentifier.IdentifierType.NIP, subjectNip))
                 .withContextIdentifier(new ContextIdentifier(ContextIdentifier.IdentifierType.INTERNALID, contextNip))
                 .withDescription("e2e subunit test")
-                .withSubunitName("test")
+                .withSubunitName("test_e2e")
                 .build();
 
         OperationResponse response = ksefClient.grantsPermissionSubUnit(request, accessToken);

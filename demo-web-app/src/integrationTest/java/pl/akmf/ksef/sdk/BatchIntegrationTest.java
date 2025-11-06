@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class BatchIntegrationTest extends BaseIntegrationTest {
     private static final int DEFAULT_NUMBER_OF_PARTS = 2;
-    private static final int DEFAULT_INVOICES_COUNT = 5;
+    private static final int DEFAULT_INVOICES_COUNT = 35;
     private static final long MAX_TOTAL_PACKAGE_SIZE_IN_BYTES = 5_368_709_120L; // 5 GiB
     private static final long EXCEEDED_TOTAL_PACKAGE_SIZE_IN_BYTES = MAX_TOTAL_PACKAGE_SIZE_IN_BYTES + 1; // 5 GiB + 1 bajt
     private static final long PADDING_SAFETY_MARGIN_IN_BYTES = 1024 * 1024; // 1 MB
@@ -64,7 +64,6 @@ class BatchIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private DefaultCryptographyService defaultCryptographyService;
-
 
     // Weryfikuje poprawne wysłanie dokumentów w paczce (scenariusz pozytywny).
     // Oczekuje pomyślnego przetworzenia wszystkich faktur i możliwości pobrania UPO.
@@ -386,11 +385,11 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // To symuluje uszkodzenie podczas transmisji lub manipulację danymi
         byte[] corruptedData = encryptedZipParts.get(0).getData();
         int corruptionPosition = corruptedData.length / 2;
-        corruptedData[corruptionPosition] ^= 0xFF;
+        corruptedData[corruptionPosition] ^= (byte) 0xFF;
         BatchPartSendingInfo corruptedPart = new BatchPartSendingInfo(
                 corruptedData,
-                encryptedZipParts.get(0).getMetadata(),
-                encryptedZipParts.get(0).getOrdinalNumber()
+                encryptedZipParts.getFirst().getMetadata(),
+                encryptedZipParts.getFirst().getOrdinalNumber()
         );
         List<BatchPartSendingInfo> corruptedZipParts = List.of(corruptedPart);
 

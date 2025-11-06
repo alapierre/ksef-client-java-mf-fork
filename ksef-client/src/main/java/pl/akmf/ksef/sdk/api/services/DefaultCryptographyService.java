@@ -424,6 +424,13 @@ public class DefaultCryptographyService implements CryptographyService {
         }
     }
 
+    @Override
+    public X509Certificate parseCertificateFromBytes(byte[] certBytes) throws CertificateException {
+        CertificateFactory certFactory = CertificateFactory.getInstance(X_509);
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(certBytes);
+        return (X509Certificate) certFactory.generateCertificate(inputStream);
+    }
+
     private byte[] encryptWithRSAUsingPublicKey(byte[] content, PublicKey publicKey) throws SystemKSeFSDKException {
         try {
             OAEPParameterSpec oaepParams = new OAEPParameterSpec(

@@ -23,7 +23,6 @@ public enum Url {
     INVOICE_DOWNLOAD_BY_KSEF("/api/v2/invoices/ksef/{ksefReferenceNumber}", "apiV2InvoicesKsefKsefReferenceNumberGet"),
     INVOICE_EXPORT_STATUS("/api/v2/invoices/exports/{referenceNumber}", "apiV2InvoicesExportDownload"),
     INVOICE_EXPORT_INIT("/api/v2/invoices/exports", "apiV2InvoicesExportPost"),
-    INVOICE_DOWNLOAD("/api/v2/invoices/download", "apiV2InvoicesDownloadPost"),
     INVOICE_QUERY_METADATA("/api/v2/invoices/query/metadata", "apiV2InvoicesQueryMetadataPost"),
 
     GRANT_EU_ADMINISTRATOR_PERMISSION("/api/v2/permissions/eu-entities/administration/grants", "apiV2PermissionsEuEntitiesAdministrationGrantsPost"),
@@ -68,6 +67,7 @@ public enum Url {
 
     LIMIT_CONTEXT("/api/v2/limits/context", "apiV2LimitsGet"),
     LIMIT_SUBJECT_CERTIFICATE("/api/v2/limits/subject", "apiV2LimitsGet"),
+    GET_RATE_LIMIT("/api/v2/rate-limits", "apiV2RateLimit"),
 
     LIMIT_CONTEXT_CHANGE_TEST("/api/v2/testdata/limits/context/session", "apiV2LimitsChange"),
     LIMIT_CONTEXT_RESET_TEST("/api/v2/testdata/limits/context/session", "apiV2LimitsReset"),

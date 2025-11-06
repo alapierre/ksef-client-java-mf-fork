@@ -62,8 +62,9 @@ public class LocalSigningContext implements SignContextProvider {
                     signatureAlgorithm = SignatureAlgorithm.ECDSA_SHA512;
                 }
             } else {
-                throw new IllegalArgumentException("Unsupported certificate key type: "
-                                                   + signatureCertificate.getPublicKey().getAlgorithm());
+                throw new IllegalArgumentException("Encoding data are incorrect: \nCertificate signatureAlg: " + signatureCertificate.getSigAlgName()
+                + "\nPublicKey signatureAlg: " + signatureCertificate.getPublicKey().getAlgorithm()
+                + "\nPrivateKEy signatureAlg: " + privateKey.getAlgorithm());
             }
 
             try (Pkcs12SignatureToken token = createPkcs12Token(keystoreBytes)) {

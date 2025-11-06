@@ -38,6 +38,7 @@ import static org.awaitility.Awaitility.await;
 public class QrCodeOnlineIntegrationTest extends BaseIntegrationTest {
     private static final int SESSION_SUCCESSFUL_STATUS_CODE = 200;
     private static final int SESSION_FAILED_STATUS_CODE = 445;
+
     @Autowired
     private DefaultCryptographyService defaultCryptographyService;
 

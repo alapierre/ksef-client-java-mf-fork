@@ -3,13 +3,18 @@ package pl.akmf.ksef.sdk.util;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.YearMonth;
+import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class IdentifierGeneratorUtils {
 
+    private static final String SHA_256 = "SHA-256";
     private static final Random random = new Random();
 
     public static String generateRandomNIP() {
@@ -43,7 +48,6 @@ public class IdentifierGeneratorUtils {
 
         return sb.toString();
     }
-
 
     // --- NIP ---
     public static String getRandomNip() {

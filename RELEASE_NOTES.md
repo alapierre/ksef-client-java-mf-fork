@@ -1002,7 +1002,7 @@
 | ➖ usunięte  | 1             |
 
 ---
-# Changelog zmian - `## 3.0.3 (2025-10-22)` - `API: 2.0.0 RC5.3`   
+# Changelog zmian - `## 3.0.3 (2025-10-22)` - `API: 2.0.0 RC5.3`
 ## 1. ksef-client
 
 ### 1.1 api.builders
@@ -1014,7 +1014,7 @@
 - **DefaultSignatureService.java**: 🔧 - zmiany związane z podpisywaniem dokumentów dla ECDsa
 
 ### 1.3 api
-- **DefaultKsefClient.java**: 🔧 
+- **DefaultKsefClient.java**: 🔧
   - w `InitAsyncInvoicesQueryResponse initAsyncQueryInvoice` dodano nagłówek `"x-ksef-feature", "include-metadata"` który w API będzie domyślnym od 2025-10-27
   - dla metody `SessionsQueryResponse getSessions(...)` zmieniono obsługę parametrów dla urla aby przyjmowała duplikaty kluczy, np `?statuses=InProgress&statuses=Succeeded`
   - poprawki w urlach dla metod `resetContextLimitTest`, `resetSubjectCertificateLimit`
@@ -1054,7 +1054,7 @@
 
 ### 2.1 integrationTest
 
-- **BaseIntegrationTest.java**: 🔧 
+- **BaseIntegrationTest.java**: 🔧
   - dodano pole `ObjectMapper objectMapper`
   - przeciążenie metody `AuthTokensPair authWithCustomNip(...)` o dodanie parametry `EncryptionMethod encryptionMethod` (Rsa i ECDsa)
   - dodanie metody `AuthTokensPair authAsPeppolProvider(String peppolId)`
@@ -1093,5 +1093,113 @@
 | ➕ dodane    | 7             |
 | 🔧 zmienione | 30            |
 | ➖ usunięte  | 1             |
+
+---
+# Changelog zmian - `## 3.0.4 (2025-11-06)` - `API: 2.0.0 RC5.6`
+## 1. ksef-client
+- **build.gradle.kts**: 🔧 dodano publikację artefaktów na github package
+- **maven-package.md**: 🔧 dodano opis publikacji artefaktów na github package
+- **README.md**: 🔧 dodano publikację artefaktów na github package
+
+### 1.1 api.builders
+
+### 1.2 api.services
+- **DefaultCryptographyService.java**: 🔧 dodano implementację metody `X509Certificate parseCertificateFromBytes(byte[] certBytes)`
+- **DefaultSignatureService.java**: 🔧 rozszerzono exception message
+
+### 1.3 api
+- **DefaultKsefClient.java**: 🔧 refaktor sposobu walidacji responsów, usunięcie nieistniejącej w API metody `byte[] getInvoice(DownloadInvoiceRequest downloadInvoiceRequest, String accessToken)`, dodanie `SortOrder` do `QueryInvoiceMetadataResponse queryInvoiceMetadata` i oznaczenie poprzedniej wersji jako deprecated, dodanie `GetRateLimitResponse getRateLimit(String accessToken)`
+- **HttpStatus.java**: 🔧 rozszerzenie enuma o nowe kody http
+- **HttpUtils.java**: 🔧 drobne zmiany w walidacji responsów
+- **Url.java**: 🔧 dodanie ` GET_RATE_LIMIT("/api/v2/rate-limits", "apiV2RateLimit"),`, usunięcie `INVOICE_DOWNLOAD("/api/v2/invoices/download", "apiV2InvoicesDownloadPost"),`
+
+### 1.4 client.interfaces
+- **CryptographyService.java**: 🔧 dodano implementację metody `X509Certificate parseCertificateFromBytes(byte[] certBytes)`
+- **KsefClient.java**: 🔧 usunięcie nieistniejącej w API metody `byte[] getInvoice(DownloadInvoiceRequest downloadInvoiceRequest, String accessToken)`, dodanie `SortOrder` do `QueryInvoiceMetadataResponse queryInvoiceMetadata` i oznaczenie poprzedniej wersji jako deprecated, dodanie `GetRateLimitResponse getRateLimit(String accessToken)`
+
+### 1.5 client.model
+- **certificate/CertificateInfo.java**: 🔧 dodanie `OffsetDateTime requestDate`
+- **invoice/DownloadInvoiceRequest.java**: ➖ usunięcie klasy
+- **invoice/DwonloadInvoiceMetadata.java**: ➖ usunięcie klasy
+- **invoice/InitAsyncInvoicesQueryResponse.java**: 🔧 usunięcie pola `String operationReferenceNumber` wcześniej oznaczonego jako deprecated 
+- **invoice/InvoiceExportStatus.java**: 🔧 dodanie `OffsetDateTime packageExpirationDate` 
+- **invoice/InvoiceMetadata.java**: 🔧 dodanie metod do porównywania obiektu 
+- **invoice/InvoicePackagePart.java**: 🔧 drobne zmiany 
+- **limit/BatchSessionLimit.java**: 🔧 usunięcie pól `int maxInvoiceSizeInMib`, `int maxInvoiceWithAttachmentSizeInMib` wcześniej oznaczonych jako deprecated
+- **limit/BatchSessionRateLimit.java**: ➕ dodanie klasy
+- **limit/GetRateLimitResponse.java**: ➕ dodanie klasy
+- **limit/InvoiceDownloadRateLimit.java**: ➕ dodanie klasy
+- **limit/InvoiceExportRateLimit.java**: ➕ dodanie klasy
+- **limit/InvoiceMetadataRateLimit.java**: ➕ dodanie klasy
+- **limit/InvoiceSendRateLimit.java**: ➕ dodanie klasy
+- **limit/InvoiceStatusRateLimit.java**: ➕ dodanie klasy
+- **limit/OnlineSessionLimit.java**: 🔧 usunięcie pól `int maxInvoiceSizeInMib`, `int maxInvoiceWithAttachmentSizeInMib` wcześniej oznaczonych jako deprecated
+- **limit/OnlineSessionRateLimit.java**: ➕ dodanie klasy
+- **limit/OtherRateLimit.java**: ➕ dodanie klasy
+- **limit/SessionInvoiceListRateLimit.java**: ➕ dodanie klasy
+- **limit/SessionListRateLimit.java**: ➕ dodanie klasy
+- **limit/SessionMiscRateLimits.java**: ➕ dodanie klasy
+- **permission/OperationResponse.java**: 🔧 usunięcie pola `String operationReferenceNumber` wcześniej oznaczonego jako deprecated 
+- **session/SessionInvoiceStatusResponse.java**: 🔧 dodanie pola `String upoDownloadUrlExpirationDate` 
+- **session/UpoPageResponse.java**: 🔧 dodanie pola `OffsetDateTime downloadUrlExpirationDate` 
+- **util/SortOrder.java**: ➕ dodanie klasy 
+- **Headers.java**: ➕ usunięcie `String X_KSEF_FEATURE = "X-KSeF-Feature"`
+- **Parameter.java**: ➕ dodanie `String SORT_ORDER = "sortOrder"`
+
+### 1.6 client
+- **peppol/PeppolProvider.java**: ➕ dodanie klasy
+
+### 1.7 sign
+- **CertUtil.java**: 🔧 drobne zmiany kosmetyczne
+- **LocalSigningContext.java**: 🔧 rozszerzono exception message
+
+### 1.8 system
+
+### 1.9 resources
+
+### 1.10 test
+- **CertUtilTest.java**: 🔧 dodanie testów
+
+## 2. demo-web-app
+- **KsefClientConfig.java**: 🔧 dodano do `ObjectMapper` jako domyślny property `DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES` na `false`
+
+### 2.1 integrationTest
+- **model/ExportTask.java**: ➕ dodano klasę modelu w testach do przyrostowego pobierania faktur
+- **model/PackageProcessingResult.java**: ➕ dodano klasę modelu w testach do przyrostowego pobierania faktur
+- **model/TimeWindows.java**: ➕ dodano klasę modelu w testach do przyrostowego pobierania faktur
+- **AuthorizationIntegrationTest.java**: 🔧 dodano nowe scenariusze testowe
+- **BatchIntegrationTest.java**: 🔧 drobne zmiany kosmetyczne
+- **EuEntityPermissionIntegrationTest.java**: 🔧 poprawki w scenariuszu
+- **GetRateLimitIntegrationTest.java**: ➕ dodano klasę ze scenariuszem do limitów API
+- **IncrementalInvoiceRetrieveIntegrationTest.java**: ➕ dodano klasę ze scenariuszami przyrostowego pobierania faktur
+- **KsefTokenIntegrationTest.java**: 🔧 drobne zmiany kosmetyczne
+- **OnlineSessionIntegrationTest.java**: 🔧 poprawki w scenariuszu
+- **QueryInvoiceIntegrationTest.java**: 🔧 poprawki w scenariuszu, dodanie parametru z sortowaniem
+- **SearchPersonalGrantPermissionIntegrationTest.java**: 🔧 drobne zmiany kosmetyczne
+- **SearchSubordinateQueryIntegrationTest.java**: 🔧 drobne zmiany kosmetyczne
+- **SubUnitPermissionIntegrationTest.java**: 🔧 drobne zmiany kosmetyczne
+ 
+### 2.1.1 integrationTest.resources
+- **KsefClientConfig.java**: 🔧 `KsefApiProperties` jako parametr dla `DefaultVerificationLinkService` 
+
+### 2.2 api
+- **InvoicesController.java**: 🔧 usunięcie użycia nieistniejącego endpointu w API, dodanie parametru z sortowaniem
+
+### 2.2.1 resources
+
+### 2.3 test - api.services
+- **QrCodeTests.java**: 🔧 `KsefApiProperties` jako parametr dla `DefaultVerificationLinkService` 
+- **VerificationLinkServiceTests.java**: 🔧 `KsefApiProperties` jako parametr dla `DefaultVerificationLinkService` 
+
+## 3. .http
+
+
+## 4. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 21           |
+| 🔧 zmienione | 43           |
+| ➖ usunięte  | 2            |
 
 ---
