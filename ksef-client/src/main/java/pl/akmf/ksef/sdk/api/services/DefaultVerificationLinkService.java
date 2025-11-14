@@ -1,5 +1,6 @@
 package pl.akmf.ksef.sdk.api.services;
 
+import io.alapierre.ksef.QREnvironment;
 import pl.akmf.ksef.sdk.client.interfaces.VerificationLinkService;
 import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
@@ -20,21 +21,21 @@ import java.util.Base64;
 
 public class DefaultVerificationLinkService implements VerificationLinkService {
 
-    private static final String BASE_URL = "https://ksef.mf.gov.pl/client-app";
     private static final String SHA_256_WITH_RSA = "SHA256withRSA";
     private static final String SHA_256_WITH_ECDSA = "SHA256withECDSA";
 
     @Override
-    public String buildInvoiceVerificationUrl(String nip, LocalDate issueDate, String invoiceHash) {
+    public String buildInvoiceVerificationUrl(QREnvironment env, String nip, LocalDate issueDate, String invoiceHash) {
         String date = issueDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
 
-        return String.format("%s/invoice/%s/%s/%s", BASE_URL, nip, date, invoiceHashUrlEncoded);
+        return String.format("%s/invoice/%s/%s/%s", env.getUrl(), nip, date, invoiceHashUrlEncoded);
     }
 
     @Override
-    public String buildCertificateVerificationUrl(String sellerNip,
+    public String buildCertificateVerificationUrl(QREnvironment env,
+                                                  String sellerNip,
                                                   ContextIdentifierType contextIdentifierType,
                                                   String contextIdentifierValue,
                                                   String certificateSerial,
@@ -43,12 +44,12 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
 
-        String pathToSign = String.format("%s/certificate/%s/%s/%s/%s/%s/", BASE_URL, contextIdentifierType, contextIdentifierValue, sellerNip,
+        String pathToSign = String.format("%s/certificate/%s/%s/%s/%s/%s/", env.getUrl(), contextIdentifierType, contextIdentifierValue, sellerNip,
                         certificateSerial, invoiceHashUrlEncoded)
                 .replace("https://", "");
         String signedHash = computeUrlEncodedSignedHash(pathToSign, privateKey);
 
-        return String.format("%s/certificate/%s/%s/%s/%s/%s/%s", BASE_URL, contextIdentifierType, contextIdentifierValue, sellerNip,
+        return String.format("%s/certificate/%s/%s/%s/%s/%s/%s", env.getUrl(), contextIdentifierType, contextIdentifierValue, sellerNip,
                 certificateSerial, invoiceHashUrlEncoded, signedHash);
     }
 

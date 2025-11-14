@@ -1,5 +1,6 @@
 package pl.akmf.ksef.sdk.client.interfaces;
 
+import io.alapierre.ksef.QREnvironment;
 import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
 
 import java.security.PrivateKey;
@@ -15,7 +16,7 @@ public interface VerificationLinkService {
      * @param invoiceHash
      * @return
      */
-    String buildInvoiceVerificationUrl(String nip, LocalDate issueDate, String invoiceHash);
+    String buildInvoiceVerificationUrl(QREnvironment env, String nip, LocalDate issueDate, String invoiceHash);
 
     /**
      * Buduje link do weryfikacji certyfikatu Wystawcy (offline).
@@ -28,5 +29,5 @@ public interface VerificationLinkService {
      * @param privateKey
      * @return
      */
-    String buildCertificateVerificationUrl(String sellerNip, ContextIdentifierType contextIdentifierType, String contextIdentifierValue, String certificateSerial, String invoiceHash, PrivateKey privateKey);
+    String buildCertificateVerificationUrl(QREnvironment env, String sellerNip, ContextIdentifierType contextIdentifierType, String contextIdentifierValue, String certificateSerial, String invoiceHash, PrivateKey privateKey);
 }
