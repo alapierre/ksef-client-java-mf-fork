@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import pl.akmf.ksef.sdk.api.builders.batch.OpenBatchSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
+import pl.akmf.ksef.sdk.client.ExceptionDetails;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.ExceptionResponse;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionInfo;
 import pl.akmf.ksef.sdk.client.model.session.FileMetadata;
@@ -34,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -154,8 +155,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
         int partsCount = 1;
 
-        String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(PATH_SAMPLE_INVOICE_TEMPLATE_XML))
-                .readAllBytes(), StandardCharsets.UTF_8);
+        String invoice = new String(readBytesFromPath(PATH_SAMPLE_INVOICE_TEMPLATE_XML), StandardCharsets.UTF_8);
 
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
@@ -180,8 +180,12 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // API KSeF powinno odrzucić żądanie ze względu na przekroczony limit fileSize
         ApiException apiException = assertThrows(ApiException.class, () ->
                 ksefClient.openBatchSession(request, accessToken));
-        Assertions.assertTrue(apiException.getResponseBody()
-                .contains("{\"exceptionCode\":21405,\"exceptionDescription\":\"B\\u0142\\u0105d walidacji danych wej\\u015Bciowych.\",\"details\":[\"\\u0027fileSize\\u0027 must be less than or equal to \\u00275000000000\\u0027.\"]}]"));
+        ExceptionResponse exceptionResponse = apiException.getExceptionResponse();
+        Assertions.assertFalse(exceptionResponse.getException().getExceptionDetailList().isEmpty());
+        ExceptionDetails details = exceptionResponse.getException().getExceptionDetailList().getFirst();
+        Assertions.assertEquals(21405, details.getExceptionCode());
+        Assertions.assertEquals("Błąd walidacji danych wejściowych.", details.getExceptionDescription());
+        Assertions.assertEquals("'fileSize' must be less than or equal to '5000000000'.", details.getDetails().getFirst());
     }
 
     // Weryfikuje odrzucenie paczki przekraczającej limit rozmiaru 100 MiB (przed szyfrowaniem).
@@ -192,8 +196,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
         int partsCount = 1;
 
-        String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(PATH_SAMPLE_INVOICE_TEMPLATE_XML))
-                .readAllBytes(), StandardCharsets.UTF_8);
+        String invoice = new String(readBytesFromPath(PATH_SAMPLE_INVOICE_TEMPLATE_XML), StandardCharsets.UTF_8);
 
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
@@ -219,8 +222,13 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // API KSeF odrzuca żądanie już na etapie otwarcia sesji
         ApiException apiException = assertThrows(ApiException.class, () ->
                 ksefClient.openBatchSession(request, accessToken));
-        Assertions.assertTrue(apiException.getResponseBody()
-                .contains("{\"exception\":{\"exceptionDetailList\":[{\"exceptionCode\":21157,\"exceptionDescription\":\"Nieprawid\\u0142owy rozmiar cz\\u0119\\u015Bci pakietu.\",\"details\":[\"Rozmiar cz\\u0119\\u015Bci 1 przekroczy\\u0142 dozwolony rozmiar 100MB.\"]}]"));
+        ExceptionResponse exceptionResponse = apiException.getExceptionResponse();
+        Assertions.assertFalse(exceptionResponse.getException().getExceptionDetailList().isEmpty());
+        ExceptionDetails details = exceptionResponse.getException().getExceptionDetailList().getFirst();
+        Assertions.assertEquals(21157, details.getExceptionCode());
+        Assertions.assertEquals("Nieprawidłowy rozmiar części pakietu.", details.getExceptionDescription());
+        Assertions.assertEquals("Rozmiar części 1 przekroczył dozwolony rozmiar 100MB.", details.getDetails().getFirst());
+
     }
 
     // Weryfikuje wykrycie próby zamknięcia sesji bez wysłania wszystkich zadeklarowanych części.
@@ -230,8 +238,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
         String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
 
-        String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(PATH_SAMPLE_INVOICE_TEMPLATE_XML))
-                .readAllBytes(), StandardCharsets.UTF_8);
+        String invoice = new String(readBytesFromPath(PATH_SAMPLE_INVOICE_TEMPLATE_XML), StandardCharsets.UTF_8);
 
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
@@ -262,8 +269,12 @@ class BatchIntegrationTest extends BaseIntegrationTest {
 
         ApiException apiException = assertThrows(ApiException.class, () ->
                 closeSession(sessionReferenceNumber, accessToken));
-        Assertions.assertTrue(apiException.getResponseBody()
-                .contains("{\"exception\":{\"exceptionDetailList\":[{\"exceptionCode\":21205,\"exceptionDescription\":\"Pakiet nie może być pusty.\",\"details\":[\"Nie przesłano zadeklarowanej '2' części pliku.\"]}]"));
+        ExceptionResponse exceptionResponse = apiException.getExceptionResponse();
+        Assertions.assertFalse(exceptionResponse.getException().getExceptionDetailList().isEmpty());
+        ExceptionDetails details = exceptionResponse.getException().getExceptionDetailList().getFirst();
+        Assertions.assertEquals(21205, details.getExceptionCode());
+        Assertions.assertEquals("Pakiet nie może być pusty.", details.getExceptionDescription());
+        Assertions.assertEquals("Nie przesłano zadeklarowanej '2' części pliku.", details.getDetails().getFirst());
     }
 
     // Weryfikuje odrzucenie paczki z liczbą części przekraczającą maksymalny limit 50.
@@ -273,8 +284,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
         String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
 
-        String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(PATH_SAMPLE_INVOICE_TEMPLATE_XML))
-                .readAllBytes(), StandardCharsets.UTF_8);
+        String invoice = new String(readBytesFromPath(PATH_SAMPLE_INVOICE_TEMPLATE_XML), StandardCharsets.UTF_8);
 
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
@@ -297,8 +307,12 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // API KSeF odrzuca żądanie z przekroczoną liczbą części
         ApiException apiException = assertThrows(ApiException.class, () ->
                 ksefClient.openBatchSession(request, accessToken));
-        Assertions.assertTrue(apiException.getResponseBody()
-                .contains("{\"exception\":{\"exceptionDetailList\":[{\"exceptionCode\":21161,\"exceptionDescription\":\"Przekroczono dozwolon\\u0105 liczb\\u0119 cz\\u0119\\u015Bci pakiet\\u00F3w.\",\"details\":[\"Liczba cz\\u0119\\u015Bci pliku musi by\\u0107 mniejsza lub r\\u00F3wna ni\\u017C 50.\"]}]"));
+        ExceptionResponse exceptionResponse = apiException.getExceptionResponse();
+        Assertions.assertFalse(exceptionResponse.getException().getExceptionDetailList().isEmpty());
+        ExceptionDetails details = exceptionResponse.getException().getExceptionDetailList().getFirst();
+        Assertions.assertEquals(21161, details.getExceptionCode());
+        Assertions.assertEquals("Przekroczono dozwoloną liczbę części pakietów.", details.getExceptionDescription());
+        Assertions.assertEquals("Liczba części pliku musi być mniejsza lub równa niż 50.", details.getDetails().getFirst());
     }
 
     // Weryfikuje wykrycie nieprawidłowo zaszyfrowanego klucza symetrycznego.
@@ -308,8 +322,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
         String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
 
-        String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(PATH_SAMPLE_INVOICE_TEMPLATE_XML))
-                .readAllBytes(), StandardCharsets.UTF_8);
+        String invoice = new String(readBytesFromPath(PATH_SAMPLE_INVOICE_TEMPLATE_XML), StandardCharsets.UTF_8);
 
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
@@ -364,8 +377,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
         String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
 
-        String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(PATH_SAMPLE_INVOICE_TEMPLATE_XML))
-                .readAllBytes(), StandardCharsets.UTF_8);
+        String invoice = new String(readBytesFromPath(PATH_SAMPLE_INVOICE_TEMPLATE_XML), StandardCharsets.UTF_8);
 
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
@@ -420,8 +432,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         String contextNip = IdentifierGeneratorUtils.generateRandomNIP();
         String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
 
-        String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(PATH_SAMPLE_INVOICE_TEMPLATE_XML))
-                .readAllBytes(), StandardCharsets.UTF_8);
+        String invoice = new String(readBytesFromPath(PATH_SAMPLE_INVOICE_TEMPLATE_XML), StandardCharsets.UTF_8);
 
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
@@ -519,8 +530,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
     }
 
     private String openBatchSessionAndSendInvoicesParts(String context, String accessToken, int invoicesCount, int partsCount) throws IOException, ApiException {
-        String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(PATH_SAMPLE_INVOICE_TEMPLATE_XML))
-                .readAllBytes(), StandardCharsets.UTF_8);
+        String invoice = new String(readBytesFromPath(PATH_SAMPLE_INVOICE_TEMPLATE_XML), StandardCharsets.UTF_8);
 
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
@@ -584,8 +594,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
     }
 
     private String openBatchSessionAndSendInvoicesPartsStream(String context, String accessToken, int invoicesCount, int invoicesPartCount) throws IOException, ApiException {
-        String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(PATH_SAMPLE_INVOICE_TEMPLATE_XML))
-                .readAllBytes(), StandardCharsets.UTF_8);
+        String invoice = new String(readBytesFromPath(PATH_SAMPLE_INVOICE_TEMPLATE_XML), StandardCharsets.UTF_8);
 
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 

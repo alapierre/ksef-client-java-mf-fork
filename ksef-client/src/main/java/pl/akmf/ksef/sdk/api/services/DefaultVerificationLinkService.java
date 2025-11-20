@@ -5,26 +5,29 @@ import pl.akmf.ksef.sdk.client.interfaces.VerificationLinkService;
 import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
 
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 
 public class DefaultVerificationLinkService implements VerificationLinkService {
 
-    private final KsefApiProperties ksefApiProperties;
+    private static final String RSASSA_PSS = "RSASSA-PSS";
+    private static final String SHA_256 = "SHA-256";
+    private static final String MGF_1 = "MGF1";
+    private static final String SHA_256_WITH_ECDS_AIN_P_1363_FORMAT = "SHA256withECDSAinP1363Format";
     private static final String CLIENT_APP = "client-app";
-    private static final String SHA_256_WITH_RSA = "SHA256withRSA";
-    private static final String SHA_256_WITH_ECDSA = "SHA256withECDSA";
+    private final KsefApiProperties ksefApiProperties;
 
     public DefaultVerificationLinkService(KsefApiProperties ksefApiProperties) {
         this.ksefApiProperties = ksefApiProperties;
@@ -35,7 +38,7 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
         String date = issueDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
-        String apiPath = ksefApiProperties.getBaseUri() + CLIENT_APP;
+        String apiPath = ksefApiProperties.getBaseUri() + "/" + CLIENT_APP;
 
         return String.format("%s/invoice/%s/%s/%s", apiPath, nip, date, invoiceHashUrlEncoded);
     }
@@ -49,7 +52,7 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
                                                   PrivateKey privateKey) {
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
-        String apiPath = ksefApiProperties.getBaseUri() + CLIENT_APP;
+        String apiPath = ksefApiProperties.getBaseUri() + "/" + CLIENT_APP;
 
         String pathToSign = String.format("%s/certificate/%s/%s/%s/%s/%s", apiPath, contextIdentifierType, contextIdentifierValue, sellerNip, certificateSerial, invoiceHashUrlEncoded)
                 .replace("https://", "");
@@ -61,26 +64,23 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
 
     private String computeUrlEncodedSignedHash(String pathToSign, PrivateKey privateKey) {
         try {
-            MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
-            byte[] sha = sha256.digest(pathToSign.getBytes(StandardCharsets.UTF_8));
-
-
             Signature signature;
             if (privateKey instanceof RSAPrivateKey) {
-                signature = Signature.getInstance(SHA_256_WITH_RSA);
+                signature = Signature.getInstance(RSASSA_PSS);
+                PSSParameterSpec pssSpec = new PSSParameterSpec(SHA_256, MGF_1, new MGF1ParameterSpec(SHA_256), 32, 1);
+                signature.setParameter(pssSpec);
             } else if (privateKey instanceof ECPrivateKey) {
-                signature = Signature.getInstance(SHA_256_WITH_ECDSA);
+                signature = Signature.getInstance(SHA_256_WITH_ECDS_AIN_P_1363_FORMAT);
             } else {
                 throw new SystemKSeFSDKException("Certificate not support RSA or ECDsa.", null);
             }
 
             signature.initSign(privateKey);
-            signature.update(sha);
+            signature.update(pathToSign.getBytes(StandardCharsets.UTF_8));
             byte[] signedBytes = signature.sign();
-
-            String base64 = Base64.getEncoder().encodeToString(signedBytes);
-            return URLEncoder.encode(base64, StandardCharsets.UTF_8);
-        } catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(signedBytes);
+        } catch (NoSuchAlgorithmException | SignatureException | InvalidKeyException |
+                 InvalidAlgorithmParameterException e) {
             throw new SystemKSeFSDKException("Cannot compute signature", e);
         }
     }

@@ -4,6 +4,7 @@ import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentsInfoRespo
 import pl.akmf.ksef.sdk.client.model.certificate.CsrResult;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
 import pl.akmf.ksef.sdk.client.model.session.FileMetadata;
+import pl.akmf.ksef.sdk.system.KsefIntegrationMode;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
 
 import javax.crypto.BadPaddingException;
@@ -153,11 +154,56 @@ public interface CryptographyService {
      */
     FileMetadata getMetaData(InputStream inputStream) throws SystemKSeFSDKException;
 
+    /**
+     * Zwraca klucz publiczny w formacie PublicKey na podstawie klucza w formacie String
+     *
+     * @param certificatePem
+     * @return Zwraca klucz publiczny w formacie PublicKey na podstawie klucza w formacie String
+     * @throws SystemKSeFSDKException
+     */
     PublicKey parsePublicKeyFromCertificatePem(String certificatePem) throws SystemKSeFSDKException;
 
+    /**
+     * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w RSA)
+     *
+     * @param privateKey
+     * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w RSA)
+     * @throws SystemKSeFSDKException
+     */
     PrivateKey parseRsaPrivateKeyFromPem(byte[] privateKey) throws SystemKSeFSDKException;
 
+    /**
+     * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w Ecdsa)
+     *
+     * @param privateKey
+     * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w Ecdsa)
+     * @throws SystemKSeFSDKException
+     */
     PrivateKey parseEcdsaPrivateKeyFromPem(byte[] privateKey) throws SystemKSeFSDKException;
 
+    /**
+     * Zwraca certyfikat w formacie X509Certificate na podstawie tablicy byte zawierającej certyfikat
+     *
+     * @param certBytes
+     * Zwraca certyfikat w formacie X509Certificate na podstawie tablicy byte zawierającej certyfikat
+     * @throws SystemKSeFSDKException
+     */
     X509Certificate parseCertificateFromBytes(byte[] certBytes) throws CertificateException;
+
+    /**
+     * Inicjuje pobranie certyfikat z API KSEF
+     *
+     * Inicjuje pobranie certyfikat z API KSEF
+     * @throws SystemKSeFSDKException
+     */
+    void initCryptographyService();
+
+    /**
+     * Zwraca status serwisu (w razie nieudanego pobrania certyfikatów podczas inicjowania serwisu jest ustawiony na OFFLINE).
+     * Możliwe jest wtedy ponowne wywyłanie usługi initCryptographyService() w celu próby inicjalizacji serwisu
+     *
+     * Zwraca status serwisu (w razie nieudanego pobrania certyfikatów podczas inicjowania serwisu jest ustawiony na OFFLINE)
+     * @throws SystemKSeFSDKException
+     */
+    KsefIntegrationMode getKsefIntegrationMode();
 }

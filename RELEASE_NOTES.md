@@ -1203,3 +1203,83 @@
 | ➖ usunięte  | 2            |
 
 ---
+# Changelog zmian - `## 3.0.5 (2025-11-20)` - `API: 2.0.0 RC5.7`
+## 1. ksef-client
+
+### 1.1 api.builders
+- **OpenBatchSessionRequestBuilder.java**: 🔧 oznaczenie metody `addBatchFilePart` z polem `String fileName` jako deprecated zgodnie z kontraktem
+
+### 1.2 api.services
+- **DefaultCryptographyService.java**: 🔧 inicjalizacja beana (pobieranie certyfikatu API KSeF) w przypadku niepowodzenia przestawia `KsefIntegrationMode` na `OFFLINE`, jeśli `KsefIntegrationMode getKsefIntegrationMode()` zwróci `FALSE` to można ponowić inicjalizację poprzez `initCryptographyService()`   
+- **DefaultSignatureService.java**: 🔧 zmiana pakietów dla `CommonCertificateVerifier` związana z aktualizacją zależności   
+- **DefaultVerificationLinkService.java**: 🔧 poprawki dla generowanych linków weryfikacyjnych   
+
+### 1.3 api
+- **DefaultKsefClient.java**: 🔧 kosmetyczne zmiany w walidacji odpowiedzi i walidacja kodów http
+- **HttpUtils.java**: 🔧 kosmetyczne zmiany w walidacji odpowiedzi
+
+### 1.4 client.interfaces
+- **CryptographyService.java**: 🔧 dodanie metod `void initCryptographyService()` i `KsefIntegrationMode getKsefIntegrationMode()` pomocnych przy inicjalizacji `DefaultCryptographyService`
+
+### 1.5 client.model
+- **session/batch/BatchFilePartInfo.java**: 🔧 oznaczenie pola `String fileName` jako `@Deprecated(since = "planowane usunięcie: 2025-12-05")`
+- **ApiException.java**: 🔧 oznaczenie pola `String responseBody` jako `@Deprecated`, dodanie pola `ExceptionResponse exceptionResponse`, dodanie getterów do `ExceptionResponse getExceptionResponse()` i `HttpHeaders getResponseHeaders()` 
+- **ExceptionObject.java**: ➕ dodanie klasy  
+- **ExceptionResponse.java**: ➕ dodanie klasy  
+- **ExceptionResponse.java**: ➕ dodanie klasy  
+
+### 1.6 client
+- **ExceptionDetails.java**: ➕ dodanie klasy  
+
+### 1.7 sign
+
+### 1.8 system
+- **CryptographyException.java**: ➕ dodanie klasy  
+- **KsefIntegrationMode.java**: ➕ dodanie klasy  
+- **SystemKSeFSDKException .java**: 🔧 dodanie konstruktora  
+
+### 1.9 resources
+
+### 1.10 test
+
+- podbicie wersji bibliotek
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BaseIntegrationTest.java**: 🔧 dodanie pomocniczej metody `byte[] readBytesFromPath(String path)`
+- **BatchIntegrationTest.java**: 🔧 aktualizacje w asercjach dot. exception response
+- **IncrementalInvoiceRetrieveIntegrationTest.java**: 🔧 drobne zmiany kosmetyczne
+- **OnlineSessionIntegrationTest.java**: 🔧 drobne zmiany kosmetyczne
+- **PeppolInvoiceIntegrationTest.java**: 🔧 drobne zmiany kosmetyczne
+- **QrCodeOfflineIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego o weryfikację z linków (certyfikatu i faktury), dodanie testu z wczytaniem certyfikatu z dysku i pomocniczo wysyłki csr
+- **QrCodeOnlineIntegrationTest.java**: 🔧 drobne zmiany kosmetyczne
+- **QueryInvoiceIntegrationTest.java**: 🔧 aktualizacje w asercjach dot. exception response
+- **SelfInvoicingIntegrationTest.java**: ➕ dodanie nowego scenariusza testowego
+- **SessionIntegrationTest.java**: 🔧 aktualizacje w asercjach dot. exception response
+- **SearchInvoiceForSubject2IntegrationTest.java**: ➕ dodanie nowego scenariusza testowego
+- **SearchInvoiceForSubject3IntegrationTest.java**: ➕ dodanie nowego scenariusza testowego
+
+### 2.1.1 integrationTest.resources
+- **keys/private/rsa/sample/private-key.pem**: ➕ dodanie przykładowego klucza prywatnego RSA
+- **keys/private/rsa/sample/public-key.pem**: ➕ dodanie przykładowego klucza prywatnego RSA
+- **xml/invoices/sample/invoice_template_v3_self_invoicing.xml**: ➕ dodanie przykładowej faktury z samofakturowaniem
+- **xml/invoices/sample/invoice-template-fa-3-with-custom-subject_2.xml**: ➕ dodanie przykładowej faktury z zmieniającym się podmiotem 2
+- **xml/invoices/sample/invoice-template-fa-3-with-custom-subject_3.xml**: ➕ dodanie przykładowej faktury z zmieniającym się podmiotem 3
+
+### 2.2 api
+
+### 2.2.1 resources
+
+### 2.3 test - api.services
+
+## 3. .http
+
+- podbicie wersji spring boot
+## 4. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 15            |
+| 🔧 zmienione | 22            |
+| ➖ usunięte  | 0             |
+---

@@ -1,7 +1,6 @@
 package pl.akmf.ksef.sdk.api;
 
 import org.apache.commons.lang3.StringUtils;
-import pl.akmf.ksef.sdk.client.model.ApiException;
 
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
@@ -67,28 +66,24 @@ public class HttpUtils {
         return url.toString();
     }
 
-    public static void validateResponseStatus(String operationId,
-                                              HttpResponse<byte[]> response,
-                                              HttpStatus expectedStatus) throws ApiException {
-        int statusCode = response.statusCode();
-
-        if (expectedStatus.getCode() != statusCode) {
-            String responseBody = response.body() == null ? null : new String(response.body(), StandardCharsets.UTF_8);
-            String message = formatExceptionMessage(operationId, statusCode, responseBody);
-            throw new ApiException(statusCode, message, response.headers(), responseBody);
-        }
+    public static boolean isValidResponse(HttpResponse<byte[]> response,
+                                          HttpStatus expectedStatus) {
+        return expectedStatus.getCode() == response.statusCode();
     }
 
-    private static String formatExceptionMessage(String operationId, int statusCode, String body) {
-        if (body == null || body.isEmpty()) {
-            body = "[no body]";
+    public static String formatExceptionMessage(String operationId, int statusCode, byte[] body) {
+        String exceptionMessage;
+        if (body == null) {
+            exceptionMessage = "[no body]";
+        } else {
+            exceptionMessage = new String(body, StandardCharsets.UTF_8);
         }
-        return operationId + " call failed with: " + statusCode + " - " + body;
+        return operationId + " call failed with: " + statusCode + " - " + exceptionMessage;
     }
 
-    static class KeyValue {
-        private String key;
-        private String value;
+    public static class KeyValue {
+        private final String key;
+        private final String value;
 
         public KeyValue(String key, String value) {
             this.key = key;

@@ -60,7 +60,6 @@ class IncrementalInvoiceRetrieveIntegrationTest extends BaseIntegrationTest {
     private static final int DEFAULT_INVOICES_COUNT = 15;
     private static final String PATH_SAMPLE_INVOICE_TEMPLATE_XML = "/xml/invoices/sample/invoice-template_v3.xml";
 
-
     @Autowired
     private DefaultCryptographyService defaultCryptographyService;
 
@@ -101,12 +100,11 @@ class IncrementalInvoiceRetrieveIntegrationTest extends BaseIntegrationTest {
         exportTasks.forEach(task -> {
             EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
             OffsetDateTime effectiveFrom = getEffectiveStartDate(continuationPoints, task.getSubjectType(), task.getFrom());
-            String operationReferenceNumber = initiateInvoiceExportAsync(effectiveFrom, task.getTo(),
-                    task.getSubjectType(), accessToken, encryptionData.encryptionInfo());
+            String operationReferenceNumber = initiateInvoiceExportAsync(effectiveFrom, task.getTo(), task.getSubjectType(), accessToken, encryptionData.encryptionInfo());
 
             AtomicReference<InvoiceExportStatus> status = new AtomicReference<>();
             await().atMost(45, SECONDS)
-                    .pollInterval(1, SECONDS)
+                    .pollInterval(3, SECONDS)
                     .until(() -> {
                         status.set(ksefClient.checkStatusAsyncQueryInvoice(operationReferenceNumber, accessToken));
                         return status.get().getStatus().getCode().equals(200);
@@ -221,8 +219,7 @@ class IncrementalInvoiceRetrieveIntegrationTest extends BaseIntegrationTest {
     private List<String> openBatchSessionAndSendInvoicesPartsStream(String context, String accessToken,
                                                                     int invoicesCount,
                                                                     int invoicesPartCount) throws IOException, ApiException {
-        String invoice = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(PATH_SAMPLE_INVOICE_TEMPLATE_XML))
-                .readAllBytes(), StandardCharsets.UTF_8);
+        String invoice = new String(readBytesFromPath(PATH_SAMPLE_INVOICE_TEMPLATE_XML), StandardCharsets.UTF_8);
 
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
@@ -253,12 +250,28 @@ class IncrementalInvoiceRetrieveIntegrationTest extends BaseIntegrationTest {
                 .pollInterval(5, SECONDS)
                 .until(() -> isInvoicesInSessionProcessed(openBatchSessionResponse.getReferenceNumber(), accessToken, DEFAULT_INVOICES_COUNT));
 
+        //check if all invoices have been stored permanently
+        AtomicReference<List<String>> ksefNumberList = new AtomicReference<>();
+        await().atMost(50, SECONDS)
+                .pollInterval(5, SECONDS)
+                .until(() -> {
+                    List<String> ksefNumbers =
+                            ksefClient.getSessionInvoices(openBatchSessionResponse.getReferenceNumber(), null,
+                                            100, accessToken)
+                                    .getInvoices()
+                                    .stream()
+                                    .filter(e -> Objects.nonNull(e.getPermanentStorageDate()))
+                                    .map(SessionInvoiceStatusResponse::getKsefNumber)
+                                    .toList();
+                    if (ksefNumbers.size() == DEFAULT_INVOICES_COUNT) {
+                        ksefNumberList.set(ksefNumbers);
+                        return true;
+                    }
 
-        return ksefClient.getSessionInvoices(openBatchSessionResponse.getReferenceNumber(), null, 100, accessToken)
-                .getInvoices()
-                .stream()
-                .map(SessionInvoiceStatusResponse::getKsefNumber)
-                .toList();
+                    return false;
+                });
+
+        return ksefNumberList.get();
     }
 
     private OpenBatchSessionRequest buildOpenBatchSessionRequestForStream(FileMetadata zipMetadata,
