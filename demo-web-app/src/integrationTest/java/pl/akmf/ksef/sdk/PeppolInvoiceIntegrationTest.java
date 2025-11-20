@@ -38,7 +38,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -222,8 +221,8 @@ class PeppolInvoiceIntegrationTest extends BaseIntegrationTest {
         try {
             SessionStatusResponse statusResponse = ksefClient.getSessionStatus(sessionReferenceNumber, accessToken);
             return statusResponse != null &&
-                    statusResponse.getSuccessfulInvoiceCount() != null &&
-                    statusResponse.getSuccessfulInvoiceCount() > 0;
+                   statusResponse.getSuccessfulInvoiceCount() != null &&
+                   statusResponse.getSuccessfulInvoiceCount() > 0;
         } catch (Exception e) {
             return false;
         }
@@ -233,9 +232,7 @@ class PeppolInvoiceIntegrationTest extends BaseIntegrationTest {
                                   String contextNip, String path, String accessToken) throws IOException, ApiException {
         String buyerNip = IdentifierGeneratorUtils.generateRandomNIP();
         String iban = IdentifierGeneratorUtils.generateIban();
-
-        String invoiceTemplate = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(path))
-                .readAllBytes(), StandardCharsets.UTF_8)
+        String invoiceTemplate = new String(readBytesFromPath(path), StandardCharsets.UTF_8)
                 .replace("#buyer_reference#", "PL" + buyerNip)
                 .replace("#buyer_nip#", "PL" + buyerNip)
                 .replace("#supplier_nip#", "PL" + contextNip)

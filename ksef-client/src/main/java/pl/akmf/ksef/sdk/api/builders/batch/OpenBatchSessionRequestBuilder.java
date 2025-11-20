@@ -56,6 +56,7 @@ public class OpenBatchSessionRequestBuilder {
         return this;
     }
 
+    @Deprecated
     public OpenBatchSessionRequestBuilder addBatchFilePart(int ordinalNumber, String fileName, long fileSize, String fileHash) {
         if (ordinalNumber < 0 || isNullOrBlank(fileName) || fileSize < 0 || isNullOrBlank(fileHash)) {
             throw new IllegalArgumentException("BatchFilePart parameters are invalid.");
@@ -69,6 +70,20 @@ public class OpenBatchSessionRequestBuilder {
         this.parts.add(batchFilePartInfo);
         return this;
     }
+
+    public OpenBatchSessionRequestBuilder addBatchFilePart(int ordinalNumber, long fileSize, String fileHash) {
+        if (ordinalNumber < 0 || fileSize < 0 || isNullOrBlank(fileHash)) {
+            throw new IllegalArgumentException("BatchFilePart parameters are invalid.");
+        }
+
+        BatchFilePartInfo batchFilePartInfo = new BatchFilePartInfo();
+        batchFilePartInfo.setOrdinalNumber(ordinalNumber);
+        batchFilePartInfo.setFileSize(fileSize);
+        batchFilePartInfo.setFileHash(fileHash);
+        this.parts.add(batchFilePartInfo);
+        return this;
+    }
+
 
     public OpenBatchSessionRequestBuilder endBatchFile() {
         if (isNullOrBlank(batchFileHash)) {

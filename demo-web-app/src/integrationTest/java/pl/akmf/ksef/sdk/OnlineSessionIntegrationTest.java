@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Base64;
-import java.util.Objects;
 import java.util.UUID;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -173,8 +172,8 @@ class OnlineSessionIntegrationTest extends BaseIntegrationTest {
         try {
             SessionStatusResponse statusResponse = ksefClient.getSessionStatus(sessionReferenceNumber, accessToken);
             return statusResponse != null &&
-                    statusResponse.getSuccessfulInvoiceCount() != null &&
-                    statusResponse.getSuccessfulInvoiceCount() > 0;
+                   statusResponse.getSuccessfulInvoiceCount() != null &&
+                   statusResponse.getSuccessfulInvoiceCount() > 0;
         } catch (Exception e) {
             return false;
         }
@@ -220,8 +219,7 @@ class OnlineSessionIntegrationTest extends BaseIntegrationTest {
 
     private String sendInvoiceOnlineSession(String nip, String sessionReferenceNumber, EncryptionData encryptionData,
                                             String path, String accessToken) throws IOException, ApiException {
-        String invoiceTemplate = new String(Objects.requireNonNull(BaseIntegrationTest.class.getResourceAsStream(path))
-                .readAllBytes(), StandardCharsets.UTF_8)
+        String invoiceTemplate = new String(readBytesFromPath(path), StandardCharsets.UTF_8)
                 .replace("#nip#", nip)
                 .replace("#invoicing_date#", LocalDate.of(2025, 6, 15).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                 .replace("#invoice_number#", UUID.randomUUID().toString());

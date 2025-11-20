@@ -4,7 +4,7 @@ plugins {
 }
 
 
-val appVersion = "3.0.4"
+val appVersion = "3.0.5"
 val artifactName = "ksef-client"
 
 val githubRepositoryToken = "token"
@@ -37,12 +37,12 @@ val bouncycastleVersion = "1.82"
 val jsr310Version = "2.17.1"
 val junitVersion = "4.4"
 val junitEngineVersion = "5.8.2"
-val jsxbVarsion = "4.0.6"
+val jsxbVersion = "4.0.6"
+val jakartaBindApi = "4.0.4"
 val jaxbFluentApiVersion = "3.0"
 val xjc by configurations.creating
-val xadesVersion = "6.0.1"
-val googleZxingCodeVersion = "3.5.3"
-val googleZxingJavaseVersion = "3.5.3"
+val xadesVersion = "6.3"
+val googleZxing = "3.5.3"
 val commonsLangsVersion = "3.18.0"
 
 dependencies {
@@ -60,16 +60,18 @@ dependencies {
 
     //xsd
     xjc("org.jvnet.jaxb2_commons:jaxb2-fluent-api:$jaxbFluentApiVersion")
-    xjc("com.sun.xml.bind:jaxb-xjc:$jsxbVarsion")
-    xjc("com.sun.xml.bind:jaxb-impl:$jsxbVarsion")
+    xjc("com.sun.xml.bind:jaxb-xjc:$jsxbVersion")
+    xjc("com.sun.xml.bind:jaxb-impl:$jsxbVersion")
+    implementation("jakarta.xml.bind:jakarta.xml.bind-api:$jakartaBindApi")
+    implementation("org.glassfish.jaxb:jaxb-runtime:$jsxbVersion")
 
     //bouncycastle
     implementation("org.bouncycastle:bcpkix-jdk18on:$bouncycastleVersion")
     implementation("org.bouncycastle:bcprov-jdk18on:$bouncycastleVersion")
 
     //qr code
-    implementation("com.google.zxing:core:$googleZxingCodeVersion")
-    implementation("com.google.zxing:javase:$googleZxingJavaseVersion")
+    implementation("com.google.zxing:core:$googleZxing")
+    implementation("com.google.zxing:javase:$googleZxing")
 }
 
 tasks.withType<Test> {

@@ -30,7 +30,9 @@ import pl.akmf.ksef.sdk.client.model.xml.AuthTokenRequest;
 import pl.akmf.ksef.sdk.client.model.xml.SubjectIdentifierTypeEnum;
 import pl.akmf.ksef.sdk.util.ExampleApiProperties;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
@@ -163,6 +165,17 @@ public abstract class BaseIntegrationTest {
         AuthOperationStatusResponse tokenResponse = ksefClient.redeemToken(submitAuthTokenResponse.getAuthenticationToken().getToken());
 
         return new AuthTokensPair(tokenResponse.getAccessToken().getToken(), tokenResponse.getRefreshToken().getToken());
+    }
+
+    protected byte[] readBytesFromPath(String path) throws IOException {
+        byte[] fileBytes;
+        try (InputStream is = BaseIntegrationTest.class.getResourceAsStream(path)) {
+            if (is == null) {
+                throw new FileNotFoundException();
+            }
+            fileBytes = is.readAllBytes();
+        }
+        return fileBytes;
     }
 
     private boolean isAuthProcessReady(String referenceNumber, String tempAuthToken) throws ApiException {

@@ -8,6 +8,8 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.akmf.ksef.sdk.api.builders.certificate.CertificateBuilders;
 import pl.akmf.ksef.sdk.client.interfaces.CryptographyService;
 import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
@@ -19,6 +21,8 @@ import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificateU
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionInfo;
 import pl.akmf.ksef.sdk.client.model.session.FileMetadata;
+import pl.akmf.ksef.sdk.system.CryptographyException;
+import pl.akmf.ksef.sdk.system.KsefIntegrationMode;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
 
 import javax.crypto.BadPaddingException;
@@ -82,34 +86,20 @@ public class DefaultCryptographyService implements CryptographyService {
     private static final String BEGIN_CERTIFICATE = "-----BEGIN CERTIFICATE-----\n";
     private static final String END_CERTIFICATE = "\n-----END CERTIFICATE-----";
     private static final String X_509 = "X.509";
-    private final String symmetricKeyEncryptionPem;
-    private final String ksefTokenPem;
-
+    private static final Logger log = LoggerFactory.getLogger(DefaultCryptographyService.class);
+    private String symmetricKeyEncryptionPem;
+    private String ksefTokenPem;
+    private final KSeFClient ksefClient;
+    private KsefIntegrationMode ksefIntegrationMode = KsefIntegrationMode.OFFLINE;
 
     public DefaultCryptographyService(KSeFClient ksefClient) throws SystemKSeFSDKException {
-        try {
-            List<PublicKeyCertificate> publicKeyCertificates = ksefClient.retrievePublicKeyCertificate();
-
-            this.symmetricKeyEncryptionPem = publicKeyCertificates.stream()
-                    .filter(c -> c.getUsage().contains(PublicKeyCertificateUsage.SYMMETRICKEYENCRYPTION))
-                    .findFirst()
-                    .map(PublicKeyCertificate::getCertificate)
-                    .map(c -> BEGIN_CERTIFICATE + c + END_CERTIFICATE)
-                    .orElse(null);
-
-            this.ksefTokenPem = publicKeyCertificates.stream()
-                    .filter(c -> c.getUsage().contains(PublicKeyCertificateUsage.KSEFTOKENENCRYPTION))
-                    .min(Comparator.comparing(PublicKeyCertificate::getValidFrom))
-                    .map(PublicKeyCertificate::getCertificate)
-                    .map(c -> BEGIN_CERTIFICATE + c + END_CERTIFICATE)
-                    .orElse(null);
-        } catch (ApiException e) {
-            throw new SystemKSeFSDKException(e.getMessage(), e);
-        }
+        this.ksefClient = ksefClient;
+        initCryptographyService();
     }
 
     @Override
     public EncryptionData getEncryptionData() throws SystemKSeFSDKException {
+        validateServiceConfiguration();
         try {
             PublicKey publicKey = parsePublicKeyFromCertificatePem(this.symmetricKeyEncryptionPem);
 
@@ -133,6 +123,7 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public byte[] encryptKsefTokenWithRSAUsingPublicKey(String ksefToken, Instant challengeTimestamp) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
         byte[] tokenWithTimestamp = (ksefToken + "|" + challengeTimestamp.toEpochMilli())
                 .getBytes(StandardCharsets.UTF_8);
 
@@ -141,6 +132,7 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public byte[] encryptKsefTokenWithECDsaUsingPublicKey(String ksefToken, Instant challengeTimestamp) {
+        validateServiceConfiguration();
         byte[] tokenWithTimestamp = (ksefToken + "|" + challengeTimestamp.toEpochMilli())
                 .getBytes(StandardCharsets.UTF_8);
 
@@ -149,6 +141,7 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public byte[] encryptWithRSAUsingPublicKey(byte[] content) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
         PublicKey publicKey = parsePublicKeyFromCertificatePem(this.ksefTokenPem);
 
         return encryptWithRSAUsingPublicKey(content, publicKey);
@@ -156,6 +149,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public byte[] encryptWithECDsaUsingPublicKey(byte[] content) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
+
         try {
             ECPublicKey publicKey = (ECPublicKey) parsePublicKeyFromCertificatePem(this.ksefTokenPem);
 
@@ -195,6 +190,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public byte[] decryptBytesWithAes256(byte[] encryptedPackagePart, byte[] cipherKey, byte[] cipherIv) {
+        validateServiceConfiguration();
+
         try {
             Cipher cipher = Cipher.getInstance(AES_CBC_PKCS_5_PADDING);
             SecretKeySpec secretKeySpec = new SecretKeySpec(cipherKey, AES);
@@ -230,6 +227,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public void decryptStreamBytesWithAes256(InputStream encryptedPackagePart, OutputStream output, byte[] cipherKey, byte[] cipherIv) {
+        validateServiceConfiguration();
+
         try {
             Cipher cipher = Cipher.getInstance(AES_CBC_PKCS_5_PADDING);
             SecretKeySpec secretKey = new SecretKeySpec(cipherKey, AES);
@@ -254,6 +253,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public byte[] encryptBytesWithAES256(byte[] content, byte[] key, byte[] iv) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
+
         try {
             Cipher cipher = Cipher.getInstance(AES_CBC_PKCS_5_PADDING);
 
@@ -270,6 +271,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public void encryptStreamWithAES256(InputStream input, OutputStream output, byte[] key, byte[] iv) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
+
         SecretKeySpec secretKeySpec = new SecretKeySpec(key, AES);
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
         try {
@@ -293,6 +296,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public CsrResult generateCsrWithRsa(CertificateEnrollmentsInfoResponse certificateInfo) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
+
         try {
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(RSA);
 
@@ -319,6 +324,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public CsrResult generateCsrWithEcdsa(CertificateEnrollmentsInfoResponse certificateInfo) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
+
         try {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance(EC);
             kpg.initialize(new ECGenParameterSpec(SECP_256_R_1));
@@ -344,6 +351,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public FileMetadata getMetaData(byte[] file) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
+
         try {
             MessageDigest sha256 = MessageDigest.getInstance(SHA_256);
             byte[] hash = sha256.digest(file);
@@ -363,6 +372,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public FileMetadata getMetaData(InputStream inputStream) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
+
         if (inputStream == null) {
             throw new IllegalArgumentException("Input stream cannot be null");
         }
@@ -389,6 +400,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public PublicKey parsePublicKeyFromCertificatePem(String certificatePem) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
+
         try (ByteArrayInputStream input = new ByteArrayInputStream(certificatePem.getBytes(StandardCharsets.UTF_8))) {
             CertificateFactory factory = CertificateFactory.getInstance(X_509);
             X509Certificate certificate = (X509Certificate) factory.generateCertificate(input);
@@ -400,6 +413,8 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public PrivateKey parseRsaPrivateKeyFromPem(byte[] privateKey) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
+
         try {
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKey);
 
@@ -413,6 +428,7 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public PrivateKey parseEcdsaPrivateKeyFromPem(byte[] privateKey) throws SystemKSeFSDKException {
+        validateServiceConfiguration();
         try {
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKey);
 
@@ -426,9 +442,41 @@ public class DefaultCryptographyService implements CryptographyService {
 
     @Override
     public X509Certificate parseCertificateFromBytes(byte[] certBytes) throws CertificateException {
+        validateServiceConfiguration();
+
         CertificateFactory certFactory = CertificateFactory.getInstance(X_509);
         ByteArrayInputStream inputStream = new ByteArrayInputStream(certBytes);
         return (X509Certificate) certFactory.generateCertificate(inputStream);
+    }
+
+    @Override
+    public void initCryptographyService() {
+        try {
+            List<PublicKeyCertificate> publicKeyCertificates = ksefClient.retrievePublicKeyCertificate();
+
+            this.symmetricKeyEncryptionPem = publicKeyCertificates.stream()
+                    .filter(c -> c.getUsage().contains(PublicKeyCertificateUsage.SYMMETRICKEYENCRYPTION))
+                    .findFirst()
+                    .map(PublicKeyCertificate::getCertificate)
+                    .map(c -> BEGIN_CERTIFICATE + c + END_CERTIFICATE)
+                    .orElse(null);
+
+            this.ksefTokenPem = publicKeyCertificates.stream()
+                    .filter(c -> c.getUsage().contains(PublicKeyCertificateUsage.KSEFTOKENENCRYPTION))
+                    .min(Comparator.comparing(PublicKeyCertificate::getValidFrom))
+                    .map(PublicKeyCertificate::getCertificate)
+                    .map(c -> BEGIN_CERTIFICATE + c + END_CERTIFICATE)
+                    .orElse(null);
+            ksefIntegrationMode = KsefIntegrationMode.ONLINE;
+        } catch (ApiException e) {
+            ksefIntegrationMode = KsefIntegrationMode.OFFLINE;
+            log.error("Error with connection to KseF Api: {}", e.getMessage() + ". Library works in offline mode");
+        }
+    }
+
+    @Override
+    public KsefIntegrationMode getKsefIntegrationMode() {
+        return ksefIntegrationMode;
     }
 
     private byte[] encryptWithRSAUsingPublicKey(byte[] content, PublicKey publicKey) throws SystemKSeFSDKException {
@@ -473,5 +521,11 @@ public class DefaultCryptographyService implements CryptographyService {
         byte[] iv = new byte[16];
         SecureRandom.getInstanceStrong().nextBytes(iv);
         return iv;
+    }
+
+    private void validateServiceConfiguration() {
+        if (ksefIntegrationMode.equals(KsefIntegrationMode.OFFLINE)) {
+            throw new CryptographyException("Service has not been initialized correctly");
+        }
     }
 }

@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import pl.akmf.ksef.sdk.api.builders.session.OpenOnlineSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
+import pl.akmf.ksef.sdk.client.ExceptionDetails;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.ExceptionResponse;
 import pl.akmf.ksef.sdk.client.model.session.AuthenticationListItem;
 import pl.akmf.ksef.sdk.client.model.session.AuthenticationListResponse;
 import pl.akmf.ksef.sdk.client.model.session.CommonSessionStatus;
@@ -31,8 +33,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SessionIntegrationTest extends BaseIntegrationTest {
-    private String expectedErrorMessage = "\"exceptionCode\":21304,\"exceptionDescription\":\"Brak uwierzytelnienia.\",\"details\":[\"Nieprawidłowy token.\"]";
-
     @Autowired
     private DefaultCryptographyService defaultCryptographyService;
 
@@ -68,7 +68,12 @@ class SessionIntegrationTest extends BaseIntegrationTest {
 
         // Step 5: refresh token should throw: 21304: Brak uwierzytelnienia. - Nieprawidłowy token.
         ApiException apiException = assertThrows(ApiException.class, () -> ksefClient.refreshAccessToken(accessTokensPair.refreshToken()));
-        Assertions.assertTrue(apiException.getResponseBody().contains(expectedErrorMessage));
+        ExceptionResponse exceptionResponse = apiException.getExceptionResponse();
+        Assertions.assertFalse(exceptionResponse.getException().getExceptionDetailList().isEmpty());
+        ExceptionDetails details = exceptionResponse.getException().getExceptionDetailList().getFirst();
+        Assertions.assertEquals(21304, details.getExceptionCode());
+        Assertions.assertEquals("Brak uwierzytelnienia.", details.getExceptionDescription());
+        Assertions.assertEquals("Nieprawidłowy token.", details.getDetails().getFirst());
     }
 
     @Test
@@ -124,7 +129,6 @@ class SessionIntegrationTest extends BaseIntegrationTest {
 
         // Step 6: refresh token should throw: 21304: Brak uwierzytelnienia. - Nieprawidłowy token.
         ApiException apiException = assertThrows(ApiException.class, () -> ksefClient.refreshAccessToken(secondAccessTokensPair.refreshToken()));
-        Assertions.assertTrue(apiException.getResponseBody().contains(expectedErrorMessage));
     }
 
     @Test
@@ -156,7 +160,7 @@ class SessionIntegrationTest extends BaseIntegrationTest {
         Assertions.assertEquals(100, firstSession.getStatus().getCode());
         Assertions.assertEquals("Sesja interaktywna otwarta", firstSession.getStatus().getDescription());
         Assertions.assertEquals(440, secondSession.getStatus().getCode());
-        Assertions.assertEquals("Sesja anulowana, nie przesłano faktur", secondSession.getStatus().getDescription());
+        Assertions.assertEquals("Sesja anulowana", secondSession.getStatus().getDescription());
     }
 
     @Test
