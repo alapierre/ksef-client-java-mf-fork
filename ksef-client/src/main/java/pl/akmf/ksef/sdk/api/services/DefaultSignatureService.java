@@ -72,8 +72,9 @@ public class DefaultSignatureService implements SignatureService {
                 digestAlgorithm = DigestAlgorithm.SHA512;
             }
         } else {
-            throw new IllegalArgumentException("Unsupported certificate or key algorithm type: "
-                                               + x509Certificate.getPublicKey().getAlgorithm() + " " + privateKey.getAlgorithm());
+            throw new IllegalArgumentException("Encoding data are incorrect: \nCertificate signatureAlg: " + x509Certificate.getSigAlgName()
+                                               + "\nPublicKey signatureAlg: " + x509Certificate.getPublicKey().getAlgorithm()
+                                               + "\nPrivateKEy signatureAlg: " + privateKey.getAlgorithm());
         }
 
         parameters.setEncryptionAlgorithm(encryptionAlgorithm);

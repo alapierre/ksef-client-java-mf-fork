@@ -24,15 +24,16 @@ import pl.akmf.ksef.sdk.client.model.certificate.CertificateRevokeRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.QueryCertificatesRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
-import pl.akmf.ksef.sdk.client.model.invoice.DownloadInvoiceRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoicePackagePart;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryFilters;
 import pl.akmf.ksef.sdk.client.model.invoice.QueryInvoiceMetadataResponse;
 import pl.akmf.ksef.sdk.client.model.limit.ChangeContextLimitRequest;
 import pl.akmf.ksef.sdk.client.model.limit.ChangeSubjectCertificateLimitRequest;
 import pl.akmf.ksef.sdk.client.model.limit.GetContextLimitResponse;
+import pl.akmf.ksef.sdk.client.model.limit.GetRateLimitResponse;
 import pl.akmf.ksef.sdk.client.model.limit.GetSubjectLimitResponse;
 import pl.akmf.ksef.sdk.client.model.permission.OperationResponse;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionAttachmentStatusResponse;
@@ -80,6 +81,7 @@ import pl.akmf.ksef.sdk.client.model.testdata.TestDataPersonCreateRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataPersonRemoveRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataSubjectCreateRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataSubjectRemoveRequest;
+import pl.akmf.ksef.sdk.client.model.util.SortOrder;
 import pl.akmf.ksef.sdk.client.peppol.PeppolProvidersListResponse;
 
 import java.util.List;
@@ -536,16 +538,6 @@ public interface KSeFClient {
     byte[] getInvoice(String ksefReferenceNumber, String accessToken) throws ApiException;
 
     /**
-     * Pobranie faktury na podstawie numeru KSeF oraz danych faktury.
-     *
-     * @param request DownloadInvoiceRequest
-     * @return Faktura w formie XML.
-     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
-     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
-     */
-    byte[] getInvoice(DownloadInvoiceRequest request, String accessToken) throws ApiException;
-
-    /**
      * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania.
      *
      * @param pageOffset - Index strony wyników (domyślnie 0)
@@ -555,7 +547,21 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
+    @Deprecated
     QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset, Integer pageSize, InvoiceQueryFilters request, String accessToken) throws ApiException;
+
+    /**
+     * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania.
+     *
+     * @param pageOffset - Index strony wyników (domyślnie 0)
+     * @param pageSize   - Ilość elementów na stronie (domyślnie 10)
+     * @param sortOrder  - Kolejność sortowania wyników.
+     * @param request    InvoicesQueryRequest - zestaw filtrów
+     * @return QueryInvoicesReponse
+     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
+     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
+     */
+    QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset, Integer pageSize, SortOrder sortOrder, InvoiceQueryFilters request, String accessToken) throws ApiException;
 
     /**
      * Rozpoczyna asynchroniczny proces wyszukiwania faktur w systemie KSeF na podstawie przekazanych filtrów
@@ -856,6 +862,14 @@ public interface KSeFClient {
      */
     void removeAttachmentPermissionTest(TestDataAttachmentRemoveRequest testDataAttachmentRemoveRequest) throws ApiException;
 
+    /**
+     * Zwraca wartości aktualnie obowiązujących limitów ilości żądań przesyłanych do API.
+     *
+     * @param accessToken
+     * @return GetRateLimitResponse
+     */
+    GetRateLimitResponse getRateLimit(String accessToken) throws ApiException;
+
     void singleBatchPartSendingProcess(BatchPartSendingInfo part,
                                        PackagePartSignatureInitResponseType responsePart,
                                        List<String> errors);
@@ -863,4 +877,6 @@ public interface KSeFClient {
     void singleBatchPartSendingProcessByStream(BatchPartStreamSendingInfo part,
                                                PackagePartSignatureInitResponseType responsePart,
                                                List<String> errors);
+
+    byte[] downloadPackagePart(InvoicePackagePart part);
 }
