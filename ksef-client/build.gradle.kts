@@ -56,18 +56,20 @@ dependencies {
     xjc("com.sun.xml.bind:jaxb-impl:$jsxbVarsion")
 
     //bouncycastle
-    implementation("org.bouncycastle:bcpkix-jdk18on:$bouncycastleVersion")
-    implementation("org.bouncycastle:bcprov-jdk18on:$bouncycastleVersion")
+    api("org.bouncycastle:bcpkix-jdk18on:$bouncycastleVersion")
+    api("org.bouncycastle:bcprov-jdk18on:$bouncycastleVersion")
 
     //qr code
-    implementation("com.google.zxing:core:$googleZxingCodeVersion")
-    implementation("com.google.zxing:javase:$googleZxingJavaseVersion")
+    api("com.google.zxing:core:$googleZxingCodeVersion")
+    api("com.google.zxing:javase:$googleZxingJavaseVersion")
 
     compileOnly("org.projectlombok:lombok:$lombokVersion")
     annotationProcessor("org.projectlombok:lombok:$lombokVersion")
 
     testCompileOnly("org.projectlombok:lombok:$lombokVersion")
     testAnnotationProcessor("org.projectlombok:lombok:$lombokVersion")
+
+    testImplementation("org.slf4j:slf4j-simple:2.0.13")
 }
 
 tasks.withType<Test> {
@@ -75,7 +77,7 @@ tasks.withType<Test> {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(11)
+    options.release.set(21)
     options.encoding = "UTF-8"
 }
 
