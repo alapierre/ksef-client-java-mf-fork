@@ -33,13 +33,12 @@ The intent is to support the developer community until the official SDK regains 
 ## 🧱 Differences from the Official SDK
 
 
-| Area                  | Official SDK            | This Fork                                   |
-|-----------------------|-------------------------|---------------------------------------------|
-| API version           | 	Outdated               | Outdated                                    |
-| Dependency management | Vulnerable dependencies | Updated and secure dependencies             |
-| Maven publishing	     | Not available           | Published to public Maven repository        |
-| Maintenance           | 	Irregular / no updates | Community maintained                        |
-| Build system          | 	Unmodified             | Cleaned up and improved for reproducibility |
+| Area                  | Official SDK           | This Fork                                   |
+|-----------------------|------------------------|---------------------------------------------|
+| Dependency management | it varies              | Updated and secure dependencies             |
+| Maven publishing	     | Github Packages        | Published to public Maven repository        |
+| Maintenance           | Irregular / no updates | Community maintained                        |
+| Build system          | Unmodified             | Cleaned up and improved for reproducibility |
 
 ## Public maven repo dependency
 
@@ -47,7 +46,7 @@ The intent is to support the developer community until the official SDK regains 
 <dependency>
     <groupId>io.alapierre.ksef-sdk</groupId>
     <artifactId>ksef-client</artifactId>
-    <version>2.1.4</version>
+    <version>2.2.2</version>
 </dependency>
 ````
 
