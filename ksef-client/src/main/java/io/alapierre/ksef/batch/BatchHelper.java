@@ -78,7 +78,7 @@ public class BatchHelper {
             // 4. Podziel i zaszyfruj ZIP kawałkami (byte[])
             try (InputStream fis = new FileInputStream(plainZipFile)) {
 
-                byte[] buffer = new byte[(int) config.maxPartSize()];
+                byte[] buffer = new byte[config.maxPartSize()];
                 int bytesRead;
                 int partIndex = 1; // KSeF wymaga indeksowania od 1
 
@@ -110,13 +110,13 @@ public class BatchHelper {
                             cipherSize,
                             cipherHash
                     ));
-                    partIndex++;
                     log.debug("Przetworzono część {}, plainSize: {}, cipherSize: {}", partIndex, partData.length, cipherSize);
+                    partIndex++;
                 }
             }
 
         } catch (Exception e) {
-            log.warn("Problem z tworzeniem i szyfrowaniem paczek dla wysyłki wsadowej, czczenie pozostałości, usuwam {} plików paczek", encryptedParts.size());
+            log.warn("Problem z tworzeniem i szyfrowaniem paczek dla wysyłki wsadowej, czyszczenie pozostałości, usuwam {} plików paczek", encryptedParts.size());
             for (BatchPartInfo part : encryptedParts) {
                 try {
                     Files.deleteIfExists(part.cipherPath());

@@ -8,7 +8,7 @@ import java.nio.file.Path;
  */
 public record BatchConfig(
         Path outputDir,
-        long maxPartSize,
+        int maxPartSize,
         boolean cleanup
 ) {
 }
