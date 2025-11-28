@@ -68,6 +68,8 @@ dependencies {
 
     testCompileOnly("org.projectlombok:lombok:$lombokVersion")
     testAnnotationProcessor("org.projectlombok:lombok:$lombokVersion")
+
+    testImplementation("org.slf4j:slf4j-simple:2.0.13")
 }
 
 tasks.withType<Test> {
@@ -75,7 +77,7 @@ tasks.withType<Test> {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(11)
+    options.release.set(21)
     options.encoding = "UTF-8"
 }
 
