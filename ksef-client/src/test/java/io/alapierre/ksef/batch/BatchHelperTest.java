@@ -5,10 +5,7 @@ import io.alapierre.ksef.batch.model.BatchPartInfo;
 import io.alapierre.ksef.batch.model.BatchResult;
 import lombok.val;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import pl.akmf.ksef.sdk.api.DefaultKsefClient;
 import pl.akmf.ksef.sdk.api.KsefApiProperties;
 import pl.akmf.ksef.sdk.api.builders.auth.AuthKsefTokenRequestBuilder;
@@ -101,6 +98,7 @@ public class BatchHelperTest {
     }
 
     @Test
+    @Ignore("Test integracyjny - wymaga tokena i NIP")
     public void testSend() throws Exception {
 
         final String KSEF_TOKEN = System.getenv("KSEF_TOKEN");
