@@ -8,6 +8,7 @@ import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
 import java.security.PrivateKey;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 import static io.alapierre.ksef.qr.CryptoUtils.computeUrlEncodedSignedHash;
 
@@ -60,7 +61,7 @@ public final class VerificationLinkGenerator {
      * @param ctxValue    context identifier value
      * @param sellerNip   seller’s NIP (10 digits)
      * @param certSerial  KSeF certificate serial number (hex string expected by docs)
-     * @param invoiceXml  SHA-256 of invoice XML in Base64URL (no padding)
+     * @param invoiceHash SHA-256 of invoice XML
      * @param privateKey  private key – RSA (for RSA-PSS) or EC (for ECDSA P-256)
      * @return full CODE II URL with Base64URL(no padding) signature appended
      */
@@ -70,8 +71,8 @@ public final class VerificationLinkGenerator {
                                                              String sellerNip,
                                                              String certSerial,
                                                              PrivateKey privateKey,
-                                                             byte[] invoiceXml) {
-        String invoiceHashUrlEncoded = CryptoUtils.computeInvoiceHashBase64Url(invoiceXml);
+                                                             byte[] invoiceHash) {
+        String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHash);
 
         String baseUrl = trimTrailingSlash(environment.getUrl());
         String normalizedNip = normalizeAndValidateNip(sellerNip);
