@@ -46,7 +46,7 @@ The intent is to support the developer community until the official SDK regains 
 <dependency>
     <groupId>io.alapierre.ksef-sdk</groupId>
     <artifactId>ksef-client</artifactId>
-    <version>2.2.2</version>
+    <version>2.2.3</version>
 </dependency>
 ````
 
