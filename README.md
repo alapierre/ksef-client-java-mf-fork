@@ -40,13 +40,20 @@ The intent is to support the developer community until the official SDK regains 
 | Maintenance           | Irregular / no updates | Community maintained                        |
 | Build system          | Unmodified             | Cleaned up and improved for reproducibility |
 
+## Some useful utilities
+
+- `io.alapierre.ksef.batch.BatchHelper` - a utility class for preparing and sanding batches of invoices without going to OutOfMemory Exceptions
+- `io.alapierre.ksef.qr.VerificationLinkGenerator` - working version of the QR code link generator from the official SDK
+
+The current release fixes the original [DefaultVerificationLinkService.java](ksef-client/src/main/java/pl/akmf/ksef/sdk/api/services/DefaultVerificationLinkService.java) to work properly with certs issued by Aplikacja Podatnika and MCU.
+
 ## Public maven repo dependency
 
 ````xml
 <dependency>
     <groupId>io.alapierre.ksef-sdk</groupId>
     <artifactId>ksef-client</artifactId>
-    <version>2.2.3</version>
+    <version>2.2.4</version>
 </dependency>
 ````
 

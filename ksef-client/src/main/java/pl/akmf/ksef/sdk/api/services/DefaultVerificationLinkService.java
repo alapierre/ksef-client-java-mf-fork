@@ -25,7 +25,7 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
     private static final String RSASSA_PSS = "RSASSA-PSS";
     private static final String SHA_256 = "SHA-256";
     private static final String MGF_1 = "MGF1";
-    private static final String SHA_256_WITH_ECDS_AIN_P_1363_FORMAT = "SHA256withECDSAinP1363Format";
+    private static final String SHA_256_WITH_ECDSA = "SHA256withECDSA";
     private static final String CLIENT_APP = "client-app";
     private final KsefApiProperties ksefApiProperties;
 
@@ -70,7 +70,7 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
                 PSSParameterSpec pssSpec = new PSSParameterSpec(SHA_256, MGF_1, new MGF1ParameterSpec(SHA_256), 32, 1);
                 signature.setParameter(pssSpec);
             } else if (privateKey instanceof ECPrivateKey) {
-                signature = Signature.getInstance(SHA_256_WITH_ECDS_AIN_P_1363_FORMAT);
+                signature = Signature.getInstance(SHA_256_WITH_ECDSA);
             } else {
                 throw new SystemKSeFSDKException("Certificate not support RSA or ECDsa.", null);
             }

@@ -2,3 +2,5 @@
 /.idea/
 .gradle
 /private.env
+/ksef-client/src/test/resources/SignTest.crt
+/ksef-client/src/test/resources/SignTest.key
