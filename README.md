@@ -53,7 +53,7 @@ The current release fixes the original [DefaultVerificationLinkService.java](kse
 <dependency>
     <groupId>io.alapierre.ksef-sdk</groupId>
     <artifactId>ksef-client</artifactId>
-    <version>2.2.4</version>
+    <version>${ksef.client.version}</version>
 </dependency>
 ````
 

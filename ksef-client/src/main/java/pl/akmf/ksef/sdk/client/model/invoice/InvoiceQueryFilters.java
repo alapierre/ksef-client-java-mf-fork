@@ -1,5 +1,7 @@
 package pl.akmf.ksef.sdk.client.model.invoice;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.List;
 
 public class InvoiceQueryFilters {
@@ -92,10 +94,12 @@ public class InvoiceQueryFilters {
         this.invoicingMode = invoicingMode;
     }
 
+    @JsonProperty("isSelfInvoicing")
     public Boolean getSelfInvoicing() {
         return isSelfInvoicing;
     }
 
+    @JsonProperty("isSelfInvoicing")
     public void setSelfInvoicing(Boolean selfInvoicing) {
         isSelfInvoicing = selfInvoicing;
     }
