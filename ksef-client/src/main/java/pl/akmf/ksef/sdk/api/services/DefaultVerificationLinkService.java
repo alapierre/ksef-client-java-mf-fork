@@ -27,10 +27,15 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
     private static final String MGF_1 = "MGF1";
     private static final String SHA_256_WITH_ECDS_AIN_P_1363_FORMAT = "SHA256withECDSAinP1363Format";
     private static final String CLIENT_APP = "client-app";
-    private final KsefApiProperties ksefApiProperties;
+    private final String appUrl;
 
+    @Deprecated
     public DefaultVerificationLinkService(KsefApiProperties ksefApiProperties) {
-        this.ksefApiProperties = ksefApiProperties;
+        this.appUrl = ksefApiProperties.getBaseUri();
+    }
+
+    public DefaultVerificationLinkService(String appUrl) {
+        this.appUrl = appUrl;
     }
 
     @Override
@@ -38,7 +43,7 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
         String date = issueDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
-        String apiPath = ksefApiProperties.getBaseUri() + "/" + CLIENT_APP;
+        String apiPath = appUrl + "/" + CLIENT_APP;
 
         return String.format("%s/invoice/%s/%s/%s", apiPath, nip, date, invoiceHashUrlEncoded);
     }
@@ -52,7 +57,7 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
                                                   PrivateKey privateKey) {
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
-        String apiPath = ksefApiProperties.getBaseUri() + "/" + CLIENT_APP;
+        String apiPath = appUrl + "/" + CLIENT_APP;
 
         String pathToSign = String.format("%s/certificate/%s/%s/%s/%s/%s", apiPath, contextIdentifierType, contextIdentifierValue, sellerNip, certificateSerial, invoiceHashUrlEncoded)
                 .replace("https://", "");

@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import pl.akmf.ksef.sdk.api.DefaultKsefClient;
-import pl.akmf.ksef.sdk.api.KsefApiProperties;
 import pl.akmf.ksef.sdk.api.services.DefaultCertificateService;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.api.services.DefaultQrCodeService;
@@ -29,10 +29,7 @@ import java.net.http.HttpClient;
 @RequiredArgsConstructor
 public class KsefClientConfig {
 
-    @Bean
-    public ExampleApiProperties apiProperties() {
-        return new ExampleApiProperties();
-    }
+    private final ExampleApiProperties apiProperties;
 
     @Bean
     public CertificateService initDefaultCertificateService() {
@@ -45,8 +42,8 @@ public class KsefClientConfig {
     }
 
     @Bean
-    public VerificationLinkService initDefaultVerificationLinkService(KsefApiProperties ksefApiProperties) {
-        return new DefaultVerificationLinkService(ksefApiProperties);
+    public VerificationLinkService initDefaultVerificationLinkService(@Value("${sdk.config.base-uri}") String baseUri) {
+        return new DefaultVerificationLinkService(baseUri);
     }
 
     @Bean
@@ -64,7 +61,7 @@ public class KsefClientConfig {
         HttpClient apiClient = HttpClientBuilder.createHttpBuilder(new HttpClientConfig()).build();
         return new DefaultKsefClient(
                 apiClient,
-                apiProperties(),
+                apiProperties,
                 objectMapper);
     }
 

@@ -1,2 +1,11 @@
 server:
   port: 8082
+
+sdk:
+  config:
+    base-uri: "https://ksef-test.mf.gov.pl/"
+    request-timeout: 100
+
+spring:
+  profiles:
+    default: local

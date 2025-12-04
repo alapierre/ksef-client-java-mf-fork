@@ -88,6 +88,10 @@ public abstract class BaseIntegrationTest {
         return authWithCustomNip(context, subject, EncryptionMethod.Rsa);
     }
 
+    protected AuthTokensPair authWithCustomPesel(String context, String subject) throws ApiException, JAXBException, IOException {
+        return authWithCustomPesel(context, subject, EncryptionMethod.Rsa);
+    }
+
     protected AuthTokensPair authWithCustomNip(String context, String subject, EncryptionMethod encryptionMethod) throws ApiException, JAXBException, IOException {
         AuthenticationChallengeResponse challenge = ksefClient.getAuthChallenge();
 
@@ -124,6 +128,33 @@ public abstract class BaseIntegrationTest {
                 .build();
 
         String xml = AuthTokenRequestSerializer.authTokenRequestSerializer(authTokenRequest);
+
+        String signedXml = signatureService.sign(xml.getBytes(), cert.certificate(), cert.getPrivateKey());
+
+        SignatureResponse submitAuthTokenResponse = ksefClient.submitAuthTokenRequest(signedXml, false);
+
+        //Czekanie na zakończenie procesu
+        await().atMost(14, SECONDS)
+                .pollInterval(1, SECONDS)
+                .until(() -> isAuthProcessReady(submitAuthTokenResponse.getReferenceNumber(), submitAuthTokenResponse.getAuthenticationToken().getToken()));
+
+        AuthOperationStatusResponse tokenResponse = ksefClient.redeemToken(submitAuthTokenResponse.getAuthenticationToken().getToken());
+
+        return new AuthTokensPair(tokenResponse.getAccessToken().getToken(), tokenResponse.getRefreshToken().getToken());
+    }
+
+    protected AuthTokensPair authWithCustomPesel(String context, String pesel, EncryptionMethod encryptionMethod) throws ApiException, JAXBException, IOException {
+        AuthenticationChallengeResponse challenge = ksefClient.getAuthChallenge();
+
+        AuthTokenRequest authTokenRequest = new AuthTokenRequestBuilder()
+                .withChallenge(challenge.getChallenge())
+                .withContextNip(context)
+                .withSubjectType(SubjectIdentifierTypeEnum.CERTIFICATE_SUBJECT)
+                .build();
+
+        String xml = AuthTokenRequestSerializer.authTokenRequestSerializer(authTokenRequest);
+
+        SelfSignedCertificate cert = certificateService.getPersonalCertificate("M", "B", "PNOPL", pesel, "M B", encryptionMethod);
 
         String signedXml = signatureService.sign(xml.getBytes(), cert.certificate(), cert.getPrivateKey());
 

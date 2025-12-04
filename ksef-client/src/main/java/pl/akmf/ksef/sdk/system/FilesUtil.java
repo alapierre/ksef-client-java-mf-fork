@@ -1,4 +1,4 @@
-package pl.akmf.ksef.sdk.util;
+package pl.akmf.ksef.sdk.system;
 
 import org.apache.commons.lang3.function.TriFunction;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
@@ -6,6 +6,7 @@ import pl.akmf.ksef.sdk.client.model.invoice.InvoicePackagePart;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
 import pl.akmf.ksef.sdk.client.model.session.FileMetadata;
 import pl.akmf.ksef.sdk.client.model.session.batch.BatchPartStreamSendingInfo;
+import pl.akmf.ksef.sdk.client.model.util.ZipInputStreamWithSize;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -29,12 +30,20 @@ public class FilesUtil {
     }
 
     public static Map<String, byte[]> generateInvoicesInMemory(int invoicesCount, String contextNip, String invoiceTemplate) {
+        return generateInvoicesInMemory(invoicesCount,
+                contextNip,
+                LocalDate.of(2025, 6, 15),
+                UUID.randomUUID().toString(),
+                invoiceTemplate);
+    }
+
+    public static Map<String, byte[]> generateInvoicesInMemory(int invoicesCount, String contextNip, LocalDate invoicingDate, String invoiceNumber, String invoiceTemplate) {
         Map<String, byte[]> invoiceMap = new HashMap<>();
         for (int i = 0; i < invoicesCount; i++) {
             String invoice = invoiceTemplate
                     .replace("#nip#", contextNip)
-                    .replace("#invoicing_date#", LocalDate.of(2025, 6, 15).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                    .replace("#invoice_number#", UUID.randomUUID().toString());
+                    .replace("#invoicing_date#", invoicingDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                    .replace("#invoice_number#", invoiceNumber);
 
             invoiceMap.put("faktura_" + (i + 1) + ".xml", invoice.getBytes(StandardCharsets.UTF_8));
         }
@@ -211,8 +220,4 @@ public class FilesUtil {
             throw new RuntimeException(e.getMessage());
         }
     }
-
-    public record ZipInputStreamWithSize(ByteArrayInputStream byteArrayInputStream, int zipLength) {
-    }
-
 }

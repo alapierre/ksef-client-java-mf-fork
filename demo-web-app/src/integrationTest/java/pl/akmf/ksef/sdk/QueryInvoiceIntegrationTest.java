@@ -38,7 +38,7 @@ import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceOnlineSessionRequ
 import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceResponse;
 import pl.akmf.ksef.sdk.client.model.util.SortOrder;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
-import pl.akmf.ksef.sdk.util.FilesUtil;
+import pl.akmf.ksef.sdk.system.FilesUtil;
 import pl.akmf.ksef.sdk.util.IdentifierGeneratorUtils;
 
 import java.io.IOException;
