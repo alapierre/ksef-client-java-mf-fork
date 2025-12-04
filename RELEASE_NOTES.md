@@ -1283,3 +1283,94 @@
 | 🔧 zmienione | 22            |
 | ➖ usunięte  | 0             |
 ---
+# Changelog zmian - `## 3.0.6 (2025-12-04)` - `API: 2.0.0 RC6.0`
+
+## 1. ksef-client
+
+### 1.1 api.builders
+- Dodano właściwość subjectDetails - "Dane podmiotu, któremu nadawane są uprawnienia" do wszystkich endpointów nadających uprawnienia **/permissions/.../grants. W RC6.0 pole jest opcjonalne; od 2025-12-19 będzie wymagane.)
+- **GrantEntityPermissionsRequestBuilder.java**: 🔧 dodanie pola `subjectDetails`
+- **GrantEUEntityPermissionsRequestBuilder.java**: 🔧 dodanie pól `subjectDetails` i `euEntityDetails`
+- **GrantEUEntityRepresentativePermissionsRequestBuilder.java**: 🔧 dodanie pola `subjectDetails`
+- **GrantIndirectEntityPermissionsRequestBuilder.java**: 🔧 dodanie pola `subjectDetails`
+- **GrantPersonPermissionsRequestBuilder.java**: 🔧 dodanie pola `subjectDetails`
+- **GrantAuthorizationPermissionsRequestBuilder.java**: 🔧 dodanie pola `subjectDetails`
+- **SubunitPermissionsGrantRequestBuilder.java**: 🔧 dodanie pola `subjectDetails`
+
+### 1.2 api.services
+- **DefaultCryptographyService.java**: 🔧 w `initCryptographyService` przechwycenie `SystemKSeFSDKException`
+- **DefaultVerificationLinkService.java**: 🔧 konstruktor z polem `KsefApiProperties` oznaczony jako deprecated, dodano nowy konstruktor z polem `String appUrl`
+
+### 1.3 api
+- **DefaultKsefClient.java**: 🔧 w metodzie `validResponse` dodano pomijanie parsowania jsona w przypadku odpowiedzi z API typów innych niż json,
+  - Dodano parametr `upoVersion` w metodach `openBatchSession` i `openOnlineSession`
+    - Pozwala wybrać wersję UPO (dostępne wartości: `"upo-v4-3"`)
+    - Ustawia nagłówek `X-KSeF-Feature` z odpowiednią wersją
+    - Domyślnie: v4-2, od 5.01.2026 → v4-3
+    - poprzednie wersje metod oznaczone jako deprecated
+- **HttpUtils.java**: 🔧 w metodzie `formatExceptionMessage` dodano dodatkowe sprawdzanie dla pustego body 
+
+### 1.4 client.interfaces
+- **KSeFClient.java**: 🔧 metody `openBatchSession` i `openOnlineSession` zgodnie z opisem w implementacji `DefaultKsefClient` 
+
+### 1.5 client.model
+- **auth/TokenPermissionType.java**: 🔧 dodano `PEPPOL_ID("PeppolId")`
+- **invoice/InitAsyncInvoicesQueryResponse.java**: 🔧 zmiana modyfikatora dostępu na prywatny dla pola `String referenceNumber`
+- **invoice/InvoiceExportPackage.java**: 🔧 dodanie opisów dla pól i dodanie pola `OffsetDateTime permanentStorageHwmDate`
+- **invoice/InvoiceQueryDateRange.java**: 🔧 dodanie pola `Boolean restrictToPermanentStorageHwmDate`
+- **invoice/InvoiceQueryFilters.java**: 🔧 poprawka w mapowaniu pola isSelfInvoicing (`@JsonProperty("isSelfInvoicing")`)
+- **invoice/QueryInvoiceMetadataResponse.java**: 🔧 dodanie pola `OffsetDateTime permanentStorageHwmDate`
+- Dodano właściwość subjectDetails - "Dane podmiotu, któremu nadawane są uprawnienia" do wszystkich endpointów nadających uprawnienia **/permissions/.../grants. W RC6.0 pole jest opcjonalne; od 2025-12-19 będzie wymagane.)
+- **permission/entity/GrantEntityPermissionsRequest.java**: 🔧 dodanie pola `subjectDetails`
+- **permission/euentity/EuEntityPermissionsGrantRequest.java**: 🔧 dodanie pól `subjectDetails`, `euEntityDetails` i podtypów 
+- **permission/euentity/GrantEUEntityRepresentativePermissionsRequest.java**: 🔧 dodanie pola `subjectDetails` i podtypów 
+- **permission/indirect/GrantIndirectEntityPermissionsRequest.java**: 🔧 dodanie pola `subjectDetails` i podtypów 
+- **permission/person/GrantPersonPermissionsRequest.java**: 🔧 dodanie pola `subjectDetails` i podtypów 
+- **permission/proxy/GrantAuthorizationPermissionsRequest.java**: 🔧 dodanie pola `subjectDetails` 
+- **permission/subunit/SubunitPermissionsGrantRequest.java**: 🔧 dodanie pola `subjectDetails` i podtypów 
+- **TestDataAttachmentRemoveRequest.java**: 🔧 dodanie pola `OffsetDateTime expectedEndDate` 
+- **TestDataPersonCreateRequest.java**: 🔧 dodanie pola `Boolean isDeceased` 
+- **ZipInputStreamWithSize.java**: ➕ dodanie nowego modelu
+- **StatusInfo.java**: 🔧 dodanie nowego pola `Map<String, String> extensions`
+
+### 1.6 client
+- **Headers.java**: 🔧 dodanie nowego pola `String X_KSEF_FEATURE = "X-KSeF-Feature"`
+
+### 1.7 system
+- **FilesUtil.java**: 🔧 przeniesione z modułu demo
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BaseIntegrationTest.java**: 🔧 dodanie metody `AuthTokensPair authWithCustomPesel(String context, String pesel, EncryptionMethod encryptionMethod)`
+- **IntegrationConfig.java**: 🔧 przekazanie do ObjectMappera domyślnej wartości property `DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false`
+- **BatchIntegrationTest.java**: 🔧 kosmetyczne zmiany związane ze zmianą pakietów `FilesUtil.java`
+- **DuplicateInvoiceIntegrationTest.java**: ➕ dodanie nowego scenariusza testowego
+- **EnforcementOperationIntegrationTest.java**: ➕ dodanie nowego scenariusza testowego
+- **EnforcementOperationNegativeIntegrationTest.java**: ➕ dodanie nowego scenariusza testowego
+- **IncrementalInvoiceRetrieveIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego
+- **PersonalPermissionAuthorizedPeselInNipContext.java**: ➕ dodanie nowego scenariusza testowego
+- **QueryInvoiceIntegrationTest.java**: 🔧 kosmetyczne zmiany związane ze zmianą pakietów `FilesUtil.java`
+- **SearchEntityInvoiceRoleIntegrationTest.java**: 🔧 poprawki w scenariuszu testowym
+- **SearchInvoiceForSubject2IntegrationTest.java**: 🔧 aktualizacja scenariusza testowego
+- **SearchInvoiceForSubject3IntegrationTest.java**: 🔧 aktualizacja scenariusza testowego
+- **SubUnitPermissionIntegrationTest.java**: 🔧 aktualizacja scenariusza testowego
+
+### 2.2 api
+- **ExampleApiProperties.java**: 🔧 zmiany w sposobie dostarczania konfiguracji w module demo `application.yaml`
+- **KsefClientConfig.java**: 🔧 wczytanie urla aplikacji z `application.yaml` do `DefaultVerificationLinkService`
+
+### 2.3 resources
+- **application.yaml**: 🔧 dodanie konfiguracji wymaganej w `ApiProperties.java`
+
+### 2.4 test - api.services
+- **ModelSerializationTest.java**: ➕ dodanie testu weryfikującego zgodność nazw pól/getterów/JsonProperty
+- **VerificationLinkServiceTests.java**: 🔧 aktualizacja testu
+
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 34            |
+| 🔧 zmienione | 42            |
+| ➖ usunięte  | 0             |

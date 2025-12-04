@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "pl.akmf.ksef"
-version = "3.0.5"
+version = "3.0.6"
 
 java {
     toolchain {
@@ -43,6 +43,7 @@ val wiremockStandaloneVersion = "3.9.1"
 val testcontainersVersion = "1.21.3"
 val awaitilityVersion = "4.2.0"
 val googleZxing = "3.5.3"
+val reflectionsVersion = "0.10.2"
 
 dependencies {
     implementation(project(":ksef-client"))
@@ -76,6 +77,8 @@ dependencies {
     integrationTestImplementation("org.testcontainers:testcontainers:${testcontainersVersion}")
     integrationTestImplementation("org.wiremock:wiremock-standalone:${wiremockStandaloneVersion}")
     implementation("org.awaitility:awaitility:${awaitilityVersion}")
+
+    testImplementation("org.reflections:reflections:${reflectionsVersion}")
 }
 
 sourceSets {

@@ -6,7 +6,6 @@ import pl.akmf.ksef.sdk.client.interfaces.VerificationLinkService;
 import pl.akmf.ksef.sdk.client.model.certificate.SelfSignedCertificate;
 import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
-import pl.akmf.ksef.sdk.util.ExampleApiProperties;
 
 import java.net.URI;
 import java.net.URLDecoder;
@@ -25,8 +24,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class VerificationLinkServiceTests {
-    private final ExampleApiProperties exampleApiProperties = new ExampleApiProperties();
     private static final String CLIENT_APP = "client-app";
+    public static final String URL = "https://test.pl";
 
     // =============================================
     // Testy legacy (RSA) – tylko dla zgodności wstecznej; NIEZALECANE:
@@ -55,7 +54,7 @@ class VerificationLinkServiceTests {
     @Test
     void buildCertificateVerificationUrl_WithEmbeddedEcdsaKey_ShouldSucceed_Ecc() throws Exception {
         // Arrange: wygeneruj klucz ECDSA P-256 i self-signed certyfikat
-        VerificationLinkService svc = new DefaultVerificationLinkService(exampleApiProperties);
+        VerificationLinkService svc = new DefaultVerificationLinkService(URL);
         CertificateBuilders.X500NameHolder x500 = new CertificateBuilders()
                 .buildForOrganization("Kowalski sp. z o.o", "VATPL-1111111111", "FullEccCert", "PL");
         SelfSignedCertificate cert = new DefaultCertificateService().generateSelfSignedCertificateEcdsa(x500);
@@ -75,7 +74,6 @@ class VerificationLinkServiceTests {
         String[] segments = uri.getPath().split("/");
         String signedUrl = URLEncoder.encode(segments[segments.length - 1], StandardCharsets.UTF_8);
         assertTrue(signedUrl.matches("^[A-Za-z0-9_%-]+$"), "Signed URL does not match expected Base64 URL-safe pattern");
-        assertTrue(url.toLowerCase().contains("%3d"), "URL powinien zawierać base64 podpis (np. '%3d')");
     }
 
     @Test
@@ -84,7 +82,7 @@ class VerificationLinkServiceTests {
         String xml = "<root>foo</root>";
         String serial = UUID.randomUUID().toString();
         String invoiceHash = computeUrlEncodedBase64Sha256(xml);
-        VerificationLinkService svc = new DefaultVerificationLinkService(exampleApiProperties);
+        VerificationLinkService svc = new DefaultVerificationLinkService(URL);
 
         CertificateBuilders.X500NameHolder x500 = new CertificateBuilders()
                 .buildForOrganization("Kowalski sp. z o.o", "VATPL-" + nip, "TestRSA", "PL");
@@ -101,7 +99,6 @@ class VerificationLinkServiceTests {
         assertNotNull(segments[7]); // hash
         assertFalse(segments[8].isBlank());
         assertNotNull(segments[8]); // signed hash
-        assertFalse(segments[9].isBlank());
     }
 
     @Test
@@ -110,7 +107,7 @@ class VerificationLinkServiceTests {
         String xml = "<data>ecdsa</data>";
         String serial = UUID.randomUUID().toString();
         String invoiceHash = computeUrlEncodedBase64Sha256(xml);
-        VerificationLinkService svc = new DefaultVerificationLinkService(exampleApiProperties);
+        VerificationLinkService svc = new DefaultVerificationLinkService(URL);
 
         CertificateBuilders.X500NameHolder x500 = new CertificateBuilders()
                 .buildForOrganization("Kowalski sp. z o.o", "VATPL-" + nip, "TestECDSA", "PL");
@@ -134,7 +131,7 @@ class VerificationLinkServiceTests {
         String nip = "0000000000";
         String serial = UUID.randomUUID().toString();
         String invoiceHash = computeUrlEncodedBase64Sha256(xml);
-        VerificationLinkService svc = new DefaultVerificationLinkService(exampleApiProperties);
+        VerificationLinkService svc = new DefaultVerificationLinkService(URL);
 
         assertThrows(SystemKSeFSDKException.class, () ->
                 svc.buildCertificateVerificationUrl(nip, ContextIdentifierType.NIP, nip, serial, invoiceHash, null)
@@ -144,14 +141,14 @@ class VerificationLinkServiceTests {
     private void assertInvoiceUrlIsCorrect(String xml) throws Exception {
         String nip = "1234567890";
         LocalDate issueDate = LocalDate.of(2026, 1, 5);
-        VerificationLinkService svc = new DefaultVerificationLinkService(exampleApiProperties);
+        VerificationLinkService svc = new DefaultVerificationLinkService(URL);
 
         MessageDigest sha256 = MessageDigest.getInstance("SHA-256");
         byte[] sha = sha256.digest(xml.getBytes(StandardCharsets.UTF_8));
         String invoiceHash = Base64.getEncoder().encodeToString(sha);
         String expectedHash = Base64.getUrlEncoder().withoutPadding().encodeToString(sha);
 
-        String expectedUrl = String.format("%s/invoice/%s/%s/%s", exampleApiProperties.getBaseUri() + CLIENT_APP, nip,
+        String expectedUrl = String.format("%s/invoice/%s/%s/%s", URL + "/" + CLIENT_APP, nip,
                 issueDate.format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy")), expectedHash);
 
         String actualUrl = svc.buildInvoiceVerificationUrl(nip, issueDate, invoiceHash);

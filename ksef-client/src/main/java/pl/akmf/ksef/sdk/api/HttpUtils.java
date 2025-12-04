@@ -73,7 +73,7 @@ public class HttpUtils {
 
     public static String formatExceptionMessage(String operationId, int statusCode, byte[] body) {
         String exceptionMessage;
-        if (body == null) {
+        if (body == null || body.length == 0) {
             exceptionMessage = "[no body]";
         } else {
             exceptionMessage = new String(body, StandardCharsets.UTF_8);

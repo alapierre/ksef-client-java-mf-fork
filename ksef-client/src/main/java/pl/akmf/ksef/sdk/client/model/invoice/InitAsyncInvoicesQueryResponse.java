@@ -2,7 +2,7 @@ package pl.akmf.ksef.sdk.client.model.invoice;
 
 public class InitAsyncInvoicesQueryResponse {
 
-    public String referenceNumber;
+    private String referenceNumber;
 
     public InitAsyncInvoicesQueryResponse() {
     }

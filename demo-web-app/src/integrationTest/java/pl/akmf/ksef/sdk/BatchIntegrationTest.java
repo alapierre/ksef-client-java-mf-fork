@@ -22,8 +22,9 @@ import pl.akmf.ksef.sdk.client.model.session.batch.BatchPartSendingInfo;
 import pl.akmf.ksef.sdk.client.model.session.batch.BatchPartStreamSendingInfo;
 import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionRequest;
 import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionResponse;
+import pl.akmf.ksef.sdk.client.model.util.ZipInputStreamWithSize;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
-import pl.akmf.ksef.sdk.util.FilesUtil;
+import pl.akmf.ksef.sdk.system.FilesUtil;
 import pl.akmf.ksef.sdk.util.IdentifierGeneratorUtils;
 
 import java.io.ByteArrayOutputStream;
@@ -600,9 +601,9 @@ class BatchIntegrationTest extends BaseIntegrationTest {
 
         Map<String, byte[]> invoicesInMemory = FilesUtil.generateInvoicesInMemory(invoicesCount, context, invoice);
 
-        FilesUtil.ZipInputStreamWithSize zipInputStreamWithSize = FilesUtil.createZipInputStream(invoicesInMemory);
-        InputStream zipInputStream = zipInputStreamWithSize.byteArrayInputStream();
-        int zipLength = zipInputStreamWithSize.zipLength();
+        ZipInputStreamWithSize zipInputStreamWithSize = FilesUtil.createZipInputStream(invoicesInMemory);
+        InputStream zipInputStream = zipInputStreamWithSize.getInputStream();
+        int zipLength = zipInputStreamWithSize.getZipLength();
 
         // get ZIP metadata (before crypto)
         FileMetadata zipMetadata = defaultCryptographyService.getMetaData(zipInputStream);

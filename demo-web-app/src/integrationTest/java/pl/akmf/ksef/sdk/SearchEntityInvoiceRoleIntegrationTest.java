@@ -32,6 +32,7 @@ class SearchEntityInvoiceRoleIntegrationTest extends BaseIntegrationTest {
         request.setDescription("description");
         request.setNip(contextNip);
         request.setPesel(pesel);
+        request.setIsDeceased(false);
         request.setIsBailiff(Boolean.TRUE);
 
         ksefClient.createTestPerson(request);

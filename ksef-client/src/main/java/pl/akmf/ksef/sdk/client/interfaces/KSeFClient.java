@@ -97,7 +97,20 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
+    @Deprecated
     OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, String accessToken) throws ApiException;
+
+    /**
+     * Otwarcie sesji wsadowej
+     * Otwiera sesję do wysyłki wsadowej faktur.
+     *
+     * @param body - OpenBatchSessionRequest - schemat wysyłanych faktur, informacje o paczce faktur oraz informacje o kluczu używanym do szyfrowania.
+     * @param upoVersion - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
+     * @return OpenBatchSessionResponse
+     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
+     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
+     */
+    OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, String upoVersion, String accessToken) throws ApiException;
 
     /**
      * Zamknięcie sesji wsadowej.
@@ -137,7 +150,20 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
+    @Deprecated
     OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, String accessToken) throws ApiException;
+
+    /**
+     * Otwarcie sesji interaktywnej
+     * Inicjalizacja wysyłki interaktywnej faktur.
+     *
+     * @param body
+     * @param upoVersion - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
+     * @return OpenOnlineSessionResponse
+     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
+     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
+     */
+    OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, String upoVersion, String accessToken) throws ApiException;
 
     /**
      * Zamknięcie sesji interaktywnej
