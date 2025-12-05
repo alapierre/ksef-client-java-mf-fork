@@ -30,20 +30,12 @@ public class FilesUtil {
     }
 
     public static Map<String, byte[]> generateInvoicesInMemory(int invoicesCount, String contextNip, String invoiceTemplate) {
-        return generateInvoicesInMemory(invoicesCount,
-                contextNip,
-                LocalDate.of(2025, 6, 15),
-                UUID.randomUUID().toString(),
-                invoiceTemplate);
-    }
-
-    public static Map<String, byte[]> generateInvoicesInMemory(int invoicesCount, String contextNip, LocalDate invoicingDate, String invoiceNumber, String invoiceTemplate) {
         Map<String, byte[]> invoiceMap = new HashMap<>();
         for (int i = 0; i < invoicesCount; i++) {
             String invoice = invoiceTemplate
                     .replace("#nip#", contextNip)
-                    .replace("#invoicing_date#", invoicingDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))
-                    .replace("#invoice_number#", invoiceNumber);
+                    .replace("#invoicing_date#", LocalDate.of(2025, 6, 15).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                    .replace("#invoice_number#", UUID.randomUUID().toString());
 
             invoiceMap.put("faktura_" + (i + 1) + ".xml", invoice.getBytes(StandardCharsets.UTF_8));
         }

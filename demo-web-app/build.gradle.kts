@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "pl.akmf.ksef"
-version = "3.0.6"
+version = "3.0.7"
 
 java {
     toolchain {

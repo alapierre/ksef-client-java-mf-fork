@@ -1374,3 +1374,24 @@
 | ➕ dodane    | 34            |
 | 🔧 zmienione | 42            |
 | ➖ usunięte  | 0             |
+---
+# Changelog zmian - `## 3.0.7 (2025-12-05)` - `API: 2.0.0 RC6.0`
+
+## 1. ksef-client
+
+### 1.1 system
+- **FilesUtil.java**: 🔧 usunięcie `Map<String, byte[]> generateInvoicesInMemory(int invoicesCount, String contextNip, LocalDate invoicingDate, String invoiceNumber, String invoiceTemplate)`
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **DuplicateInvoiceIntegrationTest.java**: 🔧 poprawka scenariusza testowego
+- **SearchEntityInvoiceRoleIntegrationTest.java**: 🔧 usunięcie zbędnych importów
+
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 0             |
+| 🔧 zmienione | 3             |
+| ➖ usunięte  | 0             |
