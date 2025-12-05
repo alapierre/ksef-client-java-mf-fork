@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -129,14 +130,17 @@ class DuplicateInvoiceIntegrationTest extends BaseIntegrationTest {
 
     private String openBatchSessionAndSendInvoicesPartsStream(String contextNip, SystemCode systemCode, String invoiceTemplatePath, String invoiceNumber,
                                                               EncryptionData encryptionData, String accessToken) throws IOException, ApiException {
-        String invoice = new String(readBytesFromPath("/xml/invoices/sample/" + invoiceTemplatePath), StandardCharsets.UTF_8);
+        String invoiceTemplate = new String(readBytesFromPath("/xml/invoices/sample/" + invoiceTemplatePath), StandardCharsets.UTF_8);
 
-        Map<String, byte[]> invoicesInMemory = FilesUtil.generateInvoicesInMemory(BATCH_TOTAL_INVOICES,
-                contextNip,
-                LocalDate.of(2025, 6, 15),
-                invoiceNumber,
-                invoice);
+        Map<String, byte[]> invoicesInMemory = new HashMap<>();
+        for (int i = 0; i < BATCH_TOTAL_INVOICES; i++) {
+            String invoice = invoiceTemplate
+                    .replace("#nip#", contextNip)
+                    .replace("#invoicing_date#", LocalDate.of(2025, 6, 15).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                    .replace("#invoice_number#", invoiceNumber);
 
+            invoicesInMemory.put("faktura_" + (i + 1) + ".xml", invoice.getBytes(StandardCharsets.UTF_8));
+        }
         ZipInputStreamWithSize zipInputStreamWithSize = FilesUtil.createZipInputStream(invoicesInMemory);
         InputStream zipInputStream = zipInputStreamWithSize.getInputStream();
         int zipLength = zipInputStreamWithSize.getZipLength();
