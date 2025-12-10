@@ -151,12 +151,15 @@ public class BatchHelper {
      * Wysyła przygotowane wcześniej części paczki jedna po drugiej.
      * Każda część jest wczytywana z dysku do pamięci (byte[]) tuż przed wysyłką, co oszczędza RAM w porównaniu do ładowania listy.
      *
-     * @param authToken oAuth access token
      * @param result wynik przygotowania paczki (zawiera ścieżki do plików)
+     * @param authToken oAuth access token
+     * @param formCode kod formularza faktury
      */
-    public OpenBatchSessionResponse sendBatch(BatchResult result, String authToken) throws ApiException {
+    public OpenBatchSessionResponse sendBatch(BatchResult result,
+                                              String authToken,
+                                              FormCode formCode) throws ApiException {
 
-        val batchRequest = prepareRequest(result);
+        val batchRequest = prepareRequest(result, formCode);
         var session = client.openBatchSession(batchRequest, authToken);
 
         List<PackagePartSignatureInitResponseType> uploadInstructions = session.getPartUploadRequests();
@@ -198,10 +201,11 @@ public class BatchHelper {
         return session;
     }
 
-    private OpenBatchSessionRequest prepareRequest(BatchResult batchResult) {
+    private OpenBatchSessionRequest prepareRequest(BatchResult batchResult,
+                                                   FormCode formCode) {
 
         var builder = OpenBatchSessionRequestBuilder.create()
-                    .withFormCode(SystemCode.FA_2, SchemaVersion.VERSION_1_0E, SessionValue.FA)
+                    .withFormCode(formCode.getSystemCode(), formCode.getSchemaVersion(), formCode.getValue())
                     .withOfflineMode(false)
                     .withBatchFile(batchResult.zipSize(), batchResult.zipHash())
                     .withEncryption(

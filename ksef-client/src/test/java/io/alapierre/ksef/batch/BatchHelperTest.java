@@ -1,7 +1,6 @@
 package io.alapierre.ksef.batch;
 
 import io.alapierre.ksef.batch.model.BatchConfig;
-import io.alapierre.ksef.batch.model.BatchPartInfo;
 import io.alapierre.ksef.batch.model.BatchResult;
 import lombok.val;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
@@ -9,17 +8,12 @@ import org.junit.*;
 import pl.akmf.ksef.sdk.api.DefaultKsefClient;
 import pl.akmf.ksef.sdk.api.KsefApiProperties;
 import pl.akmf.ksef.sdk.api.builders.auth.AuthKsefTokenRequestBuilder;
-import pl.akmf.ksef.sdk.api.builders.batch.OpenBatchSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.client.interfaces.CryptographyService;
 import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
 import pl.akmf.ksef.sdk.client.model.auth.AuthStatus;
 import pl.akmf.ksef.sdk.client.model.auth.ContextIdentifier;
-import pl.akmf.ksef.sdk.client.model.session.SchemaVersion;
-import pl.akmf.ksef.sdk.client.model.session.SessionStatusResponse;
-import pl.akmf.ksef.sdk.client.model.session.SessionValue;
-import pl.akmf.ksef.sdk.client.model.session.SystemCode;
-import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionRequest;
+import pl.akmf.ksef.sdk.client.model.session.*;
 
 import java.net.http.HttpClient;
 import java.nio.file.Files;
@@ -122,7 +116,7 @@ public class BatchHelperTest {
             System.out.println(config.outputDir());
 
             val authToken = auth(KSEF_TOKEN, NIP);
-            val session = helper.sendBatch(batchResult, authToken);
+            val session = helper.sendBatch(batchResult, authToken, new FormCode(SystemCode.FA_2, SchemaVersion.VERSION_1_0E, SessionValue.FA));
 
             System.out.println("waiting before close session...");
             Thread.sleep(100);
