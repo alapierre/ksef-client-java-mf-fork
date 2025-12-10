@@ -7,7 +7,6 @@ import pl.akmf.ksef.sdk.client.interfaces.VerificationLinkService;
 import pl.akmf.ksef.sdk.client.model.certificate.SelfSignedCertificate;
 import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
-import pl.akmf.ksef.sdk.util.ExampleApiProperties;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -19,8 +18,8 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 class QrCodeTests {
-    private ExampleApiProperties exampleApiProperties = new ExampleApiProperties();
 
+    private String apiUrl = "https://ksef-test.mf.gov.pl/";
 
     // =============================================
     // Testy RSA; NIEZALECANE):
@@ -32,7 +31,7 @@ class QrCodeTests {
     // =============================================
     @Test
     void buildCertificateQr_WithEmbeddedPrivateKey_ShouldReturnBase64Png() throws Exception {
-        VerificationLinkService linkSvc = new DefaultVerificationLinkService(exampleApiProperties);
+        VerificationLinkService linkSvc = new DefaultVerificationLinkService(apiUrl);
         QrCodeService qrSvc = new DefaultQrCodeService();
         CertificateBuilders.X500NameHolder x500 = new CertificateBuilders()
                 .buildForOrganization("Kowalski sp. z o.o", "VATPL-1111111111", "Kowalski", "PL");
@@ -56,7 +55,7 @@ class QrCodeTests {
 
     @Test
     void buildCertificateQr_PublicOnlyWithoutPrivateKey_ShouldThrow() throws Exception {
-        VerificationLinkService linkSvc = new DefaultVerificationLinkService(exampleApiProperties);
+        VerificationLinkService linkSvc = new DefaultVerificationLinkService(apiUrl);
         String nip = "0000000000";
         String xml = "<x/>";
         String serial = UUID.randomUUID().toString();
@@ -76,7 +75,7 @@ class QrCodeTests {
     // =============================================
     @Test
     void buildCertificateQr_WithEmbeddedEccPrivateKey_ShouldReturnBase64Png() throws Exception {
-        VerificationLinkService linkSvc = new DefaultVerificationLinkService(exampleApiProperties);
+        VerificationLinkService linkSvc = new DefaultVerificationLinkService(apiUrl);
         QrCodeService qrSvc = new DefaultQrCodeService();
         CertificateBuilders.X500NameHolder x500 = new CertificateBuilders()
                 .buildForOrganization("Kowalski sp. z o.o", "VATPL-1111111111", "TestEcc", "PL");

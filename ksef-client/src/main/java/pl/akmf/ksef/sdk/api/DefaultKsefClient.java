@@ -9,6 +9,7 @@ import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ApiResponse;
 import pl.akmf.ksef.sdk.client.model.ExceptionResponse;
+import pl.akmf.ksef.sdk.client.model.UpoVersion;
 import pl.akmf.ksef.sdk.client.model.auth.AuthKsefTokenRequest;
 import pl.akmf.ksef.sdk.client.model.auth.AuthOperationStatusResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthStatus;
@@ -297,7 +298,7 @@ public class DefaultKsefClient implements KSeFClient {
         headers.put(AUTHORIZATION, BEARER + accessToken);
         headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
-        headers.put(X_KSEF_FEATURE, "upo-v4-3");
+        headers.put(X_KSEF_FEATURE, UpoVersion.UPO_4_3.value());
 
         HttpResponse<byte[]> response = post(BATCH_SESSION_OPEN.getUrl(), openBatchSessionRequest, headers);
 
@@ -309,18 +310,32 @@ public class DefaultKsefClient implements KSeFClient {
      * Otwiera sesję do wysyłki wsadowej faktur.
      *
      * @param openBatchSessionRequest - OpenBatchSessionRequest - schemat wysyłanych faktur, informacje o paczce faktur oraz informacje o kluczu używanym do szyfrowania.
-     * @param upoVersion - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
+     * @param upoVersion              - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
      * @return OpenBatchSessionResponse
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
     @Override
+    public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest openBatchSessionRequest, UpoVersion upoVersion, String accessToken) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+        headers.put(X_KSEF_FEATURE, upoVersion.value());
+
+        HttpResponse<byte[]> response = post(BATCH_SESSION_OPEN.getUrl(), openBatchSessionRequest, headers);
+
+        return getResponse(response, CREATED, BATCH_SESSION_OPEN, OpenBatchSessionResponse.class);
+    }
+
+    @Override
+    @Deprecated
     public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest openBatchSessionRequest, String upoVersion, String accessToken) throws ApiException {
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
         headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
-        headers.put(X_KSEF_FEATURE, upoVersion);
+        headers.put(X_KSEF_FEATURE, UpoVersion.fromValue(upoVersion).value());
 
         HttpResponse<byte[]> response = post(BATCH_SESSION_OPEN.getUrl(), openBatchSessionRequest, headers);
 
@@ -429,7 +444,7 @@ public class DefaultKsefClient implements KSeFClient {
         headers.put(AUTHORIZATION, BEARER + accessToken);
         headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
-        headers.put(X_KSEF_FEATURE, "upo-v4-3");
+        headers.put(X_KSEF_FEATURE, UpoVersion.UPO_4_3.value());
 
         HttpResponse<byte[]> response = post(SESSION_OPEN.getUrl(), openOnlineSessionRequest, headers);
 
@@ -441,17 +456,31 @@ public class DefaultKsefClient implements KSeFClient {
      * Inicjalizacja wysyłki interaktywnej faktur.
      *
      * @param openOnlineSessionRequest (optional)
-     * @param upoVersion - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
+     * @param upoVersion               - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
      * @return ApiResponse&lt;OpenOnlineSessionResponse&gt;
      * @throws ApiException if fails to make API call
      */
     @Override
+    public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest openOnlineSessionRequest, UpoVersion upoVersion, String accessToken) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+        headers.put(X_KSEF_FEATURE, upoVersion.value());
+
+        HttpResponse<byte[]> response = post(SESSION_OPEN.getUrl(), openOnlineSessionRequest, headers);
+
+        return getResponse(response, CREATED, SESSION_OPEN, OpenOnlineSessionResponse.class);
+    }
+
+    @Override
+    @Deprecated
     public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest openOnlineSessionRequest, String upoVersion, String accessToken) throws ApiException {
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
         headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
-        headers.put(X_KSEF_FEATURE, upoVersion);
+        headers.put(X_KSEF_FEATURE, UpoVersion.fromValue(upoVersion).value());
 
         HttpResponse<byte[]> response = post(SESSION_OPEN.getUrl(), openOnlineSessionRequest, headers);
 

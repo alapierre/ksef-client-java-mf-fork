@@ -16,6 +16,7 @@ import org.testcontainers.shaded.org.bouncycastle.operator.jcajce.JcaContentSign
 import org.testcontainers.shaded.org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.testcontainers.shaded.org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.testcontainers.shaded.org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import pl.akmf.ksef.sdk.api.builders.certificate.CertificateMetadataListRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.certificate.SendCertificateEnrollmentRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.session.OpenOnlineSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.session.SendInvoiceOnlineSessionRequestBuilder;
@@ -25,10 +26,14 @@ import pl.akmf.ksef.sdk.client.model.auth.EncryptionMethod;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentStatusResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentsInfoResponse;
+import pl.akmf.ksef.sdk.client.model.certificate.CertificateInfo;
+import pl.akmf.ksef.sdk.client.model.certificate.CertificateListItemStatus;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateListRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateListResponse;
+import pl.akmf.ksef.sdk.client.model.certificate.CertificateMetadataListResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateType;
 import pl.akmf.ksef.sdk.client.model.certificate.CsrResult;
+import pl.akmf.ksef.sdk.client.model.certificate.QueryCertificatesRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.RetrieveCertificatesListItem;
 import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
 import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
@@ -227,18 +232,31 @@ public class QrCodeOfflineIntegrationTest extends BaseIntegrationTest {
 
     static Stream<Arguments> inputQrCodeOfflineE2ETestReadKeyFromDiscParameters() {
         return Stream.of(
-                Arguments.of(SystemCode.FA_2, "invoice-template.xml"),
-                Arguments.of(SystemCode.FA_3, "invoice-template_v3.xml")
+                // wersja z wygenerowanym wcześniej przez SDK kluczem RSA (+ wysłanym requestem enrolment z metody wyżej sendCsr() )
+                Arguments.of("7368335898", "01732D26F736E531", EncryptionMethod.Rsa, SystemCode.FA_2, "invoice-template.xml", "/keys/private/rsa/sample/private-key.pem"),
+                Arguments.of("7368335898", "01732D26F736E531", EncryptionMethod.Rsa, SystemCode.FA_3, "invoice-template_v3.xml", "/keys/private/rsa/sample/private-key.pem"),
+                // wersja z wygenrowanym kluczem ECC przez aplikacje podatnika, enrolment również był wysłany przez aplikacje podatnika
+                // https://web2te-ksef.mf.gov.pl/web/certificates/certificate-list - logujemy sie nipem - uwaga - z racji, że każdy może nawiązać sesję tym nipem, może być sytuacja, w której inna osoba unieważni certyfikat o podanym serial number w teście i testy przestaną działać, w assercji niżej jest to sprawdzane
+                Arguments.of("8096529464", "01D1732E43B9345E", EncryptionMethod.ECDsa, SystemCode.FA_2, "invoice-template.xml", "/keys/private/ecdsa/sample/testowy_klucz_sdk.key"),// wazny 2 lata od 05.12.2025
+                Arguments.of("8096529464", "01D1732E43B9345E", EncryptionMethod.ECDsa, SystemCode.FA_3, "invoice-template_v3.xml", "/keys/private/ecdsa/sample/testowy_klucz_sdk.key")// wazny 2 lata od 05.12.2025
         );
     }
 
     @ParameterizedTest
     @MethodSource("inputQrCodeOfflineE2ETestReadKeyFromDiscParameters")
-    public void qrCodeOfflineE2ETestReadKeyFromDisc(SystemCode systemCode, String invoiceTemplate) throws ApiException, JAXBException, IOException, InterruptedException {
-        String privateKeyPath = "/keys/private/rsa/sample/private-key.pem";
-        // wprowadzamy swój serial number i nip zgodny z tym który wysłaliśmy w QrCodeOfflineIntegrationTest.sendCsr
-        String contextNip = "7368335898";
-        String certificateSerialNumber = "015FA8CD52D35F23";
+    public void qrCodeOfflineE2ETestReadKeyFromDisc(String contextNip, String certificateSerialNumber, EncryptionMethod encryptionMethod, SystemCode systemCode, String invoiceTemplate, String privateKeyPath) throws ApiException, JAXBException, IOException, InterruptedException {
+        String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
+        QueryCertificatesRequest request = new CertificateMetadataListRequestBuilder()
+                .build();
+        CertificateMetadataListResponse response = ksefClient.getCertificateMetadataList(request, 10, 0, accessToken);
+        CertificateInfo certificateInfo = response.getCertificates()
+                .stream()
+                .filter(e -> e.getCertificateSerialNumber().equals(certificateSerialNumber))
+                .filter(c -> CertificateType.OFFLINE.equals(c.getType()))
+                .findFirst()
+                .orElseThrow();
+        Assertions.assertTrue(certificateInfo.getStatus().equals(CertificateListItemStatus.ACTIVE)); // jeśli ktos deaktywował to należy sobie wygenerować nowy i w parametrach metody/testu podać nowy nip i serial number
+        // powyzsze testowe sprawdzenie czy certyfikat w resourcach dalej jest aktywny
 
         //=====od tego momentu jestem całkowicie offline, nie mam dostępu do KSeF=====
         //Przygotowanie faktury w formacie XML
@@ -275,8 +293,11 @@ public class QrCodeOfflineIntegrationTest extends BaseIntegrationTest {
                 contextNip,
                 certificateSerialNumber,
                 invoiceHash,
-                defaultCryptographyService.parseRsaPrivateKeyFromPem(privateKey)
+                EncryptionMethod.Rsa.equals(encryptionMethod)
+                        ? defaultCryptographyService.parseRsaPrivateKeyFromPem(privateKey)
+                        : defaultCryptographyService.parseEncryptedEcdsaPrivateKeyFromPem(privateKey, "ADadADad12!@adadad".toCharArray()) // haslo przekazac w sposob bezpieczny, np z env variable, czy secret managerem
         );
+
         checkIssuerMetadataByVerificationUrl(url);
         Arrays.fill(privateKey, (byte) 0);
 
@@ -290,7 +311,7 @@ public class QrCodeOfflineIntegrationTest extends BaseIntegrationTest {
 
         // zakładam, że jestem spowrotem online
         // nawiązujemy sesję, wysyłamy fakturę, weryfikujemy faktuę poprzez link weryfikacyjny
-        String accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
+        accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
         openSessionAdnSendInvoice(invoice, invoiceMetadata, systemCode, accessToken);
         checkInvoiceByVerificationUrl(invoiceForOfflineUrl, true);
     }
