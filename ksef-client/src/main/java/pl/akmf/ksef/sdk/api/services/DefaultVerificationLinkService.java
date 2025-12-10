@@ -5,6 +5,7 @@ import pl.akmf.ksef.sdk.client.interfaces.VerificationLinkService;
 import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -25,7 +26,7 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
     private static final String RSASSA_PSS = "RSASSA-PSS";
     private static final String SHA_256 = "SHA-256";
     private static final String MGF_1 = "MGF1";
-    private static final String SHA_256_WITH_ECDS_AIN_P_1363_FORMAT = "SHA256withECDSAinP1363Format";
+    private static final String SHA_256_WITH_ECDSA = "SHA256withECDSA";
     private static final String CLIENT_APP = "client-app";
     private final String appUrl;
 
@@ -43,7 +44,7 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
         String date = issueDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
-        String apiPath = appUrl + "/" + CLIENT_APP;
+        String apiPath = URI.create(appUrl).resolve(CLIENT_APP).toString();
 
         return String.format("%s/invoice/%s/%s/%s", apiPath, nip, date, invoiceHashUrlEncoded);
     }
@@ -57,7 +58,7 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
                                                   PrivateKey privateKey) {
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
-        String apiPath = appUrl + "/" + CLIENT_APP;
+        String apiPath = URI.create(appUrl).resolve(CLIENT_APP).toString();
 
         String pathToSign = String.format("%s/certificate/%s/%s/%s/%s/%s", apiPath, contextIdentifierType, contextIdentifierValue, sellerNip, certificateSerial, invoiceHashUrlEncoded)
                 .replace("https://", "");
@@ -75,7 +76,7 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
                 PSSParameterSpec pssSpec = new PSSParameterSpec(SHA_256, MGF_1, new MGF1ParameterSpec(SHA_256), 32, 1);
                 signature.setParameter(pssSpec);
             } else if (privateKey instanceof ECPrivateKey) {
-                signature = Signature.getInstance(SHA_256_WITH_ECDS_AIN_P_1363_FORMAT);
+                signature = Signature.getInstance(SHA_256_WITH_ECDSA);
             } else {
                 throw new SystemKSeFSDKException("Certificate not support RSA or ECDsa.", null);
             }

@@ -1395,3 +1395,42 @@
 | ➕ dodane    | 0             |
 | 🔧 zmienione | 3             |
 | ➖ usunięte  | 0             |
+
+---
+# Changelog zmian - `## 3.0.8 (2025-12-10)` - `API: 2.0.0 RC6.0`
+
+## 1. ksef-client
+
+### 1.1 api
+- **DefaultKsefClient.java**: 🔧 Dodano parametr `UpoVersion upoVersion` w metodach `openBatchSession` i `openOnlineSession`, pozostałe oznaczone jako deprecated
+
+### 1.2 client.interfaces
+- **KSeFClient.java**: 🔧 metody `openBatchSession` i `openOnlineSession` zgodnie z opisem w implementacji `DefaultKsefClient`
+- **CryptographyService.java**: 🔧 dodanie metody `PrivateKey parseEncryptedEcdsaPrivateKeyFromPem(byte[] pemBytes, char[] password)`
+
+### 1.3 api.services
+- **DefaultCryptographyService.java**: 🔧 dodanie metody `PrivateKey parseEncryptedEcdsaPrivateKeyFromPem(byte[] pemBytes, char[] password)`
+- **DefaultVerificationLinkService.java**: 🔧 poprawka w generowaniu linku weryfikacyjnego
+
+### 1.4 client.model
+- **limit/GetRateLimitResponse.java**: 🔧 aktualizacja kontraktu - zmiana nazwy pola z `otherRateLimit` na `other`
+- **UpoVersion.java**: ➕ enum z wartościami dla nagłówka `X-KSeF-Feature` dla zwracanego UPO
+
+### 1.5 test - api.services
+- **QrCodeTests.java**: ➕ poprawki testów
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **QrCodeOfflineIntegrationTest.java**: 🔧 rozbudowa scenariusza testowego dla klucza prywatnego ECC wygenerowanego z aplikacji podatnika 
+
+### 2.2 integrationTest.resources
+- **keys/private/ecdsa/sample/testowy_klucz_sdk.key**: ➕ dodanie przykładowego klucza prywatnego ECC wygenerowanego z aplikacji podatnika
+
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 2             |
+| 🔧 zmienione | 8             |
+| ➖ usunięte  | 0             |
