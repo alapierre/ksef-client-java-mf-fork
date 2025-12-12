@@ -10,9 +10,9 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum Environment {
-    DEMO("https://ksef-demo.mf.gov.pl"),
-    PROD("https://ksef.mf.gov.pl"),
-    TEST("https://ksef-test.mf.gov.pl");
+    DEMO("https://api-demo.ksef.mf.gov.pl"),
+    PROD("https://api.ksef.mf.gov.pl"),
+    TEST("https://api-test.ksef.mf.gov.pl");
 
     private final String url;
 }
