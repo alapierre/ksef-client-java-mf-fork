@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import pl.akmf.ksef.sdk.api.builders.batch.OpenBatchSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.UpoVersion;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportFilters;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportPackage;
@@ -307,7 +308,7 @@ class IncrementalInvoiceRetrieveIntegrationTest extends BaseIntegrationTest {
         // Build request
         OpenBatchSessionRequest request = buildOpenBatchSessionRequestForStream(zipMetadata, encryptedStreamParts, encryptionData);
 
-        OpenBatchSessionResponse openBatchSessionResponse = ksefClient.openBatchSession(request, accessToken);
+        OpenBatchSessionResponse openBatchSessionResponse = ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken);
         Assertions.assertNotNull(openBatchSessionResponse.getReferenceNumber());
 
         ksefClient.sendBatchPartsWithStream(openBatchSessionResponse, encryptedStreamParts);
@@ -351,7 +352,7 @@ class IncrementalInvoiceRetrieveIntegrationTest extends BaseIntegrationTest {
 
         for (int i = 0; i < encryptedZipParts.size(); i++) {
             BatchPartStreamSendingInfo part = encryptedZipParts.get(i);
-            builder = builder.addBatchFilePart(i + 1, "faktura_part" + (i + 1) + ".zip.aes",
+            builder = builder.addBatchFilePart(i + 1,
                     part.getMetadata().getFileSize(), part.getMetadata().getHashSHA());
         }
 

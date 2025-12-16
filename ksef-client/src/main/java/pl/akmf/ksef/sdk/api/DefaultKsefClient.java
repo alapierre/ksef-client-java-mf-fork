@@ -145,6 +145,7 @@ import static pl.akmf.ksef.sdk.api.Url.JWT_TOKEN_REVOKE;
 import static pl.akmf.ksef.sdk.api.Url.LIMIT_CONTEXT;
 import static pl.akmf.ksef.sdk.api.Url.LIMIT_CONTEXT_CHANGE_TEST;
 import static pl.akmf.ksef.sdk.api.Url.LIMIT_CONTEXT_RESET_TEST;
+import static pl.akmf.ksef.sdk.api.Url.LIMIT_CONTEXT_SET_PRODUCTION;
 import static pl.akmf.ksef.sdk.api.Url.LIMIT_SUBJECT_CERTIFICATE;
 import static pl.akmf.ksef.sdk.api.Url.LIMIT_SUBJECT_CERTIFICATE_CHANGE_TEST;
 import static pl.akmf.ksef.sdk.api.Url.LIMIT_SUBJECT_CERTIFICATE_RESET_TEST;
@@ -284,29 +285,6 @@ public class DefaultKsefClient implements KSeFClient {
 
     /**
      * Otwarcie sesji wsadowej
-     * Inicjalizacja wysyłki wsadowej paczki faktur.
-     *
-     * @param openBatchSessionRequest (optional)
-     * @return ApiResponse&lt;OpenBatchSessionResponse&gt;
-     * @throws ApiException if fails to make API call
-     */
-    @Override
-    @Deprecated
-    public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest openBatchSessionRequest,
-                                                     String accessToken) throws ApiException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put(AUTHORIZATION, BEARER + accessToken);
-        headers.put(CONTENT_TYPE, APPLICATION_JSON);
-        headers.put(ACCEPT, APPLICATION_JSON);
-        headers.put(X_KSEF_FEATURE, UpoVersion.UPO_4_3.value());
-
-        HttpResponse<byte[]> response = post(BATCH_SESSION_OPEN.getUrl(), openBatchSessionRequest, headers);
-
-        return getResponse(response, CREATED, BATCH_SESSION_OPEN, OpenBatchSessionResponse.class);
-    }
-
-    /**
-     * Otwarcie sesji wsadowej
      * Otwiera sesję do wysyłki wsadowej faktur.
      *
      * @param openBatchSessionRequest - OpenBatchSessionRequest - schemat wysyłanych faktur, informacje o paczce faktur oraz informacje o kluczu używanym do szyfrowania.
@@ -328,26 +306,12 @@ public class DefaultKsefClient implements KSeFClient {
         return getResponse(response, CREATED, BATCH_SESSION_OPEN, OpenBatchSessionResponse.class);
     }
 
-    @Override
-    @Deprecated
-    public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest openBatchSessionRequest, String upoVersion, String accessToken) throws ApiException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put(AUTHORIZATION, BEARER + accessToken);
-        headers.put(CONTENT_TYPE, APPLICATION_JSON);
-        headers.put(ACCEPT, APPLICATION_JSON);
-        headers.put(X_KSEF_FEATURE, UpoVersion.fromValue(upoVersion).value());
-
-        HttpResponse<byte[]> response = post(BATCH_SESSION_OPEN.getUrl(), openBatchSessionRequest, headers);
-
-        return getResponse(response, CREATED, BATCH_SESSION_OPEN, OpenBatchSessionResponse.class);
-    }
 
     /**
      * Zamknięcie sesji wsadowej
      * Informuje system o tym, że wszystkie pliki zostały przekazane i można rozpocząć ich przetwarzanie.
      *
      * @param referenceNumber Numer referencyjny sesji (required)
-     * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
     @Override
@@ -434,28 +398,6 @@ public class DefaultKsefClient implements KSeFClient {
      * Inicjalizacja wysyłki interaktywnej faktur.
      *
      * @param openOnlineSessionRequest (optional)
-     * @return ApiResponse&lt;OpenOnlineSessionResponse&gt;
-     * @throws ApiException if fails to make API call
-     */
-    @Override
-    @Deprecated
-    public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest openOnlineSessionRequest, String accessToken) throws ApiException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put(AUTHORIZATION, BEARER + accessToken);
-        headers.put(CONTENT_TYPE, APPLICATION_JSON);
-        headers.put(ACCEPT, APPLICATION_JSON);
-        headers.put(X_KSEF_FEATURE, UpoVersion.UPO_4_3.value());
-
-        HttpResponse<byte[]> response = post(SESSION_OPEN.getUrl(), openOnlineSessionRequest, headers);
-
-        return getResponse(response, CREATED, SESSION_OPEN, OpenOnlineSessionResponse.class);
-    }
-
-    /**
-     * Otwarcie sesji interaktywnej
-     * Inicjalizacja wysyłki interaktywnej faktur.
-     *
-     * @param openOnlineSessionRequest (optional)
      * @param upoVersion               - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
      * @return ApiResponse&lt;OpenOnlineSessionResponse&gt;
      * @throws ApiException if fails to make API call
@@ -473,26 +415,11 @@ public class DefaultKsefClient implements KSeFClient {
         return getResponse(response, CREATED, SESSION_OPEN, OpenOnlineSessionResponse.class);
     }
 
-    @Override
-    @Deprecated
-    public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest openOnlineSessionRequest, String upoVersion, String accessToken) throws ApiException {
-        Map<String, String> headers = new HashMap<>();
-        headers.put(AUTHORIZATION, BEARER + accessToken);
-        headers.put(CONTENT_TYPE, APPLICATION_JSON);
-        headers.put(ACCEPT, APPLICATION_JSON);
-        headers.put(X_KSEF_FEATURE, UpoVersion.fromValue(upoVersion).value());
-
-        HttpResponse<byte[]> response = post(SESSION_OPEN.getUrl(), openOnlineSessionRequest, headers);
-
-        return getResponse(response, CREATED, SESSION_OPEN, OpenOnlineSessionResponse.class);
-    }
-
     /**
      * Zamknięcie sesji interaktywnej
      * Zamyka sesję interaktywną i rozpoczyna generowanie zbiorczego UPO.
      *
      * @param referenceNumber Numer referencyjny sesji (required)
-     * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
     @Override
@@ -819,7 +746,6 @@ public class DefaultKsefClient implements KSeFClient {
      * Unieważnia aktualny (przekazany w nagłówku wywołania tej metody) token.
      * Po unieważnieniu tokena nie będzie można za jego pomocą wykonywać żadnych operacji.
      *
-     * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
     @Override
@@ -1103,36 +1029,6 @@ public class DefaultKsefClient implements KSeFClient {
                 response.headers(),
                 response.body()
         ).getData();
-    }
-
-    /**
-     * Pobranie listy metadanych faktur
-     * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania. Wymagane uprawnienia: `InvoiceRead`.",
-     *
-     * @param pageOffset          Indeks pierwszej strony wyników (domyślnie 0). (optional)
-     * @param pageSize            Rozmiar strony wyników(domyślnie 10). (optional)
-     * @param invoiceQueryFilters Zestaw filtrów dla wyszukiwania metadanych. (optional)
-     * @return ApiResponse&lt;QueryInvoicesReponse&gt;
-     * @throws ApiException if fails to make API call
-     */
-    @Override
-    public QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset,
-                                                             Integer pageSize,
-                                                             InvoiceQueryFilters invoiceQueryFilters,
-                                                             String accessToken) throws ApiException {
-        HashMap<String, String> params = new HashMap<>();
-        params.put(PAGE_SIZE, String.valueOf(pageSize));
-        params.put(PAGE_OFFSET, String.valueOf(pageOffset));
-        String uri = buildUrlWithParams(INVOICE_QUERY_METADATA.getUrl(), params);
-
-        Map<String, String> headers = new HashMap<>();
-        headers.put(AUTHORIZATION, BEARER + accessToken);
-        headers.put(CONTENT_TYPE, APPLICATION_JSON);
-        headers.put(ACCEPT, APPLICATION_JSON);
-
-        HttpResponse<byte[]> response = post(uri, invoiceQueryFilters, headers);
-
-        return getResponse(response, OK, INVOICE_QUERY_METADATA, QueryInvoiceMetadataResponse.class);
     }
 
     /**
@@ -1555,7 +1451,6 @@ public class DefaultKsefClient implements KSeFClient {
      * Unieważnienie aktualnej sesji uwierzytelnienia
      * Unieważnia sesję powiązaną z tokenem użytym do wywołania tej operacji.  Unieważnienie sesji sprawia, że powiązany z nią refresh token przestaje działać i nie można już za jego pomocą uzyskać kolejnych access tokenów. **Aktywne access tokeny działają do czasu minięcia ich termin ważności.**  Sposób uwierzytelnienia: &#x60;RefreshToken&#x60; lub &#x60;ContextToken&#x60;.
      *
-     * @return ApiResponse&lt;Void&gt;
      */
     @Override
     public void revokeCurrentSession(String accessToken) throws ApiException {
@@ -1572,7 +1467,6 @@ public class DefaultKsefClient implements KSeFClient {
      * Unieważnia sesję o podanym numerze referencyjnym.  Unieważnienie sesji sprawia, że powiązany z nią refresh token przestaje działać i nie można już za jego pomocą uzyskać kolejnych access tokenów. **Aktywne access tokeny działają do czasu minięcia ich termin ważności.**
      *
      * @param referenceNumber Numer referencyjny sesji uwierzytelnienia. (required)
-     * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
     @Override
@@ -1653,7 +1547,6 @@ public class DefaultKsefClient implements KSeFClient {
      * Zmienia wartości aktualnie obowiązujących limitów dla bieżącego kontekstu. Tylko na środowiskach testowych.
      *
      * @param changeContextLimitRequest
-     * @return
      * @throws ApiException
      */
     @Override
@@ -1669,11 +1562,28 @@ public class DefaultKsefClient implements KSeFClient {
     }
 
     /**
+     * Ustawia w bieżącym kontekście wartości limitów api zgodne z profilem produkcyjnym. Dostępny tylko na środowisku TE.
+     *
+     * @param accessToken
+     * @throws ApiException
+     */
+    @Override
+    public void restoreProductionRateLimitsAsync(String accessToken) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+
+        String url = LIMIT_CONTEXT_SET_PRODUCTION.getUrl();
+        HttpResponse<byte[]> response = post(url, null, headers);
+
+        validResponse(response, OK, LIMIT_CONTEXT_SET_PRODUCTION);
+    }
+
+    /**
      * Udostępnione w nabliższym czasie, aktualnie wyłączone
      * Zmienia wartości aktualnie obowiązujących limitów certyfikatów dla bieżącego podmiotu. Tylko na środowiskach testowych.
      *
      * @param changeSubjectCertificateLimitRequest
-     * @return
      * @throws ApiException
      */
     @Override
@@ -1693,7 +1603,6 @@ public class DefaultKsefClient implements KSeFClient {
      * Przywraca wartości aktualnie obowiązujących limitów certyfikatów dla bieżącego podmiotu do wartości domyślnych. Tylko na środowiskach testowych.
      *
      * @param accessToken
-     * @return
      * @throws ApiException
      */
     @Override
@@ -2078,7 +1987,6 @@ public class DefaultKsefClient implements KSeFClient {
      * Unieważniony token nie pozwoli już na uwierzytelnienie się za jego pomocą. Unieważnienie nie może zostać cofnięte.
      *
      * @param referenceNumber Numer referencyjny tokena do unieważeniania. (required)
-     * @return ApiResponse&lt;Void&gt;
      * @throws ApiException if fails to make API call
      */
     @Override

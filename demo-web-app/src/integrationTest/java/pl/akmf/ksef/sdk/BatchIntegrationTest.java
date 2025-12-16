@@ -9,6 +9,7 @@ import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.client.ExceptionDetails;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ExceptionResponse;
+import pl.akmf.ksef.sdk.client.model.UpoVersion;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionInfo;
 import pl.akmf.ksef.sdk.client.model.session.FileMetadata;
@@ -48,16 +49,19 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class BatchIntegrationTest extends BaseIntegrationTest {
     private static final int DEFAULT_NUMBER_OF_PARTS = 2;
     private static final int DEFAULT_INVOICES_COUNT = 35;
-    private static final long MAX_TOTAL_PACKAGE_SIZE_IN_BYTES = 5_368_709_120L; // 5 GiB
-    private static final long EXCEEDED_TOTAL_PACKAGE_SIZE_IN_BYTES = MAX_TOTAL_PACKAGE_SIZE_IN_BYTES + 1; // 5 GiB + 1 bajt
-    private static final long PADDING_SAFETY_MARGIN_IN_BYTES = 1024 * 1024; // 1 MB
-    private static final long MAX_PART_SIZE_IN_BYTES = 105L * PADDING_SAFETY_MARGIN_IN_BYTES; // 100 MiB
+    // Efektywny limit całej paczki: 5 GB = 5_000_000_000 bajtów
+    private static final long MAX_TOTAL_PACKAGE_SIZE_IN_BYTES = 5_000_000_000L; // 5 GB (dziesiętnie)
+    private static final long EXCEEDED_TOTAL_PACKAGE_SIZE_IN_BYTES = MAX_TOTAL_PACKAGE_SIZE_IN_BYTES + 1; // 5 GB + 1 bajt
+    // Jednostki komunikowane i egzekwowane przez API w MB/GB (dziesiętne: 1 MB = 1_000_000 B, 1 GB = 1_000_000_000 B).
+    private static final long PADDING_SAFETY_MARGIN_IN_BYTES = 100_000; // +100 KB zapasu (dziesiętne)
+    // Efektywny limit na część przed szyfrowaniem: 100 MB = 100_000_000 bajtów
+    private static final long MAX_PART_SIZE_IN_BYTES = 100_000_000L; // 100 MB (dziesiętnie)
     private static final int MAX_PART_COUNT_LIMIT = 50;
     private static final int EXCEEDING_PART_COUNT = MAX_PART_COUNT_LIMIT + 1;
     private static final int MAX_INVOICE_COUNT_LIMIT = 10_000;
     private static final int EXCEEDING_INVOICE_COUNT = MAX_INVOICE_COUNT_LIMIT + 1;
-    private static final String PATH_SAMPLE_INVOICE_TEMPLATE_XML = "/xml/invoices/sample/invoice-template.xml";
 
+    private static final String PATH_SAMPLE_INVOICE_TEMPLATE_XML = "/xml/invoices/sample/invoice-template.xml";
     private static final int STATUS_CODE_INVALID_INVOICES = 445;
     private static final int STATUS_CODE_EXCEEDED_INVOICE_LIMIT = 420;
     private static final int STATUS_CODE_INVALID_ENCRYPTION_KEY = 415;
@@ -180,7 +184,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
 
         // API KSeF powinno odrzucić żądanie ze względu na przekroczony limit fileSize
         ApiException apiException = assertThrows(ApiException.class, () ->
-                ksefClient.openBatchSession(request, accessToken));
+                ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken));
         ExceptionResponse exceptionResponse = apiException.getExceptionResponse();
         Assertions.assertFalse(exceptionResponse.getException().getExceptionDetailList().isEmpty());
         ExceptionDetails details = exceptionResponse.getException().getExceptionDetailList().getFirst();
@@ -222,14 +226,13 @@ class BatchIntegrationTest extends BaseIntegrationTest {
 
         // API KSeF odrzuca żądanie już na etapie otwarcia sesji
         ApiException apiException = assertThrows(ApiException.class, () ->
-                ksefClient.openBatchSession(request, accessToken));
+                ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken));
         ExceptionResponse exceptionResponse = apiException.getExceptionResponse();
         Assertions.assertFalse(exceptionResponse.getException().getExceptionDetailList().isEmpty());
         ExceptionDetails details = exceptionResponse.getException().getExceptionDetailList().getFirst();
         Assertions.assertEquals(21157, details.getExceptionCode());
         Assertions.assertEquals("Nieprawidłowy rozmiar części pakietu.", details.getExceptionDescription());
         Assertions.assertEquals("Rozmiar części 1 przekroczył dozwolony rozmiar 100MB.", details.getDetails().getFirst());
-
     }
 
     // Weryfikuje wykrycie próby zamknięcia sesji bez wysłania wszystkich zadeklarowanych części.
@@ -258,7 +261,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // Build request
         OpenBatchSessionRequest request = buildOpenBatchSessionRequest(zipMetadata, encryptedZipParts, encryptionData);
 
-        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, accessToken);
+        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken);
         String sessionReferenceNumber = response.getReferenceNumber();
         Assertions.assertNotNull(sessionReferenceNumber);
 
@@ -307,7 +310,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
 
         // API KSeF odrzuca żądanie z przekroczoną liczbą części
         ApiException apiException = assertThrows(ApiException.class, () ->
-                ksefClient.openBatchSession(request, accessToken));
+                ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken));
         ExceptionResponse exceptionResponse = apiException.getExceptionResponse();
         Assertions.assertFalse(exceptionResponse.getException().getExceptionDetailList().isEmpty());
         ExceptionDetails details = exceptionResponse.getException().getExceptionDetailList().getFirst();
@@ -354,7 +357,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // Build request
         OpenBatchSessionRequest request = buildOpenBatchSessionRequest(zipMetadata, encryptedZipParts, corruptedEncryptionData);
 
-        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, accessToken);
+        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken);
         Assertions.assertNotNull(response.getReferenceNumber());
         String sessionReferenceNumber = response.getReferenceNumber();
 
@@ -409,7 +412,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // Build request
         OpenBatchSessionRequest request = buildOpenBatchSessionRequest(zipMetadata, corruptedZipParts, encryptionData);
 
-        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, accessToken);
+        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken);
         Assertions.assertNotNull(response.getReferenceNumber());
         String sessionReferenceNumber = response.getReferenceNumber();
 
@@ -463,7 +466,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // Build request
         OpenBatchSessionRequest request = buildOpenBatchSessionRequest(zipMetadata, encryptedZipParts, corruptedEncryptionData);
 
-        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, accessToken);
+        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken);
         Assertions.assertNotNull(response.getReferenceNumber());
         String sessionReferenceNumber = response.getReferenceNumber();
 
@@ -550,7 +553,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // Build request
         OpenBatchSessionRequest request = buildOpenBatchSessionRequest(zipMetadata, encryptedZipParts, encryptionData);
 
-        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, accessToken);
+        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken);
         Assertions.assertNotNull(response.getReferenceNumber());
 
         ksefClient.sendBatchParts(response, encryptedZipParts);
@@ -572,7 +575,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         long currentSize = baos.size();
 
         if (currentSize < minSizeBytes) {
-            long paddingSize = minSizeBytes - currentSize + 1024 * 1024; // +1 MB zapasu
+            long paddingSize = minSizeBytes - currentSize + PADDING_SAFETY_MARGIN_IN_BYTES; // +100 KB zapasu
             byte[] paddingData = new byte[(int) paddingSize];
             new SecureRandom().nextBytes(paddingData);
 
@@ -615,7 +618,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // Build request
         OpenBatchSessionRequest request = buildOpenBatchSessionRequestForStream(zipMetadata, encryptedStreamParts, encryptionData);
 
-        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, accessToken);
+        OpenBatchSessionResponse response = ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken);
         Assertions.assertNotNull(response.getReferenceNumber());
 
         ksefClient.sendBatchPartsWithStream(response, encryptedStreamParts);
@@ -645,7 +648,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
 
         for (int i = 0; i < encryptedZipParts.size(); i++) {
             BatchPartSendingInfo part = encryptedZipParts.get(i);
-            builder = builder.addBatchFilePart(i + 1, "faktura_part" + (i + 1) + ".zip.aes",
+            builder = builder.addBatchFilePart(i + 1,
                     part.getMetadata().getFileSize(), part.getMetadata().getHashSHA());
         }
 
@@ -665,7 +668,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
 
         for (int i = 0; i < encryptedZipParts.size(); i++) {
             BatchPartStreamSendingInfo part = encryptedZipParts.get(i);
-            builder = builder.addBatchFilePart(i + 1, "faktura_part" + (i + 1) + ".zip.aes",
+            builder = builder.addBatchFilePart(i + 1,
                     part.getMetadata().getFileSize(), part.getMetadata().getHashSHA());
         }
 

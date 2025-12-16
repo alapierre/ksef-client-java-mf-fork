@@ -1434,3 +1434,73 @@
 | ➕ dodane    | 2             |
 | 🔧 zmienione | 8             |
 | ➖ usunięte  | 0             |
+
+---
+# Changelog zmian - `## 3.0.9 (2025-12-16)` - `API: 2.0.0 RC6.1`
+
+## 1. ksef-client
+
+### 1.1 api
+- **DefaultKsefClient.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated`, dodanie metody `restoreProductionRateLimitsAsync(String accessToken)` która ustawia w bieżącym kontekście wartości limitów api zgodne z profilem produkcyjnym. Dostępny tylko na środowisku TE.
+- **KsefApiProperties.java**: 🔧 dodanie metody `String getQrUri()`
+- **Url.java**: 🔧 dodanie `LIMIT_CONTEXT_SET_PRODUCTION("/api/v2/testdata/rate-limits/production", "apiV2LimitsSetProduction")`
+
+### 1.2 client.interfaces
+- **KSeFClient.java**: 🔧 zgodnie z opisem w implementacji `DefaultKsefClient`
+
+### 1.3 api.builders
+- **OpenBatchSessionRequestBuilder.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated`
+
+### 1.4 client.model
+- **auth/AuthenticationChallengeResponse.java**: 🔧 aktualizacja kontraktu - dodanie pola `long timestampMs`
+- **limit/ChangeSubjectCertificateLimitRequest.java**: 🔧 aktualizacja kontraktu - usunięcie wartości enuma `TOKEN("Token")`
+- **limit/GetRateLimitResponse.java**: 🔧 aktualizacja kontraktu - dodanie pola `InvoiceExportStatusRateLimit invoiceStatusExport`
+- **limit/InvoiceExportStatusRateLimit.java**: ➕ dodanie klasy
+- **permission/indirect/TargetIdentifier.java**: 🔧 aktualizacja kontraktu - w `IdentifierType` poprawa literówki enuma `ALL_PARNERS` i dodanie `INTERNAL_ID("InternalId")`
+- **batch/BatchFilePartInfo.java**: 🔧 aktualizacja kontraktu - usunięcie pola `String fileName`
+- **testdata/TestDataAttachmentRemoveRequest.java**: 🔧 aktualizacja kontraktu - zmiana typu pola `OffsetDateTime expectedEndDate` na `LocalDate`
+- **ApiException.java**: 🔧 aktualizacja kontraktu - usunięcie pola `String responseBody`
+
+### 1.5 api.services
+- **DefaultVerificationLinkService.java**: 🔧 aktualizacje związane z generowaniem linku weryfikacyjnego
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BatchIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **DuplicateInvoiceIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **EnforcementOperationNegativeIntegrationTest.java**: 🔧 poprawka dziedziczenia po BaseIntegrationTest 
+- **IncrementalInvoiceRetrieveIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **OnlineSessionIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **PeppolInvoiceIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **PermissionAttachmentStatusIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu 
+- **QrCodeOfflineIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu, usunięciem pól/metod oznaczonych `deprecated` i poprawa literówki w nazwie metody 
+- **QrCodeOnlineIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **QueryInvoiceIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **SearchInvoiceForSubject2IntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **SearchInvoiceForSubject3IntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **SelfInvoicingIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **SessionIntegrationTest.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+
+### 2.2 api
+- **BatchSessionController.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **OnlineSessionController.java**: 🔧 aktualizacje związane ze zmianą modelu i usunięciem pól/metod oznaczonych `deprecated` 
+- **ExampleApiProperties.java**: 🔧 dodano qrUri
+- **KsefClientConfig.java**: 🔧 wczytanie urla qr z `application.yaml` do `DefaultVerificationLinkService`
+
+### 2.3 resources
+- **application-demo.yaml**: ➕ dodanie konfiguracji dla środowiska demo
+- **application-prod.yaml**: ➕ dodanie konfiguracji dla środowiska produkcyjnego
+- **application.yaml**: 🔧 dodanie konfiguracji do qr kodów wymaganej w `ApiProperties.java`
+
+### 2.4 test - api.services
+- **QrCodeTests.java**: 🔧 aktualizacja testu
+- **VerificationLinkServiceTests.java**: 🔧 aktualizacja testu
+
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|--------------|
+| ➕ dodane    | 3            |
+| 🔧 zmienione | 34           |
+| ➖ usunięte  | 0            |

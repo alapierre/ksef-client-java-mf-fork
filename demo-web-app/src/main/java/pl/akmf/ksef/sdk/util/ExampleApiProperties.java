@@ -13,12 +13,18 @@ import java.util.Map;
 public class ExampleApiProperties extends KsefApiProperties {
 
     private String baseUri;
+    private String qrUri;
     private int requestTimeout;
     private Map<String, String> defaultHeaders;
 
     @Override
     public String getBaseUri() {
         return baseUri;
+    }
+
+    @Override
+    public String getQrUri() {
+        return qrUri;
     }
 
     @Override
@@ -36,6 +42,10 @@ public class ExampleApiProperties extends KsefApiProperties {
 
     public void setBaseUri(String baseUri) {
         this.baseUri = baseUri;
+    }
+
+    public void setQrUri(String qrUri) {
+        this.qrUri = qrUri;
     }
 
     public void setRequestTimeout(int requestTimeout) {

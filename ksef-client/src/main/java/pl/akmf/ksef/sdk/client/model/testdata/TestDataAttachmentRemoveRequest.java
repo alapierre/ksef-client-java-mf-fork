@@ -1,10 +1,10 @@
 package pl.akmf.ksef.sdk.client.model.testdata;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 
 public class TestDataAttachmentRemoveRequest {
     private String nip;
-    private OffsetDateTime expectedEndDate;
+    private LocalDate expectedEndDate;
 
     public TestDataAttachmentRemoveRequest() {
 
@@ -14,7 +14,7 @@ public class TestDataAttachmentRemoveRequest {
         this.nip = nip;
     }
 
-    public TestDataAttachmentRemoveRequest(String nip, OffsetDateTime expectedEndDate) {
+    public TestDataAttachmentRemoveRequest(String nip, LocalDate expectedEndDate) {
         this.nip = nip;
         this.expectedEndDate = expectedEndDate;
     }
@@ -27,11 +27,11 @@ public class TestDataAttachmentRemoveRequest {
         this.nip = nip;
     }
 
-    public OffsetDateTime getExpectedEndDate() {
+    public LocalDate getExpectedEndDate() {
         return expectedEndDate;
     }
 
-    public void setExpectedEndDate(OffsetDateTime expectedEndDate) {
+    public void setExpectedEndDate(LocalDate expectedEndDate) {
         this.expectedEndDate = expectedEndDate;
     }
 }

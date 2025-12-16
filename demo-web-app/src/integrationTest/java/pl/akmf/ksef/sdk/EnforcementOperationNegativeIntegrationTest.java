@@ -13,6 +13,7 @@ import pl.akmf.ksef.sdk.client.model.permission.search.PersonPermissionQueryType
 import pl.akmf.ksef.sdk.client.model.permission.search.PersonPermissionsAuthorizedIdentifier;
 import pl.akmf.ksef.sdk.client.model.permission.search.PersonPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.QueryPersonPermissionsResponse;
+import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
 import pl.akmf.ksef.sdk.util.IdentifierGeneratorUtils;
 
 import java.io.IOException;
@@ -22,7 +23,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
 import static pl.akmf.ksef.sdk.client.model.permission.person.PersonPermissionType.ENFORCEMENTOPERATIONS;
 
-public class EnforcementOperationNegativeIntegrationTest extends BatchIntegrationTest {
+public class EnforcementOperationNegativeIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void grantEnforcementOperationAsCourtBailiffE2E() throws JAXBException, IOException, ApiException {

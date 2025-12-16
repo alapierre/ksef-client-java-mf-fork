@@ -10,6 +10,7 @@ public class GetRateLimitResponse {
     private SessionMiscRateLimits sessionMisc;
     private InvoiceMetadataRateLimit invoiceMetadata;
     private InvoiceExportRateLimit invoiceExport;
+    private InvoiceExportStatusRateLimit invoiceStatusExport;
     private InvoiceDownloadRateLimit invoiceDownload;
     private OtherRateLimit other;
 
@@ -87,6 +88,14 @@ public class GetRateLimitResponse {
 
     public void setInvoiceExport(InvoiceExportRateLimit invoiceExport) {
         this.invoiceExport = invoiceExport;
+    }
+
+    public InvoiceExportStatusRateLimit getInvoiceStatusExport() {
+        return invoiceStatusExport;
+    }
+
+    public void setInvoiceStatusExport(InvoiceExportStatusRateLimit invoiceStatusExport) {
+        this.invoiceStatusExport = invoiceStatusExport;
     }
 
     public InvoiceDownloadRateLimit getInvoiceDownload() {

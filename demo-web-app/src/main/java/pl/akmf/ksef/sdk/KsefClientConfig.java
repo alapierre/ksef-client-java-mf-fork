@@ -42,8 +42,8 @@ public class KsefClientConfig {
     }
 
     @Bean
-    public VerificationLinkService initDefaultVerificationLinkService(@Value("${sdk.config.base-uri}") String baseUri) {
-        return new DefaultVerificationLinkService(baseUri);
+    public VerificationLinkService initDefaultVerificationLinkService(@Value("${sdk.config.qr-uri}") String qrUri) {
+        return new DefaultVerificationLinkService(qrUri);
     }
 
     @Bean

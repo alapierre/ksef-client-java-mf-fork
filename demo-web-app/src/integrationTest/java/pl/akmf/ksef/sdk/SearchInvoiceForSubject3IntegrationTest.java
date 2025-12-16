@@ -9,6 +9,7 @@ import pl.akmf.ksef.sdk.api.builders.session.OpenOnlineSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.session.SendInvoiceOnlineSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.UpoVersion;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryDateRange;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryDateType;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryFilters;
@@ -94,8 +95,8 @@ public class SearchInvoiceForSubject3IntegrationTest extends BaseIntegrationTest
         try {
             SessionStatusResponse statusResponse = ksefClient.getSessionStatus(sessionReferenceNumber, accessToken);
             return statusResponse != null &&
-                    statusResponse.getSuccessfulInvoiceCount() != null &&
-                    statusResponse.getSuccessfulInvoiceCount() > 0;
+                   statusResponse.getSuccessfulInvoiceCount() != null &&
+                   statusResponse.getSuccessfulInvoiceCount() > 0;
         } catch (Exception e) {
             Assertions.fail(e.getMessage());
         }
@@ -121,7 +122,7 @@ public class SearchInvoiceForSubject3IntegrationTest extends BaseIntegrationTest
                 .withEncryptionInfo(encryptionData.encryptionInfo())
                 .build();
 
-        OpenOnlineSessionResponse openOnlineSessionResponse = ksefClient.openOnlineSession(request, accessToken);
+        OpenOnlineSessionResponse openOnlineSessionResponse = ksefClient.openOnlineSession(request, UpoVersion.UPO_4_3, accessToken);
         Assertions.assertNotNull(openOnlineSessionResponse);
         Assertions.assertNotNull(openOnlineSessionResponse.getReferenceNumber());
         return openOnlineSessionResponse.getReferenceNumber();

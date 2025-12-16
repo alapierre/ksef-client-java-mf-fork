@@ -93,18 +93,6 @@ public interface KSeFClient {
      * Otwarcie sesji wsadowej
      * Otwiera sesję do wysyłki wsadowej faktur.
      *
-     * @param body - OpenBatchSessionRequest - schemat wysyłanych faktur, informacje o paczce faktur oraz informacje o kluczu używanym do szyfrowania.
-     * @return OpenBatchSessionResponse
-     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
-     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
-     */
-    @Deprecated
-    OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, String accessToken) throws ApiException;
-
-    /**
-     * Otwarcie sesji wsadowej
-     * Otwiera sesję do wysyłki wsadowej faktur.
-     *
      * @param body       - OpenBatchSessionRequest - schemat wysyłanych faktur, informacje o paczce faktur oraz informacje o kluczu używanym do szyfrowania.
      * @param upoVersion - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
      * @return OpenBatchSessionResponse
@@ -112,9 +100,6 @@ public interface KSeFClient {
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
     OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, UpoVersion upoVersion, String accessToken) throws ApiException;
-
-    @Deprecated
-    OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, String upoVersion, String accessToken) throws ApiException;
 
     /**
      * Zamknięcie sesji wsadowej.
@@ -140,22 +125,9 @@ public interface KSeFClient {
      *
      * @param openBatchSessionResponse
      * @param parts                    - Kolekcja trzymająca informacje o partach
-     * @return
      * @throws ApiException
      */
     void sendBatchPartsWithStream(OpenBatchSessionResponse openBatchSessionResponse, List<BatchPartStreamSendingInfo> parts) throws ApiException;
-
-    /**
-     * Otwarcie sesji interaktywnej
-     * Inicjalizacja wysyłki interaktywnej faktur.
-     *
-     * @param body
-     * @return OpenOnlineSessionResponse
-     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
-     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
-     */
-    @Deprecated
-    OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, String accessToken) throws ApiException;
 
     /**
      * Otwarcie sesji interaktywnej
@@ -168,9 +140,6 @@ public interface KSeFClient {
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
     OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, UpoVersion upoVersion, String accessToken) throws ApiException;
-
-    @Deprecated
-    OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, String upoVersion, String accessToken) throws ApiException;
 
     /**
      * Zamknięcie sesji interaktywnej
@@ -576,19 +545,6 @@ public interface KSeFClient {
      *
      * @param pageOffset - Index strony wyników (domyślnie 0)
      * @param pageSize   - Ilość elementów na stronie (domyślnie 10)
-     * @param request    InvoicesQueryRequest - zestaw filtrów
-     * @return QueryInvoicesReponse
-     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
-     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
-     */
-    @Deprecated
-    QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset, Integer pageSize, InvoiceQueryFilters request, String accessToken) throws ApiException;
-
-    /**
-     * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania.
-     *
-     * @param pageOffset - Index strony wyników (domyślnie 0)
-     * @param pageSize   - Ilość elementów na stronie (domyślnie 10)
      * @param sortOrder  - Kolejność sortowania wyników.
      * @param request    InvoicesQueryRequest - zestaw filtrów
      * @return QueryInvoicesReponse
@@ -803,17 +759,23 @@ public interface KSeFClient {
      *
      * @param changeContextLimitRequest
      * @param accessToken
-     * @return
      * @throws ApiException
      */
     void changeContextLimitTest(ChangeContextLimitRequest changeContextLimitRequest, String accessToken) throws ApiException;
+
+    /**
+     * Ustawia w bieżącym kontekście wartości limitów api zgodne z profilem produkcyjnym. Dostępny tylko na środowisku TE.
+     *
+     * @param accessToken
+     * @throws ApiException
+     */
+    void restoreProductionRateLimitsAsync(String accessToken) throws ApiException;
 
     /**
      * Zmienia wartości aktualnie obowiązujących limitów certyfikatów dla bieżącego podmiotu. Tylko na środowiskach testowych.
      *
      * @param changeSubjectCertificateLimitRequest
      * @param accessToken
-     * @return
      * @throws ApiException
      */
     void changeSubjectLimitTest(ChangeSubjectCertificateLimitRequest changeSubjectCertificateLimitRequest, String accessToken) throws ApiException;
@@ -822,7 +784,6 @@ public interface KSeFClient {
      * Przywraca wartości aktualnie obowiązujących limitów dla bieżącego kontekstu do wartości domyślnych. Tylko na środowiskach testowych.
      *
      * @param accessToken
-     * @return
      * @throws ApiException
      */
     void resetContextLimitTest(String accessToken) throws ApiException;
@@ -831,7 +792,6 @@ public interface KSeFClient {
      * Przywraca wartości aktualnie obowiązujących limitów dla bieżącego kontekstu do wartości domyślnych. Tylko na środowiskach testowych.
      *
      * @param accessToken
-     * @return
      * @throws ApiException
      */
     void resetSubjectCertificateLimit(String accessToken) throws ApiException;
