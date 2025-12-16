@@ -1,11 +1,9 @@
 package pl.akmf.ksef.sdk.api.services;
 
-import pl.akmf.ksef.sdk.api.KsefApiProperties;
 import pl.akmf.ksef.sdk.client.interfaces.VerificationLinkService;
 import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
 
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -27,16 +25,10 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
     private static final String SHA_256 = "SHA-256";
     private static final String MGF_1 = "MGF1";
     private static final String SHA_256_WITH_ECDSA = "SHA256withECDSA";
-    private static final String CLIENT_APP = "client-app";
-    private final String appUrl;
+    private final String qrAppUrl;
 
-    @Deprecated
-    public DefaultVerificationLinkService(KsefApiProperties ksefApiProperties) {
-        this.appUrl = ksefApiProperties.getBaseUri();
-    }
-
-    public DefaultVerificationLinkService(String appUrl) {
-        this.appUrl = appUrl;
+    public DefaultVerificationLinkService(String qrAppUrl) {
+        this.qrAppUrl = qrAppUrl;
     }
 
     @Override
@@ -44,9 +36,8 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
         String date = issueDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
-        String apiPath = URI.create(appUrl).resolve(CLIENT_APP).toString();
 
-        return String.format("%s/invoice/%s/%s/%s", apiPath, nip, date, invoiceHashUrlEncoded);
+        return String.format("%s/invoice/%s/%s/%s", qrAppUrl, nip, date, invoiceHashUrlEncoded);
     }
 
     @Override
@@ -58,13 +49,12 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
                                                   PrivateKey privateKey) {
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
-        String apiPath = URI.create(appUrl).resolve(CLIENT_APP).toString();
 
-        String pathToSign = String.format("%s/certificate/%s/%s/%s/%s/%s", apiPath, contextIdentifierType, contextIdentifierValue, sellerNip, certificateSerial, invoiceHashUrlEncoded)
+        String pathToSign = String.format("%s/certificate/%s/%s/%s/%s/%s", qrAppUrl, contextIdentifierType, contextIdentifierValue, sellerNip, certificateSerial, invoiceHashUrlEncoded)
                 .replace("https://", "");
         String signedHash = computeUrlEncodedSignedHash(pathToSign, privateKey);
 
-        return String.format("%s/certificate/%s/%s/%s/%s/%s/%s", apiPath, contextIdentifierType, contextIdentifierValue, sellerNip,
+        return String.format("%s/certificate/%s/%s/%s/%s/%s/%s", qrAppUrl, contextIdentifierType, contextIdentifierValue, sellerNip,
                 certificateSerial, invoiceHashUrlEncoded, signedHash);
     }
 

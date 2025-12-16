@@ -22,6 +22,7 @@ import pl.akmf.ksef.sdk.api.builders.session.OpenOnlineSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.session.SendInvoiceOnlineSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.UpoVersion;
 import pl.akmf.ksef.sdk.client.model.auth.EncryptionMethod;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentStatusResponse;
@@ -195,7 +196,7 @@ public class QrCodeOfflineIntegrationTest extends BaseIntegrationTest {
         // zakładam, że jestem spowrotem online
         // nawiązujemy sesję, wysyłamy fakturę, weryfikujemy faktuę poprzez link weryfikacyjny
         String accessToken2 = authWithCustomNip(contextNip, contextNip).accessToken();
-        openSessionAdnSendInvoice(invoice, invoiceMetadata, systemCode, accessToken2);
+        openSessionAndSendInvoice(invoice, invoiceMetadata, systemCode, accessToken2);
         checkInvoiceByVerificationUrl(invoiceForOfflineUrl, true);
     }
 
@@ -312,7 +313,7 @@ public class QrCodeOfflineIntegrationTest extends BaseIntegrationTest {
         // zakładam, że jestem spowrotem online
         // nawiązujemy sesję, wysyłamy fakturę, weryfikujemy faktuę poprzez link weryfikacyjny
         accessToken = authWithCustomNip(contextNip, contextNip).accessToken();
-        openSessionAdnSendInvoice(invoice, invoiceMetadata, systemCode, accessToken);
+        openSessionAndSendInvoice(invoice, invoiceMetadata, systemCode, accessToken);
         checkInvoiceByVerificationUrl(invoiceForOfflineUrl, true);
     }
 
@@ -414,7 +415,7 @@ public class QrCodeOfflineIntegrationTest extends BaseIntegrationTest {
         return responseBody;
     }
 
-    private void openSessionAdnSendInvoice(byte[] invoice, FileMetadata invoiceMetadata,
+    private void openSessionAndSendInvoice(byte[] invoice, FileMetadata invoiceMetadata,
                                            SystemCode systemCode, String accessToken) throws ApiException {
         EncryptionData encryptionData = defaultCryptographyService.getEncryptionData();
 
@@ -423,7 +424,7 @@ public class QrCodeOfflineIntegrationTest extends BaseIntegrationTest {
                 .withEncryptionInfo(encryptionData.encryptionInfo())
                 .build();
 
-        OpenOnlineSessionResponse openOnlineSessionResponse = ksefClient.openOnlineSession(request, accessToken);
+        OpenOnlineSessionResponse openOnlineSessionResponse = ksefClient.openOnlineSession(request, UpoVersion.UPO_4_3, accessToken);
         Assertions.assertNotNull(openOnlineSessionResponse);
         String sessionReferenceNumber = openOnlineSessionResponse.getReferenceNumber();
         Assertions.assertNotNull(sessionReferenceNumber);

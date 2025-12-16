@@ -69,6 +69,7 @@ public enum Url {
     LIMIT_SUBJECT_CERTIFICATE("/api/v2/limits/subject", "apiV2LimitsGet"),
     GET_RATE_LIMIT("/api/v2/rate-limits", "apiV2RateLimit"),
 
+    LIMIT_CONTEXT_SET_PRODUCTION("/api/v2/testdata/rate-limits/production", "apiV2LimitsSetProduction"),
     LIMIT_CONTEXT_CHANGE_TEST("/api/v2/testdata/limits/context/session", "apiV2LimitsChange"),
     LIMIT_CONTEXT_RESET_TEST("/api/v2/testdata/limits/context/session", "apiV2LimitsReset"),
     LIMIT_SUBJECT_CERTIFICATE_CHANGE_TEST("/api/v2/testdata/limits/subject/certificate", "apiV2LimitsChange"),

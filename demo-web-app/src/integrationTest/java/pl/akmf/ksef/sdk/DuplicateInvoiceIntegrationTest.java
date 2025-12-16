@@ -11,6 +11,7 @@ import pl.akmf.ksef.sdk.api.builders.session.OpenOnlineSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.session.SendInvoiceOnlineSessionRequestBuilder;
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.UpoVersion;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
 import pl.akmf.ksef.sdk.client.model.session.FileMetadata;
 import pl.akmf.ksef.sdk.client.model.session.FormCode;
@@ -155,7 +156,7 @@ class DuplicateInvoiceIntegrationTest extends BaseIntegrationTest {
         // Build request
         OpenBatchSessionRequest request = buildOpenBatchSessionRequestForStream(zipMetadata, encryptedStreamParts, systemCode, encryptionData);
 
-        OpenBatchSessionResponse openBatchSessionResponse = ksefClient.openBatchSession(request, accessToken);
+        OpenBatchSessionResponse openBatchSessionResponse = ksefClient.openBatchSession(request, UpoVersion.UPO_4_3, accessToken);
         Assertions.assertNotNull(openBatchSessionResponse.getReferenceNumber());
 
         ksefClient.sendBatchPartsWithStream(openBatchSessionResponse, encryptedStreamParts);
@@ -176,7 +177,7 @@ class DuplicateInvoiceIntegrationTest extends BaseIntegrationTest {
 
         for (int i = 0; i < encryptedZipParts.size(); i++) {
             BatchPartStreamSendingInfo part = encryptedZipParts.get(i);
-            builder = builder.addBatchFilePart(i + 1, "faktura_part" + (i + 1) + ".zip.aes",
+            builder = builder.addBatchFilePart(i + 1,
                     part.getMetadata().getFileSize(), part.getMetadata().getHashSHA());
         }
 
@@ -206,7 +207,7 @@ class DuplicateInvoiceIntegrationTest extends BaseIntegrationTest {
                 .withEncryptionInfo(encryptionData.encryptionInfo())
                 .build();
 
-        OpenOnlineSessionResponse openOnlineSessionResponse = ksefClient.openOnlineSession(request, accessToken);
+        OpenOnlineSessionResponse openOnlineSessionResponse = ksefClient.openOnlineSession(request, UpoVersion.UPO_4_3, accessToken);
         Assertions.assertNotNull(openOnlineSessionResponse);
         Assertions.assertNotNull(openOnlineSessionResponse.getReferenceNumber());
 
