@@ -347,7 +347,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // Klucz musi być zaszyfrowany RSA-OAEP kluczem publicznym MF, więc losowe dane nie będą poprawne
         int encryptionKeySize = 256; // bytes dla RSA
         byte[] corruptedEncryptedKey = new byte[encryptionKeySize];
-        SecureRandom.getInstanceStrong().nextBytes(corruptedEncryptedKey);
+        new SecureRandom().nextBytes(corruptedEncryptedKey);
         String corruptedEncryptedSymmetricKey = Base64.getEncoder().encodeToString(corruptedEncryptedKey);
         corruptedEncryptionInfo.setEncryptedSymmetricKey(corruptedEncryptedSymmetricKey);
         corruptedEncryptionInfo.setInitializationVector(encryptionData.encryptionInfo().getInitializationVector());
@@ -457,7 +457,7 @@ class BatchIntegrationTest extends BaseIntegrationTest {
         // W AES-CBC poprawny IV jest kluczowy dla odszyfrowania pierwszego bloku
         int InitializationVectorSize = 16; // bytes
         byte[] corruptedInitializationVector = new byte[InitializationVectorSize];
-        SecureRandom.getInstanceStrong().nextBytes(corruptedInitializationVector);
+        new SecureRandom().nextBytes(corruptedInitializationVector);
         corruptedEncryptionInfo.setEncryptedSymmetricKey(encryptionData.encryptionInfo().getEncryptedSymmetricKey());
         corruptedEncryptionInfo.setInitializationVector(Base64.getEncoder().encodeToString(corruptedInitializationVector));
         EncryptionData corruptedEncryptionData = new EncryptionData(encryptionData.cipherKey(), encryptionData.cipherIv(),

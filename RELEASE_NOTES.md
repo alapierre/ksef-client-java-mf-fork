@@ -1504,3 +1504,39 @@
 | ➕ dodane    | 3            |
 | 🔧 zmienione | 34           |
 | ➖ usunięte  | 0            |
+
+---
+# Changelog zmian - `## 3.0.10 (2025-12-22)` - `API: 2.0.0 RC6.1`
+
+## 1. ksef-client
+
+### 1.1 api
+- **DefaultKsefClient.java**: 🔧 dodanie pola i obsługi `String suffixURl`
+- **KsefApiProperties.java**: 🔧 dodanie metody `String getSuffixUri()`
+- **Url.java**: 🔧 usunięcie prefixów `/api/v2/` w urlach i przeniesienie do `KsefApiProperties` 
+
+### 1.2 client.model
+- **permission/search/QueryPersonalGrantTargetIdentifier.java**: 🔧 dodanie brakującej wartości enuma `IdentifierType` `INTERNAL_ID("InternalId")`
+
+### 1.3 api.services
+- **DefaultCryptographyService.java**: 🔧 dodanie pola `String secureRandomAlgorithm` wraz z konstruktorem który pozwala w metodach `generateRandom256BitsKey` i `generateRandom16BytesIv` używać wskazanego algorytmu
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BatchIntegrationTest.java**: 🔧 zmiany w użyciu SecureRandom 
+- **QrCodeOnlineIntegrationTest.java**: 🔧 poprawka związana z błędnym invoicingDate 
+
+### 2.2 api
+- **ExampleApiProperties.java**: 🔧 dodanie konfiguracji pola `String suffixUri` wraz z getterami i setterami 
+
+### 2.3 resources
+- **application.yaml**: 🔧 dodanie konfiguracji `suffix-uri`
+
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 0             |
+| 🔧 zmienione | 9             |
+| ➖ usunięte  | 0             |

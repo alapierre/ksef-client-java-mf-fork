@@ -69,8 +69,9 @@ public class QrCodeOnlineIntegrationTest extends BaseIntegrationTest {
         //Otwarcie sesji online z szyfrowaniem RSA.
         String sessionReferenceNumber = openOnlineSession(encryptionData, SystemCode.FA_2, SchemaVersion.VERSION_1_0E, SessionValue.FA, accessToken);
 
+        LocalDate invoicingDate = LocalDate.of(2025, 6, 15);
         //Utworzenie i wysłanie faktury FA(2)
-        String invoiceReferenceNumber = sendInvoiceOnlineSession(contextNip, sessionReferenceNumber, encryptionData, "/xml/invoices/sample/invoice-template.xml", accessToken);
+        String invoiceReferenceNumber = sendInvoiceOnlineSession(contextNip, sessionReferenceNumber, invoicingDate, encryptionData, "/xml/invoices/sample/invoice-template.xml", accessToken);
 
         //Weryfikacja, czy faktura została dodana do sesji.
         await().atMost(30, SECONDS)
@@ -109,10 +110,9 @@ public class QrCodeOnlineIntegrationTest extends BaseIntegrationTest {
                 .orElseThrow();
         String invoiceKsefNumber = invoiceMetadata.getKsefNumber();
         String invoiceHash = invoiceMetadata.getInvoiceHash();
-        OffsetDateTime invoicingDate = invoiceMetadata.getInvoicingDate();
 
         //Stworzenie linku weryfikacyjnego do faktury za pomoca certyfikatu oraz hashu faktury
-        String invoiceForOnlineUrl = verificationLinkService.buildInvoiceVerificationUrl(contextNip, invoicingDate.toLocalDate(), invoiceHash);
+        String invoiceForOnlineUrl = verificationLinkService.buildInvoiceVerificationUrl(contextNip, invoicingDate, invoiceHash);
 
         Assertions.assertNotNull(invoiceForOnlineUrl);
         Assertions.assertTrue(invoiceForOnlineUrl.contains(Base64.getUrlEncoder().withoutPadding().encodeToString(Base64.getDecoder().decode(invoiceHash))));
@@ -142,11 +142,11 @@ public class QrCodeOnlineIntegrationTest extends BaseIntegrationTest {
         return openOnlineSessionResponse.getReferenceNumber();
     }
 
-    private String sendInvoiceOnlineSession(String nip, String sessionReferenceNumber, EncryptionData encryptionData,
+    private String sendInvoiceOnlineSession(String nip, String sessionReferenceNumber, LocalDate invoicingDate, EncryptionData encryptionData,
                                             String path, String accessToken) throws IOException, ApiException {
         String invoiceTemplate = new String(readBytesFromPath(path), StandardCharsets.UTF_8)
                 .replace("#nip#", nip)
-                .replace("#invoicing_date#", LocalDate.of(2025, 6, 15).format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+                .replace("#invoicing_date#", invoicingDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")))
                 .replace("#invoice_number#", UUID.randomUUID().toString());
 
         byte[] invoice = invoiceTemplate.getBytes(StandardCharsets.UTF_8);

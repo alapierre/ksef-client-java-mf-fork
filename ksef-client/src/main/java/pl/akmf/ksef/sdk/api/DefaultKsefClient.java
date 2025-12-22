@@ -230,6 +230,7 @@ public class DefaultKsefClient implements KSeFClient {
     private final ObjectMapper objectMapper;
     private final HttpClient apiClient;
     private final String baseURl;
+    private final String suffixURl;
     private final Duration timeout;
     private final Map<String, String> defaultHeaders;
 
@@ -240,6 +241,7 @@ public class DefaultKsefClient implements KSeFClient {
         this.defaultHeaders = ksefApiProperties.getDefaultHeaders();
         this.timeout = ksefApiProperties.getRequestTimeout();
         this.baseURl = ksefApiProperties.getBaseUri();
+        this.suffixURl = ksefApiProperties.getSuffixUri();
         this.objectMapper = objectMapper;
     }
 
@@ -2052,7 +2054,7 @@ public class DefaultKsefClient implements KSeFClient {
 
     private HttpRequest buildRequest(String uri, String method, byte[] body, Map<String, String> additionalHeaders) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(baseURl + uri))
+                .uri(buildUri(baseURl, suffixURl, uri))
                 .timeout(timeout);
 
         defaultHeaders.forEach(builder::header);
@@ -2080,7 +2082,7 @@ public class DefaultKsefClient implements KSeFClient {
 
     private HttpRequest buildRequest(String uri, String method, Object body, Map<String, String> additionalHeaders) throws JsonProcessingException {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(baseURl + uri))
+                .uri(buildUri(baseURl, suffixURl, uri))
                 .timeout(timeout);
 
         defaultHeaders.forEach(builder::header);
@@ -2276,5 +2278,10 @@ public class DefaultKsefClient implements KSeFClient {
         } catch (IOException e) {
             throw new ApiException(e);
         }
+    }
+
+    private URI buildUri(String baseUrl, String suffix, String url) {
+        URI urlWithSuffix = URI.create(baseUrl + "/").resolve(suffix);
+        return URI.create(urlWithSuffix + "/").resolve(url);
     }
 }
