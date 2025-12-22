@@ -4,6 +4,7 @@ server:
 sdk:
   config:
     base-uri: "https://api-test.ksef.mf.gov.pl"
+    suffix-uri: "v2"
     qr-uri: "https://qr-test.ksef.mf.gov.pl"
     request-timeout: 100
 

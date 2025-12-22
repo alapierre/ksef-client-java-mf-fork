@@ -99,10 +99,17 @@ public class DefaultCryptographyService implements CryptographyService {
     private String symmetricKeyEncryptionPem;
     private String ksefTokenPem;
     private final KSeFClient ksefClient;
+    private String secureRandomAlgorithm = null;
     private KsefIntegrationMode ksefIntegrationMode = KsefIntegrationMode.OFFLINE;
 
     public DefaultCryptographyService(KSeFClient ksefClient) throws SystemKSeFSDKException {
         this.ksefClient = ksefClient;
+        initCryptographyService();
+    }
+
+    public DefaultCryptographyService(KSeFClient ksefClient, String secureRandomAlgorithm) throws SystemKSeFSDKException {
+        this.ksefClient = ksefClient;
+        this.secureRandomAlgorithm = secureRandomAlgorithm;
         initCryptographyService();
     }
 
@@ -550,13 +557,21 @@ public class DefaultCryptographyService implements CryptographyService {
 
     private byte[] generateRandom256BitsKey() throws NoSuchAlgorithmException {
         byte[] key = new byte[256 / 8];
-        SecureRandom.getInstanceStrong().nextBytes(key);
+        if (secureRandomAlgorithm == null) {
+            new SecureRandom().nextBytes(key);
+        } else {
+            SecureRandom.getInstance(secureRandomAlgorithm).nextBytes(key);
+        }
         return key;
     }
 
     private byte[] generateRandom16BytesIv() throws NoSuchAlgorithmException {
         byte[] iv = new byte[16];
-        SecureRandom.getInstanceStrong().nextBytes(iv);
+        if (secureRandomAlgorithm == null) {
+            new SecureRandom().nextBytes(iv);
+        } else {
+            SecureRandom.getInstance(secureRandomAlgorithm).nextBytes(iv);
+        }
         return iv;
     }
 
