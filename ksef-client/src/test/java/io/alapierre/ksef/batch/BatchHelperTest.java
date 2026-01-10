@@ -193,7 +193,17 @@ public class BatchHelperTest {
 
         @Override
         public String getBaseUri() {
-            return "https://ksef-test.mf.gov.pl";
+            return "https://api-test.ksef.mf.gov.pl/v2";
+        }
+
+        @Override
+        public String getSuffixUri() {
+            return "";
+        }
+
+        @Override
+        public String getQrUri() {
+            return "";
         }
 
         @Override

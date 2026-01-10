@@ -68,6 +68,16 @@ public class KeysTest {
         }
 
         @Override
+        public String getSuffixUri() {
+            return "";
+        }
+
+        @Override
+        public String getQrUri() {
+            return "";
+        }
+
+        @Override
         public Duration getRequestTimeout() {
             return null;
         }

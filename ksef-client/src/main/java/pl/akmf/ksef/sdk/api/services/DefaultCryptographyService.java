@@ -1,13 +1,19 @@
 package pl.akmf.ksef.sdk.api.services;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.pkcs.PKCSException;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pl.akmf.ksef.sdk.api.builders.certificate.CertificateBuilders;
@@ -42,6 +48,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -55,6 +62,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -80,6 +88,7 @@ public class DefaultCryptographyService implements CryptographyService {
     private static final String ECDH = "ECDH";
     private static final String MGF_1 = "MGF1";
     private static final String EC = "EC";
+    private static final String BC = "BC";
     private static final String SECP_256_R_1 = "secp256r1";
     private static final int GCM_TAG_LENGTH = 128;
     private static final int GCM_NONCE_LENGTH = 12;
@@ -90,10 +99,17 @@ public class DefaultCryptographyService implements CryptographyService {
     private String symmetricKeyEncryptionPem;
     private String ksefTokenPem;
     private final KSeFClient ksefClient;
-    private KsefIntegrationMode ksefIntegrationMode = KsefIntegrationMode.OFFLINE;
+    private String secureRandomAlgorithm = null;
+    private KsefIntegrationMode ksefIntegrationMode = KsefIntegrationMode.ONLINE;
 
     public DefaultCryptographyService(KSeFClient ksefClient) throws SystemKSeFSDKException {
         this.ksefClient = ksefClient;
+        initCryptographyService();
+    }
+
+    public DefaultCryptographyService(KSeFClient ksefClient, String secureRandomAlgorithm) throws SystemKSeFSDKException {
+        this.ksefClient = ksefClient;
+        this.secureRandomAlgorithm = secureRandomAlgorithm;
         initCryptographyService();
     }
 
@@ -441,6 +457,34 @@ public class DefaultCryptographyService implements CryptographyService {
     }
 
     @Override
+    public PrivateKey parseEncryptedEcdsaPrivateKeyFromPem(byte[] pemBytes, char[] password) {
+        try (PEMParser parser = new PEMParser(
+                new InputStreamReader(new ByteArrayInputStream(pemBytes)))
+        ) {
+            Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
+            Object object = parser.readObject();
+
+            if (!(object instanceof PKCS8EncryptedPrivateKeyInfo)) {
+                throw new IllegalArgumentException("Provided PEM is not an encrypted private key (BEGIN ENCRYPTED PRIVATE KEY)");
+            }
+            PKCS8EncryptedPrivateKeyInfo encryptedKeyPair = (PKCS8EncryptedPrivateKeyInfo) object;
+
+            var decryptorProvider = new JcePKCSPBEInputDecryptorProviderBuilder()
+                    .setProvider(BC)
+                    .build(password);
+
+            PrivateKeyInfo privateKeyInfo = encryptedKeyPair.decryptPrivateKeyInfo(decryptorProvider);
+
+            return new JcaPEMKeyConverter()
+                    .setProvider(BC)
+                    .getPrivateKey(privateKeyInfo);
+        } catch (IOException | PKCSException e) {
+            throw new SystemKSeFSDKException(e.getMessage(), e);
+        }
+    }
+
+    @Override
     public X509Certificate parseCertificateFromBytes(byte[] certBytes) throws CertificateException {
         validateServiceConfiguration();
 
@@ -468,7 +512,7 @@ public class DefaultCryptographyService implements CryptographyService {
                     .map(c -> BEGIN_CERTIFICATE + c + END_CERTIFICATE)
                     .orElse(null);
             ksefIntegrationMode = KsefIntegrationMode.ONLINE;
-        } catch (ApiException e) {
+        } catch (ApiException | SystemKSeFSDKException e) {
             ksefIntegrationMode = KsefIntegrationMode.OFFLINE;
             log.error("Error with connection to KseF Api: {}", e.getMessage() + ". Library works in offline mode");
         }
@@ -513,13 +557,21 @@ public class DefaultCryptographyService implements CryptographyService {
 
     private byte[] generateRandom256BitsKey() throws NoSuchAlgorithmException {
         byte[] key = new byte[256 / 8];
-        SecureRandom.getInstanceStrong().nextBytes(key);
+        if (secureRandomAlgorithm == null) {
+            new SecureRandom().nextBytes(key);
+        } else {
+            SecureRandom.getInstance(secureRandomAlgorithm).nextBytes(key);
+        }
         return key;
     }
 
     private byte[] generateRandom16BytesIv() throws NoSuchAlgorithmException {
         byte[] iv = new byte[16];
-        SecureRandom.getInstanceStrong().nextBytes(iv);
+        if (secureRandomAlgorithm == null) {
+            new SecureRandom().nextBytes(iv);
+        } else {
+            SecureRandom.getInstance(secureRandomAlgorithm).nextBytes(iv);
+        }
         return iv;
     }
 

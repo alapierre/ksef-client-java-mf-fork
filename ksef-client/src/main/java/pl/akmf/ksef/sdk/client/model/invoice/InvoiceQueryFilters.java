@@ -14,6 +14,7 @@ public class InvoiceQueryFilters {
     private InvoiceBuyerIdentifier buyerIdentifier;
     private List<CurrencyCode> currencyCodes;
     private InvoicingMode invoicingMode;
+    @JsonProperty("isSelfInvoicing")
     private Boolean isSelfInvoicing;
     private InvoiceFormType formType;
     private List<InvoiceMetadataInvoiceType> invoiceTypes;

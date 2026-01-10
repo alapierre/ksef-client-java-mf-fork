@@ -14,4 +14,5 @@ public final class Headers {
     public static final String OCTET_STREAM = "application/octet-stream";
     public static final String APPLICATION_JSON = "application/json";
     public static final String BEARER = "Bearer ";
+    public static final String X_KSEF_FEATURE = "X-KSeF-Feature";
 }

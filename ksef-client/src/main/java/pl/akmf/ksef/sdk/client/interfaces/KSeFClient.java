@@ -1,6 +1,7 @@
 package pl.akmf.ksef.sdk.client.interfaces;
 
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.UpoVersion;
 import pl.akmf.ksef.sdk.client.model.auth.AuthKsefTokenRequest;
 import pl.akmf.ksef.sdk.client.model.auth.AuthOperationStatusResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthStatus;
@@ -92,12 +93,13 @@ public interface KSeFClient {
      * Otwarcie sesji wsadowej
      * Otwiera sesję do wysyłki wsadowej faktur.
      *
-     * @param body - OpenBatchSessionRequest - schemat wysyłanych faktur, informacje o paczce faktur oraz informacje o kluczu używanym do szyfrowania.
+     * @param body       - OpenBatchSessionRequest - schemat wysyłanych faktur, informacje o paczce faktur oraz informacje o kluczu używanym do szyfrowania.
+     * @param upoVersion - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
      * @return OpenBatchSessionResponse
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, String accessToken) throws ApiException;
+    OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, UpoVersion upoVersion, String accessToken) throws ApiException;
 
     /**
      * Zamknięcie sesji wsadowej.
@@ -132,11 +134,12 @@ public interface KSeFClient {
      * Inicjalizacja wysyłki interaktywnej faktur.
      *
      * @param body
+     * @param upoVersion - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
      * @return OpenOnlineSessionResponse
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
-    OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, String accessToken) throws ApiException;
+    OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, UpoVersion upoVersion, String accessToken) throws ApiException;
 
     /**
      * Zamknięcie sesji interaktywnej
@@ -542,19 +545,6 @@ public interface KSeFClient {
      *
      * @param pageOffset - Index strony wyników (domyślnie 0)
      * @param pageSize   - Ilość elementów na stronie (domyślnie 10)
-     * @param request    InvoicesQueryRequest - zestaw filtrów
-     * @return QueryInvoicesReponse
-     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
-     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
-     */
-    @Deprecated
-    QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset, Integer pageSize, InvoiceQueryFilters request, String accessToken) throws ApiException;
-
-    /**
-     * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania.
-     *
-     * @param pageOffset - Index strony wyników (domyślnie 0)
-     * @param pageSize   - Ilość elementów na stronie (domyślnie 10)
      * @param sortOrder  - Kolejność sortowania wyników.
      * @param request    InvoicesQueryRequest - zestaw filtrów
      * @return QueryInvoicesReponse
@@ -772,6 +762,14 @@ public interface KSeFClient {
      * @throws ApiException
      */
     void changeContextLimitTest(ChangeContextLimitRequest changeContextLimitRequest, String accessToken) throws ApiException;
+
+    /**
+     * Ustawia w bieżącym kontekście wartości limitów api zgodne z profilem produkcyjnym. Dostępny tylko na środowisku TE.
+     *
+     * @param accessToken
+     * @throws ApiException
+     */
+    void restoreProductionRateLimitsAsync(String accessToken) throws ApiException;
 
     /**
      * Zmienia wartości aktualnie obowiązujących limitów certyfikatów dla bieżącego podmiotu. Tylko na środowiskach testowych.

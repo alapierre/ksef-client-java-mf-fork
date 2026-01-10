@@ -12,6 +12,7 @@ import pl.akmf.ksef.sdk.api.builders.batch.OpenBatchSessionRequestBuilder;
 import pl.akmf.ksef.sdk.client.interfaces.CryptographyService;
 import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.UpoVersion;
 import pl.akmf.ksef.sdk.client.model.session.*;
 import pl.akmf.ksef.sdk.client.model.session.batch.*;
 
@@ -160,7 +161,7 @@ public class BatchHelper {
                                               FormCode formCode) throws ApiException {
 
         val batchRequest = prepareRequest(result, formCode);
-        var session = client.openBatchSession(batchRequest, authToken);
+        var session = client.openBatchSession(batchRequest, UpoVersion.UPO_4_3, authToken);
 
         List<PackagePartSignatureInitResponseType> uploadInstructions = session.getPartUploadRequests();
         List<String> errors = new ArrayList<>();

@@ -6,12 +6,15 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ApiResponse;
 import pl.akmf.ksef.sdk.client.model.ExceptionResponse;
+import pl.akmf.ksef.sdk.client.model.UpoVersion;
 import pl.akmf.ksef.sdk.client.model.auth.*;
 import pl.akmf.ksef.sdk.client.model.certificate.*;
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
@@ -54,6 +57,7 @@ import static pl.akmf.ksef.sdk.api.Url.*;
 import static pl.akmf.ksef.sdk.client.Headers.*;
 import static pl.akmf.ksef.sdk.client.Parameter.*;
 
+@Slf4j
 public class DefaultKsefClient implements KSeFClient {
     private static final String GET = "GET";
     private static final String POST = "POST";
@@ -63,6 +67,7 @@ public class DefaultKsefClient implements KSeFClient {
 
     private final HttpClient apiClient;
     private final String baseURl;
+    private final String suffixURl;
     private final Duration timeout;
     private final Map<String, String> defaultHeaders;
 
@@ -78,6 +83,7 @@ public class DefaultKsefClient implements KSeFClient {
         this.defaultHeaders = ksefApiProperties.getDefaultHeaders();
         this.timeout = ksefApiProperties.getRequestTimeout();
         this.baseURl = ksefApiProperties.getBaseUri();
+        this.suffixURl = ksefApiProperties.getSuffixUri();
         this.objectMapper = objectMapper;
     }
 
@@ -123,24 +129,27 @@ public class DefaultKsefClient implements KSeFClient {
 
     /**
      * Otwarcie sesji wsadowej
-     * Inicjalizacja wysyłki wsadowej paczki faktur.
+     * Otwiera sesję do wysyłki wsadowej faktur.
      *
-     * @param openBatchSessionRequest (optional)
-     * @return ApiResponse&lt;OpenBatchSessionResponse&gt;
-     * @throws ApiException if fails to make API call
+     * @param openBatchSessionRequest - OpenBatchSessionRequest - schemat wysyłanych faktur, informacje o paczce faktur oraz informacje o kluczu używanym do szyfrowania.
+     * @param upoVersion              - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
+     * @return OpenBatchSessionResponse
+     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
+     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
     @Override
-    public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest openBatchSessionRequest,
-                                                     String accessToken) throws ApiException {
+    public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest openBatchSessionRequest, UpoVersion upoVersion, String accessToken) throws ApiException {
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
         headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
+        headers.put(X_KSEF_FEATURE, upoVersion.value());
 
         HttpResponse<byte[]> response = post(BATCH_SESSION_OPEN.getUrl(), openBatchSessionRequest, headers);
 
         return getResponse(response, CREATED, BATCH_SESSION_OPEN, OpenBatchSessionResponse.class);
     }
+
 
     /**
      * Zamknięcie sesji wsadowej
@@ -233,15 +242,17 @@ public class DefaultKsefClient implements KSeFClient {
      * Inicjalizacja wysyłki interaktywnej faktur.
      *
      * @param openOnlineSessionRequest (optional)
+     * @param upoVersion               - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
      * @return ApiResponse&lt;OpenOnlineSessionResponse&gt;
      * @throws ApiException if fails to make API call
      */
     @Override
-    public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest openOnlineSessionRequest, String accessToken) throws ApiException {
+    public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest openOnlineSessionRequest, UpoVersion upoVersion, String accessToken) throws ApiException {
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
         headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
+        headers.put(X_KSEF_FEATURE, upoVersion.value());
 
         HttpResponse<byte[]> response = post(SESSION_OPEN.getUrl(), openOnlineSessionRequest, headers);
 
@@ -865,36 +876,6 @@ public class DefaultKsefClient implements KSeFClient {
     }
 
     /**
-     * Pobranie listy metadanych faktur
-     * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania. Wymagane uprawnienia: `InvoiceRead`.",
-     *
-     * @param pageOffset          Indeks pierwszej strony wyników (domyślnie 0). (optional)
-     * @param pageSize            Rozmiar strony wyników(domyślnie 10). (optional)
-     * @param invoiceQueryFilters Zestaw filtrów dla wyszukiwania metadanych. (optional)
-     * @return ApiResponse&lt;QueryInvoicesReponse&gt;
-     * @throws ApiException if fails to make API call
-     */
-    @Override
-    public QueryInvoiceMetadataResponse queryInvoiceMetadata(Integer pageOffset,
-                                                             Integer pageSize,
-                                                             InvoiceQueryFilters invoiceQueryFilters,
-                                                             String accessToken) throws ApiException {
-        HashMap<String, String> params = new HashMap<>();
-        params.put(PAGE_SIZE, String.valueOf(pageSize));
-        params.put(PAGE_OFFSET, String.valueOf(pageOffset));
-        String uri = buildUrlWithParams(INVOICE_QUERY_METADATA.getUrl(), params);
-
-        Map<String, String> headers = new HashMap<>();
-        headers.put(AUTHORIZATION, BEARER + accessToken);
-        headers.put(CONTENT_TYPE, APPLICATION_JSON);
-        headers.put(ACCEPT, APPLICATION_JSON);
-
-        HttpResponse<byte[]> response = post(uri, invoiceQueryFilters, headers);
-
-        return getResponse(response, OK, INVOICE_QUERY_METADATA, QueryInvoiceMetadataResponse.class);
-    }
-
-    /**
      * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania.
      *
      * @param pageOffset          - Index strony wyników (domyślnie 0)
@@ -1425,6 +1406,24 @@ public class DefaultKsefClient implements KSeFClient {
     }
 
     /**
+     * Ustawia w bieżącym kontekście wartości limitów api zgodne z profilem produkcyjnym. Dostępny tylko na środowisku TE.
+     *
+     * @param accessToken
+     * @throws ApiException
+     */
+    @Override
+    public void restoreProductionRateLimitsAsync(String accessToken) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+
+        String url = LIMIT_CONTEXT_SET_PRODUCTION.getUrl();
+        HttpResponse<byte[]> response = post(url, null, headers);
+
+        validResponse(response, OK, LIMIT_CONTEXT_SET_PRODUCTION);
+    }
+
+    /**
      * Udostępnione w nabliższym czasie, aktualnie wyłączone
      * Zmienia wartości aktualnie obowiązujących limitów certyfikatów dla bieżącego podmiotu. Tylko na środowiskach testowych.
      *
@@ -1859,7 +1858,10 @@ public class DefaultKsefClient implements KSeFClient {
         Map<String, String> headers = new HashMap<>();
 
         headers.put(ACCEPT, APPLICATION_JSON);
-        HttpResponse<byte[]> response = get(SECURITY_PUBLIC_KEY_CERTIFICATE.getUrl(), headers);
+        val url = SECURITY_PUBLIC_KEY_CERTIFICATE.getUrl();
+
+        log.debug("Retrieving public key certificate from {}", url);
+        HttpResponse<byte[]> response = get(url, headers);
 
         validResponse(response, OK, SECURITY_PUBLIC_KEY_CERTIFICATE);
 
@@ -1897,7 +1899,7 @@ public class DefaultKsefClient implements KSeFClient {
 
     private HttpRequest buildRequest(String uri, String method, byte[] body, Map<String, String> additionalHeaders) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(baseURl + uri))
+                .uri(buildUri(baseURl, suffixURl, uri))
                 .timeout(timeout);
 
         defaultHeaders.forEach(builder::header);
@@ -1925,7 +1927,7 @@ public class DefaultKsefClient implements KSeFClient {
 
     private HttpRequest buildRequest(String uri, String method, Object body, Map<String, String> additionalHeaders) throws JsonProcessingException {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(baseURl + uri))
+                .uri(buildUri(baseURl, suffixURl, uri))
                 .timeout(timeout);
 
         defaultHeaders.forEach(builder::header);
@@ -2104,13 +2106,27 @@ public class DefaultKsefClient implements KSeFClient {
                                Url operation) throws ApiException {
         try {
             if (!isValidResponse(response, expectedStatus)) {
-                ExceptionResponse exception = response.body() == null ? null :
-                        objectMapper.readValue(response.body(), ExceptionResponse.class);
+                ExceptionResponse exception = null;
+
+                String contentType = response.headers()
+                        .firstValue(CONTENT_TYPE)
+                        .orElse("")
+                        .toLowerCase();
+
+                if (contentType.contains(APPLICATION_JSON)) {
+                    exception = response.body() == null ? null :
+                            objectMapper.readValue(response.body(), ExceptionResponse.class);
+                }
                 String message = formatExceptionMessage(operation.getOperationId(), response.statusCode(), response.body());
                 throw new ApiException(response.statusCode(), message, response.headers(), exception);
             }
         } catch (IOException e) {
             throw new ApiException(e);
         }
+    }
+
+    private URI buildUri(String baseUrl, String suffix, String url) {
+        URI urlWithSuffix = URI.create(baseUrl + "/").resolve(suffix);
+        return URI.create(urlWithSuffix + "/").resolve(url);
     }
 }

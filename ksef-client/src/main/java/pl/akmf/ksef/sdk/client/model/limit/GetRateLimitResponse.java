@@ -10,8 +10,9 @@ public class GetRateLimitResponse {
     private SessionMiscRateLimits sessionMisc;
     private InvoiceMetadataRateLimit invoiceMetadata;
     private InvoiceExportRateLimit invoiceExport;
+    private InvoiceExportStatusRateLimit invoiceStatusExport;
     private InvoiceDownloadRateLimit invoiceDownload;
-    private OtherRateLimit otherRateLimit;
+    private OtherRateLimit other;
 
     public GetRateLimitResponse() {
 
@@ -89,6 +90,14 @@ public class GetRateLimitResponse {
         this.invoiceExport = invoiceExport;
     }
 
+    public InvoiceExportStatusRateLimit getInvoiceStatusExport() {
+        return invoiceStatusExport;
+    }
+
+    public void setInvoiceStatusExport(InvoiceExportStatusRateLimit invoiceStatusExport) {
+        this.invoiceStatusExport = invoiceStatusExport;
+    }
+
     public InvoiceDownloadRateLimit getInvoiceDownload() {
         return invoiceDownload;
     }
@@ -97,11 +106,11 @@ public class GetRateLimitResponse {
         this.invoiceDownload = invoiceDownload;
     }
 
-    public OtherRateLimit getOtherRateLimit() {
-        return otherRateLimit;
+    public OtherRateLimit getOther() {
+        return other;
     }
 
-    public void setOtherRateLimit(OtherRateLimit otherRateLimit) {
-        this.otherRateLimit = otherRateLimit;
+    public void setOther(OtherRateLimit other) {
+        this.other = other;
     }
 }

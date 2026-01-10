@@ -6,9 +6,7 @@ public class ApiException extends Exception {
     private final int code;
     private final transient HttpHeaders responseHeaders;
     private final transient ExceptionResponse exceptionResponse;
-    @Deprecated
-    private String responseBody;
-    
+
     public ApiException(int code, String message) {
         super(message);
          this.code = code;
@@ -47,10 +45,5 @@ public class ApiException extends Exception {
 
     public HttpHeaders getResponseHeaders() {
         return responseHeaders;
-    }
-
-    @Deprecated
-    public String getResponseBody(){
-        return responseBody;
     }
 }

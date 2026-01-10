@@ -170,6 +170,16 @@ public interface CryptographyService {
     PrivateKey parseEcdsaPrivateKeyFromPem(byte[] privateKey) throws SystemKSeFSDKException;
 
     /**
+     * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w Ecdsa)
+     *
+     * @param pemBytes
+     * @param password
+     * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w Ecdsa)
+     * @throws SystemKSeFSDKException
+     */
+    PrivateKey parseEncryptedEcdsaPrivateKeyFromPem(byte[] pemBytes, char[] password);
+
+    /**
      * Zwraca certyfikat w formacie X509Certificate na podstawie tablicy byte zawierającej certyfikat
      *
      * @param certBytes
