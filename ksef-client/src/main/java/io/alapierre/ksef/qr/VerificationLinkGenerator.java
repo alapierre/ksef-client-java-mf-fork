@@ -29,7 +29,7 @@ public final class VerificationLinkGenerator {
 
     /**
      * Builds a KSeF verification link (CODE I) according to the specification:
-     * https://{env}/client-app/invoice/{NIP}/{DD-MM-YYYY}/{SHA256(xml) in Base64URL without padding}
+     * https://{env}/invoice/{NIP}/{DD-MM-YYYY}/{SHA256(xml) in Base64URL without padding}
      *
      * @param environment  the environment (must return the base URL, e.g. <a href="https://ksef-test.mf.gov.pl">...</a>)
      * @param nip          the seller’s NIP (10 digits; all non-digit characters will be removed)
@@ -41,11 +41,11 @@ public final class VerificationLinkGenerator {
                                                   String nip,
                                                   LocalDate issueDate,
                                                   byte[] invoiceXml) {
-        String base = trimTrailingSlash(environment.getUrl());
+        String base = trimTrailingSlash(environment.getQrBaseUrl());
         String normalizedNip = normalizeAndValidateNip(nip);
         String date = issueDate.format(KSEF_DATE);
         String hash = CryptoUtils.computeInvoiceHashBase64Url(invoiceXml);
-        return String.format("%s/client-app/invoice/%s/%s/%s", base, normalizedNip, date, hash);
+        return String.format("%s/invoice/%s/%s/%s", base, normalizedNip, date, hash);
     }
 
 
@@ -54,7 +54,7 @@ public final class VerificationLinkGenerator {
     /**
      * Builds a KSeF certificate verification link (CODE II) and signs the path using either RSA-PSS or ECDSA.
      * Signature input is the URL path without protocol and trailing slash, e.g.:
-     *   ksef-test.mf.gov.pl/client-app/certificate/Nip/1111111111/1111111111/01F20A5D352AE590/{hash}
+     *   ksef-test.mf.gov.pl/certificate/Nip/1111111111/1111111111/01F20A5D352AE590/{hash}
      *
      * @param environment base URL (e.g. <a href="https://ksef-test.mf.gov.pl">...</a>)
      * @param ctxType     context identifier type (Nip, InternalId, NipVatUe, PeppolId)
@@ -74,10 +74,10 @@ public final class VerificationLinkGenerator {
                                                              byte[] invoiceHash) {
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHash);
 
-        String baseUrl = trimTrailingSlash(environment.getUrl());
+        String baseUrl = trimTrailingSlash(environment.getQrBaseUrl());
         String normalizedNip = normalizeAndValidateNip(sellerNip);
 
-        String pathToSign = String.format("%s/client-app/certificate/%s/%s/%s/%s/%s",
+        String pathToSign = String.format("%s/certificate/%s/%s/%s/%s/%s",
                         baseUrl,
                         ctxType.getValue(),
                         ctxValue,
@@ -87,7 +87,7 @@ public final class VerificationLinkGenerator {
                 .replace("https://", "");
         String signedHash = computeUrlEncodedSignedHash(pathToSign, privateKey);
 
-        return String.format("%s/client-app/certificate/%s/%s/%s/%s/%s/%s",
+        return String.format("%s/certificate/%s/%s/%s/%s/%s/%s",
                 baseUrl,
                 ctxType.getValue(),
                 ctxValue,

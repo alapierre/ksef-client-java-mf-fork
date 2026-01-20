@@ -11,7 +11,6 @@ import pl.akmf.ksef.sdk.client.model.qrcode.ContextIdentifierType;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.nio.file.Path;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -64,7 +63,7 @@ public class KeysTest {
     static class DefaultKsefApiProperties extends KsefApiProperties {
         @Override
         public String getBaseUri() {
-            return Environment.TEST.getUrl();
+            return Environment.TEST.getApiBaseUrl();
         }
 
         @Override
