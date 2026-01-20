@@ -13,7 +13,7 @@ on:
         type: boolean
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   release:
@@ -70,4 +70,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew -
+          ./gradlew --no-daemon --stacktrace jreleaserConfig
+
+      - name: JReleaser deploy to Maven Central
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            ./gradlew --no-daemon --stacktrace jreleaserDeploy --dryrun
+          else
+            ./gradlew --no-daemon --stacktrace jreleaserDeploy
+          fi
+
+      - name: Create GitHub Release (after Maven Central)
+        if: ${{ inputs.dry_run != true }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon --stacktrace jreleaserRelease
