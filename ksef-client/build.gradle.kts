@@ -165,17 +165,23 @@ publishing {
 }
 
 signing {
+    // --- CI: in-memory PGP key (GitHub Secrets) ---
+    val ciKey = System.getenv("SIGNING_KEY")
+    val ciPassword = System.getenv("SIGNING_PASSWORD")
 
-    val keyId = System.getenv("SIGNING_KEY_ID") ?: findProperty("signing.keyId")?.toString()
-    val password = System.getenv("SIGNING_PASSWORD") ?: findProperty("signing.password")?.toString()
+    if (!ciKey.isNullOrBlank() && !ciPassword.isNullOrBlank()) {
+        useInMemoryPgpKeys(ciKey, ciPassword)
+    } else {
+        val keyId = System.getenv("SIGNING_KEY_ID") ?: findProperty("signing.keyId")?.toString()
+        val password = System.getenv("SIGNING_PASSWORD") ?: findProperty("signing.password")?.toString()
 
-    if (keyId != null && password != null) {
-        extra["signing.keyId"] = keyId
-        extra["signing.password"] = password
+        if (keyId != null && password != null) {
+            extra["signing.keyId"] = keyId
+            extra["signing.password"] = password
+        }
+        useGpgCmd()
     }
 
-
-    useGpgCmd()
     sign(publishing.publications["maven"])
 }
 
