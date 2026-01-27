@@ -38,9 +38,9 @@ public class DefaultVerificationLinkService implements VerificationLinkService {
         String date = issueDate.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
         byte[] invoiceHashBytes = Base64.getDecoder().decode(invoiceHash);
         String invoiceHashUrlEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(invoiceHashBytes);
-        String apiPath = ksefApiProperties.getBaseUri() + "/" + CLIENT_APP;
+        String qrAppUrl = ksefApiProperties.getQrUri();
 
-        return String.format("%s/invoice/%s/%s/%s", apiPath, nip, date, invoiceHashUrlEncoded);
+        return String.format("%s/invoice/%s/%s/%s", qrAppUrl, nip, date, invoiceHashUrlEncoded);
     }
 
     @Override
