@@ -9,3 +9,9 @@ export JRELEASER_MAVENCENTRAL_TOKEN=...
 ./gradlew jreleaserConfig
 ./gradlew jreleaserDeploy
 ````
+
+Lokalny build wersji:
+
+````shell
+./gradlew :ksef-client:publishMavenPublicationToStagingRepository -Pversion=2.3.3
+````
