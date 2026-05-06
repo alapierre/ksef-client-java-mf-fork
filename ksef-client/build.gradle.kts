@@ -168,9 +168,10 @@ signing {
     // --- CI: in-memory PGP key (GitHub Secrets) ---
     val ciKey = System.getenv("SIGNING_KEY")
     val ciPassword = System.getenv("SIGNING_PASSWORD")
+    val ciKeyId = System.getenv("SIGNING_KEY_ID")
 
     if (!ciKey.isNullOrBlank() && !ciPassword.isNullOrBlank()) {
-        useInMemoryPgpKeys(ciKey, ciPassword)
+        useInMemoryPgpKeys(ciKeyId, ciKey, ciPassword)
     } else {
         val keyId = System.getenv("SIGNING_KEY_ID") ?: findProperty("signing.keyId")?.toString()
         val password = System.getenv("SIGNING_PASSWORD") ?: findProperty("signing.password")?.toString()

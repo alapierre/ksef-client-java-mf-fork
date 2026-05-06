@@ -49,14 +49,23 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "11"
+          java-version: "21"
           cache: gradle
 
-      - name: Build (tests optional)
+#      - name: Build (tests optional)
+#        shell: bash
+#        run: |
+#          set -euo pipefail
+#          ./gradlew --no-daemon --stacktrace clean build -x test
+
+      - name: Check signing env
         shell: bash
         run: |
-          set -euo pipefail
-          ./gradlew --no-daemon --stacktrace clean build -x test
+          test -n "$SIGNING_KEY" || (echo "SIGNING_KEY is empty" && exit 1)
+          test -n "$SIGNING_PASSWORD" || (echo "SIGNING_PASSWORD is empty" && exit 1)
+          test -n "$SIGNING_KEY_ID" || (echo "SIGNING_KEY_ID is empty" && exit 1)
+          echo "$SIGNING_KEY" | grep -q "BEGIN PGP PRIVATE KEY BLOCK" || \
+            (echo "SIGNING_KEY is not a private PGP key block" && exit 1)
 
       - name: Publish ksef-client to staging repository dir
         shell: bash
