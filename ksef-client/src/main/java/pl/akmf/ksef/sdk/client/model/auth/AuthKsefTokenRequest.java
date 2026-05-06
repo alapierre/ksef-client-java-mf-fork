@@ -1,12 +1,16 @@
 package pl.akmf.ksef.sdk.client.model.auth;
 
-
 import java.util.List;
 
 public class AuthKsefTokenRequest {
     private String challenge;
     private ContextIdentifier contextIdentifier;
     private String encryptedToken;
+
+    // Identyfikator klucza publicznego użytego do zaszyfrowania tokenu KSeF.
+    // (skrót SHA-256 z DER, zakodowany w Base64).
+    // Pobierany z defaultCryptographyService.getKsefToken().getPublicKeyId()
+    private String publicKeyId;
     private IpAddressPolicy ipAddressPolicy;
 
     public AuthKsefTokenRequest() {
@@ -17,6 +21,14 @@ public class AuthKsefTokenRequest {
         this.challenge = challenge;
         this.contextIdentifier = contextIdentifier;
         this.encryptedToken = encryptedToken;
+        this.ipAddressPolicy = ipAddressPolicy;
+    }
+
+    public AuthKsefTokenRequest(String challenge, ContextIdentifier contextIdentifier, String encryptedToken, String publicKeyId, IpAddressPolicy ipAddressPolicy) {
+        this.challenge = challenge;
+        this.contextIdentifier = contextIdentifier;
+        this.encryptedToken = encryptedToken;
+        this.publicKeyId = publicKeyId;
         this.ipAddressPolicy = ipAddressPolicy;
     }
 
@@ -34,6 +46,14 @@ public class AuthKsefTokenRequest {
 
     public void setContextIdentifier(ContextIdentifier contextIdentifier) {
         this.contextIdentifier = contextIdentifier;
+    }
+
+    public String getPublicKeyId() {
+        return publicKeyId;
+    }
+
+    public void setPublicKeyId(String publicKeyId) {
+        this.publicKeyId = publicKeyId;
     }
 
     public String getEncryptedToken() {

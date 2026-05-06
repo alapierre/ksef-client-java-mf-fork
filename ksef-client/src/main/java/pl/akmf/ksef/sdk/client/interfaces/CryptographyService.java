@@ -2,6 +2,7 @@ package pl.akmf.ksef.sdk.client.interfaces;
 
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentsInfoResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CsrResult;
+import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
 import pl.akmf.ksef.sdk.client.model.session.FileMetadata;
 import pl.akmf.ksef.sdk.system.KsefIntegrationMode;
@@ -189,6 +190,14 @@ public interface CryptographyService {
     X509Certificate parseCertificateFromBytes(byte[] certBytes) throws CertificateException;
 
     /**
+     * Zwraca certyfikat w formacie X509Certificate na podstawie pem zawierającego certyfikat
+     *
+     * @param pem Zwraca certyfikat w formacie X509Certificate na podstawie pem zawierającego certyfikat
+     * @throws CertificateException
+     */
+    X509Certificate parseCertificate(String pem) throws CertificateException;
+
+    /**
      * Inicjuje pobranie certyfikat z API KSEF
      * <p>
      * Inicjuje pobranie certyfikat z API KSEF
@@ -209,4 +218,22 @@ public interface CryptographyService {
      * Zwraca powód przejścia w tryb OFFLINE
      */
     Exception getOfflineModeCause();
+
+    // Certyfikat używany do szyfrowania klucza symetrycznego w formacie PEM.
+    String getSymmetricKeyEncryptionPem();
+
+    // Certyfikat używany do szyfrowania tokenu KSeF w formacie PEM.
+    String getKsefTokenPem();
+
+    // Certyfikat używany do szyfrowania klucza symetrycznego w formie PublicKeyCertificate.
+    PublicKeyCertificate getSymmetricKeyEncryption();
+
+    // Certyfikat używany do szyfrowania tokenu KSeF w formie PublicKeyCertificate.
+    PublicKeyCertificate getKsefToken();
+
+    // Certyfikat używany do szyfrowania symetrycznego klucza AES.
+    X509Certificate getSymmetricKeyCertificate() throws CertificateException;
+
+    // Certyfikat używany do szyfrowania tokena KSeF.
+    X509Certificate getKsefTokenCertificate() throws CertificateException;
 }

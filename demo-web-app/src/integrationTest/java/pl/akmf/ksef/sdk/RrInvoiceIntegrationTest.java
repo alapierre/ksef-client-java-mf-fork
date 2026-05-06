@@ -4,6 +4,7 @@ import jakarta.xml.bind.JAXBException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import pl.akmf.ksef.sdk.api.builders.invoices.InvoicesAsyncQueryFiltersBuilder;
 import pl.akmf.ksef.sdk.api.builders.permission.entity.EntityAuthorizationPermissionsQueryRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.permission.proxy.GrantAuthorizationPermissionsRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.session.OpenOnlineSessionRequestBuilder;
@@ -11,6 +12,16 @@ import pl.akmf.ksef.sdk.api.builders.session.SendInvoiceOnlineSessionRequestBuil
 import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.UpoVersion;
+import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportFilters;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceFormType;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoicePackageMetadata;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoicePackagePart;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryDateRange;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryDateType;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQuerySubjectType;
 import pl.akmf.ksef.sdk.client.model.permission.OperationResponse;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionStatusInfo;
 import pl.akmf.ksef.sdk.client.model.permission.proxy.GrantAuthorizationPermissionsRequest;
@@ -23,9 +34,11 @@ import pl.akmf.ksef.sdk.client.model.permission.search.InvoicePermissionType;
 import pl.akmf.ksef.sdk.client.model.permission.search.QueryEntityAuthorizationPermissionsResponse;
 import pl.akmf.ksef.sdk.client.model.permission.search.QueryType;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
+import pl.akmf.ksef.sdk.client.model.session.EncryptionInfo;
 import pl.akmf.ksef.sdk.client.model.session.FileMetadata;
 import pl.akmf.ksef.sdk.client.model.session.FormCode;
 import pl.akmf.ksef.sdk.client.model.session.SchemaVersion;
+import pl.akmf.ksef.sdk.client.model.session.SessionInvoiceStatusResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionStatusResponse;
 import pl.akmf.ksef.sdk.client.model.session.SessionValue;
 import pl.akmf.ksef.sdk.client.model.session.SystemCode;
@@ -37,13 +50,17 @@ import pl.akmf.ksef.sdk.client.model.testdata.SubjectTypeTestData;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataSubjectCreateRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataSubjectRemoveRequest;
 import pl.akmf.ksef.sdk.configuration.BaseIntegrationTest;
+import pl.akmf.ksef.sdk.system.FilesUtil;
 import pl.akmf.ksef.sdk.util.IdentifierGeneratorUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -71,9 +88,10 @@ class RrInvoiceIntegrationTest extends BaseIntegrationTest {
     // 3. Otwarcie sesji online przez authorized z kodem systemu FA_RR
     // 4. Wysłanie faktury FA-RR przez authorized w imieniu grantor
     // 5. Weryfikacja przetworzenia faktury
-    // 6. Zamknięcie sesji i wyszukanie nadanego uprawnienia
-    // 7. Odebranie uprawnienia RRInvoicing
-    // 8. Usunięcie podmiotów testowych
+    // 6. Pobranie paczki faktur
+    // 7. Zamknięcie sesji i wyszukanie nadanego uprawnienia
+    // 8. Odebranie uprawnienia RRInvoicing
+    // 9. Usunięcie podmiotów testowych
 
     @Test
     void sendingFaRrInvoiceWithGrantPermission() throws JAXBException, IOException, ApiException {
@@ -108,13 +126,22 @@ class RrInvoiceIntegrationTest extends BaseIntegrationTest {
         String sessionReferenceNumber = openOnlineSession(encryptionData, SystemCode.FA_RR, SchemaVersion.VERSION_1_1E, SessionValue.FA_RR, authorizedAccessToken);
 
         // Wysłanie faktury FA-RR
-        sendRrInvoice(sessionReferenceNumber, encryptionData, grantorNip, authorizedNip, templateFileName, authorizedAccessToken);
+        String invoiceReferenceNumber = sendRrInvoice(sessionReferenceNumber, encryptionData, grantorNip, authorizedNip, templateFileName, authorizedAccessToken);
 
         // Weryfikacja przetworzenia faktury
         await().pollDelay(Duration.ZERO)
                 .atMost(30, SECONDS)
                 .pollInterval(5, SECONDS)
                 .until(() -> isInvoicesInSessionProcessed(sessionReferenceNumber, authorizedAccessToken));
+
+        await().pollDelay(Duration.ZERO)
+                .atMost(50, SECONDS)
+                .pollInterval(5, SECONDS)
+                .until(() -> waitForStoringInvoice(sessionReferenceNumber, invoiceReferenceNumber, authorizedAccessToken));
+
+        // Pobranie paczki faktur
+        InvoiceExportStatus invoiceExportStatus = initExportAndFetchAsyncInvoiceExportStatus(authorizedAccessToken, encryptionData);
+        downloadAndProcessPackageAsync(invoiceExportStatus, 1, encryptionData);
 
         // Zamknięcie sesji online
         closeSession(sessionReferenceNumber, authorizedAccessToken);
@@ -215,6 +242,16 @@ class RrInvoiceIntegrationTest extends BaseIntegrationTest {
         }
     }
 
+    private boolean waitForStoringInvoice(String sessionReferenceNumber, String invoiceReferenceNumber, String accessToken) {
+        try {
+            SessionInvoiceStatusResponse statusResponse = ksefClient.getSessionInvoiceStatus(sessionReferenceNumber, invoiceReferenceNumber, accessToken);
+            return Objects.nonNull(statusResponse.getPermanentStorageDate());
+        } catch (Exception e) {
+            Assertions.fail(e.getMessage());
+        }
+        return false;
+    }
+
     private void closeSession(String sessionReferenceNumber, String accessToken) throws ApiException {
         ksefClient.closeOnlineSession(sessionReferenceNumber, accessToken);
     }
@@ -260,4 +297,66 @@ class RrInvoiceIntegrationTest extends BaseIntegrationTest {
                 .map(EntityAuthorizationGrant::getId)
                 .toList();
     }
+
+    private InvoiceExportStatus initExportAndFetchAsyncInvoiceExportStatus(String accessToken, EncryptionData encryptionData) throws ApiException {
+        InvoiceExportFilters filters = new InvoicesAsyncQueryFiltersBuilder()
+                .withSubjectType(InvoiceQuerySubjectType.SUBJECT2)
+                .withDateRange(
+                        new InvoiceQueryDateRange(InvoiceQueryDateType.INVOICING, OffsetDateTime.now().minusDays(1), OffsetDateTime.now().plusDays(1)))
+                .withFormType(InvoiceFormType.FA_RR)
+                .build();
+
+        InvoiceExportRequest request = new InvoiceExportRequest(
+                new EncryptionInfo(encryptionData.encryptionInfo().getEncryptedSymmetricKey(),
+                        encryptionData.encryptionInfo().getInitializationVector()), filters);
+
+        InitAsyncInvoicesQueryResponse response = ksefClient.initAsyncQueryInvoice(request, accessToken);
+
+        await().pollDelay(Duration.ZERO)
+                .atMost(45, SECONDS)
+                .pollInterval(1, SECONDS)
+                .until(() -> isInvoiceFetched(response.getReferenceNumber(), accessToken));
+
+        return ksefClient.checkStatusAsyncQueryInvoice(response.getReferenceNumber(), accessToken);
+    }
+
+    private Boolean isInvoiceFetched(String referenceNumber, String accessToken) throws ApiException {
+        InvoiceExportStatus response = ksefClient.checkStatusAsyncQueryInvoice(referenceNumber, accessToken);
+
+        Assertions.assertNotNull(response);
+        return response.getStatus().getCode().equals(200);
+    }
+
+    private void downloadAndProcessPackageAsync(InvoiceExportStatus invoiceExportStatus, int expectedInvoiceSize, EncryptionData encryptionData) throws IOException {
+        Map<String, String> downloadedFiles = downloadPackage(invoiceExportStatus, encryptionData);
+
+        String metadataJson = downloadedFiles.keySet()
+                .stream()
+                .filter(fileName -> fileName.endsWith(".json"))
+                .findFirst()
+                .map(downloadedFiles::get)
+                .orElse(null);
+        InvoicePackageMetadata invoicePackageMetadata = objectMapper.readValue(metadataJson, InvoicePackageMetadata.class);
+
+        List<String> invoices = downloadedFiles.keySet()
+                .stream()
+                .filter(fileName -> fileName.endsWith(".xml"))
+                .toList();
+
+        Assertions.assertEquals(expectedInvoiceSize, invoices.size());
+        Assertions.assertEquals(expectedInvoiceSize, invoicePackageMetadata.getInvoices().size());
+        Assertions.assertTrue(invoices.getFirst().contains(invoicePackageMetadata.getInvoices().getFirst().getKsefNumber()));
+    }
+
+    private Map<String, String> downloadPackage(InvoiceExportStatus invoiceExportStatus, EncryptionData encryptionData) throws IOException {
+        List<InvoicePackagePart> parts = invoiceExportStatus.getPackageParts().getParts();
+        byte[] mergedZip = FilesUtil.mergeZipParts(
+                encryptionData,
+                parts,
+                part -> ksefClient.downloadPackagePart(part),
+                (encryptedPackagePart, key, iv) -> defaultCryptographyService.decryptBytesWithAes256(encryptedPackagePart, key, iv)
+        );
+        return FilesUtil.unzip(mergedZip);
+    }
+
 }

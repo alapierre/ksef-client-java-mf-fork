@@ -363,7 +363,8 @@ class IncrementalInvoiceRetrieveIntegrationTest extends BaseIntegrationTest {
         return builder.endBatchFile()
                 .withEncryption(
                         encryptionData.encryptionInfo().getEncryptedSymmetricKey(),
-                        encryptionData.encryptionInfo().getInitializationVector()
+                        encryptionData.encryptionInfo().getInitializationVector(),
+                        encryptionData.encryptionInfo().getPublicKeyId()
                 )
                 .build();
     }

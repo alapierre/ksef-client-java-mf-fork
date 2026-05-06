@@ -87,6 +87,12 @@ public class OpenBatchSessionRequestBuilder {
         return this;
     }
 
+    public OpenBatchSessionRequestBuilder withEncryption(String encryptedSymmetricKey, String initializationVector, String publicKeyId) {
+        withEncryption(encryptedSymmetricKey, initializationVector);
+        this.encryption.setPublicKeyId(publicKeyId);
+        return this;
+    }
+
     public OpenBatchSessionRequest build() {
         if (formCode == null) throw new IllegalStateException("FormCode is required.");
         if (isNullOrBlank(encryption.getEncryptedSymmetricKey()) || isNullOrBlank(encryption.getInitializationVector())) {

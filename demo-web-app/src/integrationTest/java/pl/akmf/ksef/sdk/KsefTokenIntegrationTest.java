@@ -132,6 +132,7 @@ class KsefTokenIntegrationTest extends BaseIntegrationTest {
                 .withChallenge(challenge.getChallenge())
                 .withContextIdentifier(new ContextIdentifier(ContextIdentifier.IdentifierType.NIP, contextNip))
                 .withEncryptedToken(Base64.getEncoder().encodeToString(encryptedToken))
+                .withPublicKeyId(defaultCryptographyService.getKsefToken().getPublicKeyId())
                 .build();
 
         SignatureResponse response = ksefClient.authenticateByKSeFToken(authTokenRequest);
