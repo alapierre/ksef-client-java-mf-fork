@@ -2135,3 +2135,43 @@
 | 🔧 zmienione | 20            |
 | ➖ usunięte  | 0             |
 
+
+# Changelog zmian - `## 3.0.25 (2026-05-06)`- `API: 2.5.0`
+
+## 1. ksef-client
+
+### 1.1 api.client.model
+- **auth/AuthKsefTokenRequest.java**: 🔧 dodanie pola `String publicKeyId`
+- **certificate/publickey/PublicKeyCertificate.java**: 🔧 dodanie pola `String publicKeyId` i `String certificateId`
+- **invoice/InvoiceFormType.java**: 🔧 dodanie enuma `FA_RR("FA_RR")` i oznaczenie jako deprcated `RR("RR")` 
+- **session/EncryptionInfo.java**: 🔧 dodanie pola `String publicKeyId`
+- **session/SessionValue.java**: 🔧 oznaczenie enuma `RR("RR")` jako deprecated
+
+### 1.2 api.client.interfaces
+- **CryptographyService.java**: 🔧 dodanie metody `X509Certificate parseCertificate(String pem)`
+
+### 1.3 api.builders
+- **auth/AuthKsefTokenRequestBuilder.java**: 🔧 - dodanie pola `String publicKeyId`
+- **batch/OpenBatchSessionRequestBuilder.java**: 🔧 - rozszerzenie metody `withEncryption` o przekazanie `String publicKeyId`
+
+### 1.4 api.services
+- **DefaultCryptographyService.java**: 🔧 - dodanie metody `X509Certificate parseCertificate(String pem)`; aktualizacja pobierania kluczy publicznych (rotacja kluczy) w `initCryptographyService()`
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BatchIntegrationTest.java**: 🔧 rozbudowa requestu `OpenBatchSessionRequest` o przekazanie `publicKeyId` w `encryptionData`
+- **DuplicateInvoiceIntegrationTest.java**: 🔧 rozbudowa requestu `OpenBatchSessionRequest` o przekazanie `publicKeyId` w `encryptionData`
+- **IncrementalInvoiceRetrieveIntegrationTest.java**: 🔧 rozbudowa requestu `OpenBatchSessionRequest` o przekazanie `publicKeyId` w `encryptionData`
+- **RrInvoiceIntegrationTest.java**: 🔧 rozbudowa jednego z testów o pobranie paczki faktur przy filtrowaniu po `InvoiceFormType.FA_RR`
+- **CertificateRotationTest.java**: ➕ dodano test z symulacją rotacji certyfikatów
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 1             |
+| 🔧 zmienione | 13            |
+| ➖ usunięte  | 0             |
+

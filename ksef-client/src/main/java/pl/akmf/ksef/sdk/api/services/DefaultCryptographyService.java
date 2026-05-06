@@ -74,9 +74,11 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 public class DefaultCryptographyService implements CryptographyService {
     private static final String AES_CBC_PKCS_5_PADDING = "AES/CBC/PKCS5Padding";
@@ -94,12 +96,15 @@ public class DefaultCryptographyService implements CryptographyService {
     private static final String SECP_256_R_1 = "secp256r1";
     private static final int GCM_TAG_LENGTH = 128;
     private static final int GCM_NONCE_LENGTH = 12;
-    private static final String BEGIN_CERTIFICATE = "-----BEGIN CERTIFICATE-----\n";
-    private static final String END_CERTIFICATE = "\n-----END CERTIFICATE-----";
+    private static final String BEGIN_CERTIFICATE = "-----BEGIN CERTIFICATE-----";
+    private static final String END_CERTIFICATE = "-----END CERTIFICATE-----";
+    private static final String END_LINE = "\n";
     private static final String X_509 = "X.509";
     private static final Logger log = LoggerFactory.getLogger(DefaultCryptographyService.class);
     private String symmetricKeyEncryptionPem;
+    private PublicKeyCertificate symmetricKeyEncryption;
     private String ksefTokenPem;
+    private PublicKeyCertificate ksefToken;
     private final KSeFClient ksefClient;
     private String secureRandomAlgorithm = null;
     private KsefIntegrationMode ksefIntegrationMode = KsefIntegrationMode.OFFLINE;
@@ -133,6 +138,7 @@ public class DefaultCryptographyService implements CryptographyService {
             EncryptionInfo encryptionInfo = new EncryptionInfo();
             encryptionInfo.setEncryptedSymmetricKey(encodedEncryptedKey);
             encryptionInfo.setInitializationVector(initializationVector);
+            encryptionInfo.setPublicKeyId(this.symmetricKeyEncryption.getPublicKeyId());
 
             return new EncryptionData(key, iv, encodedEncryptedKey, encryptionInfo);
         } catch (NoSuchAlgorithmException e) {
@@ -448,23 +454,46 @@ public class DefaultCryptographyService implements CryptographyService {
     }
 
     @Override
+    public X509Certificate parseCertificate(String pem) throws CertificateException {
+        String cleaned = pem
+                .replace(BEGIN_CERTIFICATE, "")
+                .replace(END_CERTIFICATE, "")
+                .replaceAll("\\s", "");
+
+        byte[] decoded = Base64.getDecoder().decode(cleaned);
+
+        CertificateFactory factory = CertificateFactory.getInstance(X_509);
+        return (X509Certificate) factory.generateCertificate(
+                new ByteArrayInputStream(decoded)
+        );
+    }
+
+    @Override
     public void initCryptographyService() {
         try {
             List<PublicKeyCertificate> publicKeyCertificates = ksefClient.retrievePublicKeyCertificate();
+            OffsetDateTime now = OffsetDateTime.now();
 
-            this.symmetricKeyEncryptionPem = publicKeyCertificates.stream()
+            this.symmetricKeyEncryption = publicKeyCertificates.stream()
                     .filter(c -> c.getUsage().contains(PublicKeyCertificateUsage.SYMMETRICKEYENCRYPTION))
-                    .findFirst()
+                    .filter(c -> (c.getValidFrom().isBefore(now) || c.getValidFrom().isEqual(now)) && now.isBefore(c.getValidTo()))
+                    .max(Comparator.comparing(PublicKeyCertificate::getValidFrom))
+                    .orElse(null);
+            this.symmetricKeyEncryptionPem = Optional.ofNullable(this.symmetricKeyEncryption)
                     .map(PublicKeyCertificate::getCertificate)
-                    .map(c -> BEGIN_CERTIFICATE + c + END_CERTIFICATE)
+                    .map(c -> BEGIN_CERTIFICATE + END_LINE + c + END_LINE + END_CERTIFICATE)
                     .orElse(null);
 
-            this.ksefTokenPem = publicKeyCertificates.stream()
+            this.ksefToken = publicKeyCertificates.stream()
                     .filter(c -> c.getUsage().contains(PublicKeyCertificateUsage.KSEFTOKENENCRYPTION))
-                    .min(Comparator.comparing(PublicKeyCertificate::getValidFrom))
-                    .map(PublicKeyCertificate::getCertificate)
-                    .map(c -> BEGIN_CERTIFICATE + c + END_CERTIFICATE)
+                    .filter(c -> (c.getValidFrom().isBefore(now) || c.getValidFrom().isEqual(now)) && now.isBefore(c.getValidTo()))
+                    .max(Comparator.comparing(PublicKeyCertificate::getValidFrom))
                     .orElse(null);
+            this.ksefTokenPem = Optional.ofNullable(this.ksefToken)
+                    .map(PublicKeyCertificate::getCertificate)
+                    .map(c -> BEGIN_CERTIFICATE + END_LINE + c + END_LINE + END_CERTIFICATE)
+                    .orElse(null);
+
             ksefIntegrationMode = KsefIntegrationMode.ONLINE;
             offlineModeCause = null;
         } catch (ApiException | SystemKSeFSDKException e) {
@@ -472,6 +501,48 @@ public class DefaultCryptographyService implements CryptographyService {
             offlineModeCause = e;
             log.error("Error with connection to KseF Api: {}", e.getMessage() + ". Library works in offline mode");
         }
+    }
+
+    // Certyfikat używany do szyfrowania klucza symetrycznego w formacie PEM.
+    @Override
+    public String getSymmetricKeyEncryptionPem() {
+        return symmetricKeyEncryptionPem;
+    }
+
+    // Certyfikat używany do szyfrowania tokenu KSeF w formacie PEM.
+    @Override
+    public String getKsefTokenPem() {
+        return ksefTokenPem;
+    }
+
+    // Certyfikat używany do szyfrowania klucza symetrycznego w formie PublicKeyCertificate.
+    @Override
+    public PublicKeyCertificate getSymmetricKeyEncryption() {
+        return symmetricKeyEncryption;
+    }
+
+    // Certyfikat używany do szyfrowania tokenu KSeF w formie PublicKeyCertificate.
+    @Override
+    public PublicKeyCertificate getKsefToken() {
+        return ksefToken;
+    }
+
+    // Certyfikat używany do szyfrowania symetrycznego klucza AES.
+    @Override
+    public X509Certificate getSymmetricKeyCertificate() throws CertificateException {
+        if (symmetricKeyEncryption == null || symmetricKeyEncryption.getCertificate() == null) {
+            return null;
+        }
+        return parseCertificate(symmetricKeyEncryption.getCertificate());
+    }
+
+    // Certyfikat używany do szyfrowania tokena KSeF.
+    @Override
+    public X509Certificate getKsefTokenCertificate() throws CertificateException {
+        if (ksefToken == null || ksefToken.getCertificate() == null) {
+            return null;
+        }
+        return parseCertificate(ksefToken.getCertificate());
     }
 
     @Override

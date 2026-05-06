@@ -7,7 +7,9 @@ public enum InvoiceFormType {
 
     FA("FA"),
     PEF("PEF"),
-    RR("RR");
+    @Deprecated
+    RR("RR"),
+    FA_RR("FA_RR");
 
     private final String value;
 

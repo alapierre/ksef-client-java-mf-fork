@@ -3,6 +3,7 @@ package pl.akmf.ksef.sdk.client.model.session;
 public class EncryptionInfo {
     private String encryptedSymmetricKey;
     private String initializationVector;
+    private String publicKeyId;
 
     public EncryptionInfo() {
     }
@@ -26,6 +27,14 @@ public class EncryptionInfo {
 
     public void setInitializationVector(String initializationVector) {
         this.initializationVector = initializationVector;
+    }
+
+    public String getPublicKeyId() {
+        return publicKeyId;
+    }
+
+    public void setPublicKeyId(String publicKeyId) {
+        this.publicKeyId = publicKeyId;
     }
 }
 
