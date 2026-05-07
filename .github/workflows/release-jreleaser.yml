@@ -89,12 +89,5 @@ jobs:
           if [[ "${{ inputs.dry_run }}" == "true" ]]; then
             ./gradlew --no-daemon --stacktrace -Pversion="${VERSION}" jreleaserDeploy --dryrun
           else
-            ./gradlew --no-daemon --stacktrace -Pversion="${VERSION}" jreleaserDeploy
+            ./gradlew --no-daemon --stacktrace -Pversion="${VERSION}" jreleaserFullRelease
           fi
-
-      - name: Create GitHub Release (after Maven Central)
-        if: ${{ inputs.dry_run != true }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./gradlew --no-daemon --stacktrace -Pversion="${VERSION}" jreleaserRelease
