@@ -80,16 +80,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew --no-daemon --stacktrace jreleaserConfig
+          ./gradlew --no-daemon --stacktrace -Pversion="${VERSION}" jreleaserConfig
 
       - name: JReleaser deploy to Maven Central
         shell: bash
         run: |
           set -euo pipefail
           if [[ "${{ inputs.dry_run }}" == "true" ]]; then
-            ./gradlew --no-daemon --stacktrace jreleaserDeploy --dryrun
+            ./gradlew --no-daemon --stacktrace -Pversion="${VERSION}" jreleaserDeploy --dryrun
           else
-            ./gradlew --no-daemon --stacktrace jreleaserDeploy
+            ./gradlew --no-daemon --stacktrace -Pversion="${VERSION}" jreleaserDeploy
           fi
 
       - name: Create GitHub Release (after Maven Central)
@@ -97,4 +97,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ./gradlew --no-daemon --stacktrace jreleaserRelease
+          ./gradlew --no-daemon --stacktrace -Pversion="${VERSION}" jreleaserRelease
