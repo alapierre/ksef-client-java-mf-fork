@@ -36,6 +36,7 @@ import pl.akmf.ksef.sdk.client.model.limit.ChangeSubjectCertificateLimitRequest;
 import pl.akmf.ksef.sdk.client.model.limit.GetContextLimitResponse;
 import pl.akmf.ksef.sdk.client.model.limit.GetRateLimitResponse;
 import pl.akmf.ksef.sdk.client.model.limit.GetSubjectLimitResponse;
+import pl.akmf.ksef.sdk.client.model.limit.SetRateLimitsRequest;
 import pl.akmf.ksef.sdk.client.model.permission.OperationResponse;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionAttachmentStatusResponse;
 import pl.akmf.ksef.sdk.client.model.permission.PermissionStatusInfo;
@@ -46,9 +47,11 @@ import pl.akmf.ksef.sdk.client.model.permission.indirect.GrantIndirectEntityPerm
 import pl.akmf.ksef.sdk.client.model.permission.person.GrantPersonPermissionsRequest;
 import pl.akmf.ksef.sdk.client.model.permission.proxy.GrantAuthorizationPermissionsRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.EntityAuthorizationPermissionsQueryRequest;
+import pl.akmf.ksef.sdk.client.model.permission.search.EntityPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.EuEntityPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.PersonPermissionsQueryRequest;
 import pl.akmf.ksef.sdk.client.model.permission.search.QueryEntityAuthorizationPermissionsResponse;
+import pl.akmf.ksef.sdk.client.model.permission.search.QueryEntityPermissionsResponse;
 import pl.akmf.ksef.sdk.client.model.permission.search.QueryEntityRolesResponse;
 import pl.akmf.ksef.sdk.client.model.permission.search.QueryEuEntityPermissionsResponse;
 import pl.akmf.ksef.sdk.client.model.permission.search.QueryPersonPermissionsResponse;
@@ -76,6 +79,7 @@ import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceOnlineSessionRequ
 import pl.akmf.ksef.sdk.client.model.session.online.SendInvoiceResponse;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataAttachmentRemoveRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataAttachmentRequest;
+import pl.akmf.ksef.sdk.client.model.testdata.TestDataContextIdentifier;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataPermissionRemoveRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataPermissionRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataPersonCreateRequest;
@@ -254,6 +258,18 @@ public interface KSeFClient {
     SignatureResponse submitAuthTokenRequest(String signedXml, boolean verifyCertificateChain) throws ApiException;
 
     /**
+     * Rozpoczyna operację uwierzytelniania za pomocą dokumentu XML podpisanego podpisem elektroniczny XAdES.
+     * Rozpoczyna proces uwierzytelnienia na podstawie podpisanego XML-a.
+     *
+     * @param signedXml              - Podpisany XML z żądaniem uwierzytelnienia.
+     * @param verifyCertificateChain - Flaga określająca, czy sprawdzić łańcuch certyfikatów. (Domyślnie false)
+     * @param enforceXadesCompliance - Flaga umożliwiająca wcześniejsze włączenie nowych wymagań walidacji XAdES na środowiskach DEMO i PRD poprzez nagłówek `X-KSeF-Feature: enforce-xades-compliance`.
+     * @return AuthenticationInitResponse
+     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
+     */
+    SignatureResponse submitAuthTokenRequest(String signedXml, boolean verifyCertificateChain, boolean enforceXadesCompliance) throws ApiException;
+
+    /**
      * Rozpoczyna operację uwierzytelniania z wykorzystaniem wcześniej wygenerowanego tokena KSeF.
      *
      * @param body AuthKsefTokenRequest
@@ -292,14 +308,6 @@ public interface KSeFClient {
      * @throws ApiException - W przypadku podania accessToken zamiast refreshToken. (403 Forbidden)
      */
     AuthenticationTokenRefreshResponse refreshAccessToken(String refreshToken) throws ApiException;
-
-    /**
-     * Unieważnia aktualny token autoryzacyjny przekazany w nagłówku żądania. Po unieważnieniu token nie może być używany do żadnych operacji.
-     *
-     * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
-     * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
-     */
-    void revokeAccessToken(String accessToken) throws ApiException;
 
     /**
      * Nadanie podmiotom uprawnień o charakterze upoważnień
@@ -378,6 +386,17 @@ public interface KSeFClient {
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
     QueryEntityRolesResponse searchEntityInvoiceRoles(int pageOffset, int pageSize, String accessToken) throws ApiException;
+
+    /**
+     * Wyszukiwanie uprawnień do obsługi faktur w bieżącym kontekście.
+     *
+     * @param request EntityPermissionsQueryRequest
+     * @param pageOffset
+     * @param pageSize
+     * @return QueryEntityPermissionsResponse
+     * @throws ApiException if fails to make API call
+     */
+    QueryEntityPermissionsResponse searchEntityInvoiceContext(EntityPermissionsQueryRequest request, int pageOffset, int pageSize, String accessToken) throws ApiException;
 
     /**
      * Pobranie listy uprawnień do obsługi faktur nadanych podmiotom.
@@ -770,6 +789,41 @@ public interface KSeFClient {
      * @throws ApiException
      */
     void restoreProductionRateLimitsAsync(String accessToken) throws ApiException;
+
+    /**
+     * Blokuje możliwość uwierzytelniania dla bieżącego kontekstu. Tylko na środowiskach testowych.
+     * Zablokowanie kontekstu testowego w środowisku DEMO.
+     *
+     * @param contextIdentifier
+     * @throws ApiException
+     */
+    void blockContext(TestDataContextIdentifier contextIdentifier, String accessToken) throws ApiException;
+
+    /**
+     * Odblokowuje możliwość uwierzytelniania dla bieżącego kontekstu. Tylko na środowiskach testowych.
+     * Odblokowanie kontekstu testowego w środowisku DEMO.
+     *
+     * @param contextIdentifier
+     * @throws ApiException
+     */
+    void unblockContext(TestDataContextIdentifier contextIdentifier, String accessToken) throws ApiException;
+
+    /**
+     * Zmienia wartości aktualnie obowiązujących limitów żądań przesyłanych do API dla bieżącego kontekstu.
+     * Tylko na środowisku testowym.
+     *
+     * @param setRateLimitsRequest
+     * @throws ApiException
+     */
+    void setRateLimits(SetRateLimitsRequest setRateLimitsRequest, String accessToken) throws ApiException;
+
+    /**
+     * Przywraca wartości aktualnie obowiązujących limitów żądań przesyłanych do API dla bieżącego kontekstu do wartości domyślnych.
+     * Tylko na środowiskach testowych.
+     *
+     * @throws ApiException
+     */
+    void restoreRateLimits(String accessToken) throws ApiException;
 
     /**
      * Zmienia wartości aktualnie obowiązujących limitów certyfikatów dla bieżącego podmiotu. Tylko na środowiskach testowych.

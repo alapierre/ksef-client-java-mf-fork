@@ -1540,3 +1540,638 @@
 | ➕ dodane    | 0             |
 | 🔧 zmienione | 9             |
 | ➖ usunięte  | 0             |
+
+# Changelog zmian - `## 3.0.11 (2026-01-19)`- `API: 2.0.1`
+
+
+### 1.1 api
+- **Url.java**: 🔧 usunięcie enuma `JWT_TOKEN_REVOKE`
+- **EncryptionMethod.java**: 🔧 rozszerzenie enuma
+- **Headers.java**: 🔧 dodanie nowej wartości nagłówka APPLICATION_XML
+
+### 1.2 client.model
+- **permission/entity/GrantEntityPermissionsRequest.java**: 🔧 zmiany kosmetyczne
+- **permission/euentity/PermissionsEuEntityPersonByFpNoId.java**: 🔧 zmiany typu pola `birthDate` na LocalDate
+- **permission/euentity/PermissionsEuEntitySubjectDetails .java**: 🔧 dodanie pola `permissionsEuEntityPersonByFpWithId` typu `PermissionsEuEntityPersonByFpWithId`
+- **permission/euentity/PermissionsEuEntitySubjectDetailsType .java**: 🔧 rozszerzenie wartości enumów o `PersonByFingerprintWithIdentifier`
+- **permission/euentity/PermissionsEuEntityPersonByFpWithId.java**: ➕ dodanie nowej klasy
+- **permission/indirect/PermissionsIndirectEntityPersonByFingerprintWithoutIdentifier.java**: 🔧 zmiany typu pola `birthDate` na LocalDate
+- **permission/indirect/PermissionsIndirectEntityPersonByFingerprintWithoutIdentifier.java**: 🔧 zmiany typu pola `birthDate` na LocalDate
+- **permission/proxy/GrantAuthorizationPermissionsRequest.java**: 🔧 zmiany kosmetyczne
+- **permission/search/EuAdministrationSubjectEntityDetails.java**: ➕ dodanie nowej klasy
+- **permission/search/EuEntityPermissionEuEntityDetails.java**: ➕ dodanie nowej klasy
+- **permission/search/EuEntityPermissionSubjectEntityDetails.java**: ➕ dodanie nowej klasy
+- **permission/search/EuEntityPermissionSubjectPersonDetails.java**: ➕ dodanie nowej klasy
+- **permission/search/SubunitPermissionSubjectPersonDetails.java**: ➕ dodanie nowej klasy
+- **permission/search/EntityAuthorizationGrant.java**:  dodanie pola `euAdministrationSubjectEntityDetails` typu `EuAdministrationSubjectEntityDetails`
+- **permission/search/EuEntityPermission.java**:  dodanie pól 
+  -   `subjectPersonDetails` typu `EuEntityPermissionSubjectPersonDetails`
+  -   `subjectEntityDetails` typu `EuEntityPermissionSubjectEntityDetails`
+  -   `euEntityDetails` typu `EuEntityPermissionEuEntityDetails`
+- **session/SessionStatusResponse.java**: dodanie pól  
+  - `dateCreated` typu `OffsetDateTime `
+  - `dateUpdated` typu `OffsetDateTime `
+- **session/SessionValue.java**: 🔧 rozszerzenie wartości enumów o `RR`
+- **session/SystemCode.java**: 🔧 rozszerzenie wartości enumów o `FA_RR (1)`
+
+### 1.3 api.services
+- **DefaultCertificateService.java**: 🔧 zmiany kosmetyczne związanego z zmianami modelu
+- **DefaultCryptographyService.java**: 🔧 oznaczenie jako deprecated metod:
+  -  `byte[] encryptKsefTokenWithRSAUsingPublicKey(String ksefToken, Instant challengeTimestamp)`
+  -  `byte[] encryptKsefTokenWithECDsaUsingPublicKey(String ksefToken, Instant challengeTimestamp)`
+  -  `byte[] encryptWithRSAUsingPublicKey(byte[] content)`
+  -  `byte[] encryptWithRSAUsingPublicKey(byte[] content)`
+  dodanie publicznej metody 
+  - `public byte[] encryptUsingPublicKey(byte[] content)` odpowiadającej za szyfrowanie w zależności od pobranego klucza publicznego
+  dodanie prywatnych metod
+  - `private byte[] encryptWithECDsaUsingPublicKey(byte[] content, PublicKey publicKey)`
+  - `private static void decryptWithAes256(InputStream encryptedPackagePart, OutputStream output, Cipher cipher)`
+- **DefaultCertificateService.java**: 🔧 usunięcie metody `revokeAccessToken(String accessToken)`
+- 
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BaseIntegrationTest.java**: 🔧 zmiany kosmetyczne
+- **AuthorizationIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **BatchIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **CertificateIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **DuplicateInvoiceIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **EnforcementOperationIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **EnforcementOperationNegativeIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **EntityPermissionAccountingIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **EntityPermissionIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **EuEntityPermissionIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **EuEntityRepresentativePermissionIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **IndirectPermissionIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **KsefTokenIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **PeppolInvoiceIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **PersonalPermissionAuthorizedPeselInNipContext.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **PersonPermissionIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu oraz rozbudowa scenariuszy testowych
+- **ProxyPermissionIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **QrCodeOfflineIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **QrCodeOnlineIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **SearchPersonalGrantPermissionIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **SelfInvoicingIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **SessionIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu
+- **SubUnitPermissionIntegrationTest.java**: 🔧 zmiany kosmetyczne związane z zmianą modelu oraz rozbudowa scenariuszy testowych
+
+### 2.2 api
+- ➖ **ActiveSessionController.java** ➖ usunięto klasę w związku z reorganizacją  aplikacji demonstracyjnej
+- ➖ **BatchSessionController.java**:  ➖ usunięto klasę w związku z reorganizacją  aplikacji demonstracyjnej
+- ➖ **EntityPermissionsController.java** ➖ usunięto klasę w związku z reorganizacją  aplikacji demonstracyjnej
+- ➖ **EuEntityPermissionsController.java** ➖ usunięto klasę w związku z reorganizacją  aplikacji demonstracyjnej
+- ➖ **EuEntityRepresentativePermissionsController.java** ➖ usunięto klasę w związku z reorganizacją  aplikacji demonstracyjnej
+- ➖ **IndirectPermissionsEntityController.java** ➖ usunięto klasę w związku z reorganizacją  aplikacji demonstracyjnej
+- ➖ **OperationStatusController.java** ➖ usunięto klasę w związku z reorganizacją aplikacji demonstracyjnej
+- ➖ **PersonPermissionController.java** ➖ usunięto klasę w związku z reorganizacją aplikacji demonstracyjnej
+- ➖ **ProxyPermissionsEntityController.java** ➖ usunięto klasę w związku z reorganizacją p aplikacji demonstracyjnej
+- ➖ **SearchPermissionTestEndpoint.java** ➖ usunięto klasę w związku z reorganizacją  aplikacji demonstracyjnej
+- ➖ **SessionController.java** ➖ usunięto klasę w związku z reorganizacją  aplikacji demonstracyjnej
+- ➖ **SubUnitPermissionsController.java** ➖ usunięto klasę w związku z reorganizacją  aplikacji demonstracyjnej
+- 🔧 **AuthController.java** 🔧 modyfikacja dostępnych endpointów w związku z reorganizacja aplikacji demonstracyjnej
+- 🔧 **CertificateController.java** 🔧 modyfikacja dostępnych endpointów w związku z reorganizacja aplikacji demonstracyjnej
+- 🔧 **InvoicesController.java** 🔧 modyfikacja dostępnych endpointów w związku z reorganizacja aplikacji demonstracyjnej
+- 🔧 **OnlineSessionController.java** 🔧 modyfikacja dostępnych endpointów w związku z reorganizacja aplikacji demonstracyjnej
+- 🔧 **QrCodeController.java** 🔧 modyfikacja dostępnych endpointów w związku z reorganizacja aplikacji demonstracyjnej
+- 🔧 **TokensController.java** 🔧 modyfikacja dostępnych endpointów w związku z reorganizacja aplikacji demonstracyjnej
+- ➕ **PermissionEndpoint.java** ➕ dodanie nowej klasy zawierającej endpointy związane z dodawanie oraz wyszukiwanie uprawnień
+
+### 2.3 api
+- 🔧 **IdentifierGeneratorUtils.java** 🔧 dodanie metody zwracającej sumę kontrolną dla identyfikatora wewnętrznego
+
+### 2.4 resources
+- ➖ `invoice-template.xml` ➖ usunięto plik
+- ➕ `invoice-template_v3.xml` ➕ dodano plik
+
+## 3. .http
+
+- ➖ `auth.http` ➖ usunięto plik
+- ➖ `batch.http` ➖ usunięto plik
+- ➖ `entity-permission.http` ➖ usunięto plik
+- ➖ `eu-entity-permission.http` ➖ usunięto plik
+- ➖ `eu-entity-representative-permission.http` ➖ usunięto plik
+- ➖ `grantPermission.http` ➖ usunięto plik
+- ➖ `invoice.http` ➖ usunięto plik
+- ➖ `personalPermissions.http` ➖ usunięto plik
+- ➖ `searchPermissions.http` ➖ usunięto plik
+- ➖ `session.http` ➖ usunięto plik
+- ➖ `sessionAndUpo.http` ➖ usunięto plik
+- ➖ `subunit-subject-permission.http` ➖ usunięto plik
+- ➖ `subunit-tokens-permission.http` ➖ usunięto plik
+- ➕ `authentication.http` ➕dodanie pliku zawierające wywołania metod z przeorganizowanej aplikacji demonstracyjnej
+- 🔧 `certificate.http` 🔧 modyfikacja pliku zawierającego wywołania metod z przeorganizowanej aplikacji demonstracyjnej
+- ➕ `permission.http` ➕dodanie pliku zawierające wywołania metod z przeorganizowanej aplikacji demonstracyjnej
+- ➕ `session_and_invoice.http` ➕dodanie pliku zawierające wywołania metod z przeorganizowanej aplikacji demonstracyjnej
+- ➕ `token.http` ➕dodanie pliku zawierające wywołania metod z przeorganizowanej aplikacji demonstracyjnej
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 11            |
+| 🔧 zmienione | 43            |
+| ➖ usunięte  | 26            |
+
+
+# Changelog zmian - `## 3.0.12 (2026-01-26)`- `API: 2.0.1`
+
+### 1.1 api
+- **Url.java**: 🔧 dodanie dwóch enumów `LIGHTHOUSE_STATUS("status", "apiV2LighthouseStatusGet"),
+    LIGHTHOUSE_MESSAGES("messages", "apiV2LighthouseMessagesGet");`
+- **HttpUtils.java**: 🔧 przeniesienie `URI buildUri(String baseUrl, String suffix, String url)` z `DefaultKsefClient`
+- **DefaultKsefClient.java**: 🔧 zmiany w `singleBatchPartSendingProcessByStream` i `singleBatchPartSendingProcess` - użycie w pełni urla z response `PackagePartSignatureInitResponseType responsePart`
+- **DefaultLighthouseKsefClient.java**: ➕ dodanie klienta latarenki
+
+### 1.2 client.model
+- **lighthouse/Categories.java**: ➕ dodanie nowej klasy modelu latarenki
+- **lighthouse/KsefMessagesResponse.java**: ➕ dodanie nowej klasy modelu latarenki
+- **lighthouse/KsefStatusResponse.java**: ➕ dodanie nowej klasy modelu latarenki
+- **lighthouse/Message.java**: ➕ dodanie nowej klasy modelu latarenki
+- **lighthouse/Statuses.java**: ➕ dodanie nowej klasy modelu latarenki
+
+### 1.3 client.interfaces
+- **CryptographyService.java**: 🔧 dodanie definicji metody `byte[] encryptKsefTokenUsingPublicKey(String ksefToken, Instant challengeTimestamp)`
+- **LighthouseKsefClient.java**: ➕ dodanie klienta latarenki
+
+### 1.4 api.services
+- **DefaultCryptographyService.java**: 🔧 dodanie metody `public byte[] encryptKsefTokenUsingPublicKey(String ksefToken, Instant challengeTimestamp)`
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **KsefTokenIntegrationTest.java**: 🔧 zmiany kosmetyczne
+- **LighthouseIntegrationTest.java**: ➕ dodanie scenariuszy testowych dla latarenki
+
+### 2.2 api
+- **LighthouseController.java** ➕ dodanie nowej klasy zawierającej endpointy związane z obsługą latarenki
+- **KsefClientConfig.java** 🔧 dodanie metody inicjalizującej beana klienta latarenki `DefaultLighthouseKsefClient initDefaultLighthouseClient(@Value("${sdk.config.lighthouse-base-uri}") String lighthouseBaseUri)`
+
+### 2.3 resources
+- `application.yaml` 🔧 dodanie `lighthouse-base-uri`
+- `application-prod.yaml` 🔧 dodanie `lighthouse-base-uri`
+
+## 3. .http
+- `lighthouse.http` ➕ dodanie pliku zawierającego wywołania metod z latarenki
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 9             |
+| 🔧 zmienione | 9             |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.13 (2026-01-29)`- `API: 2.0.1`
+
+### 1.1 api
+- **DefaultKsefClient.java**: 🔧 fix budowania adresu w `downloadPackagePart`
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 0             |
+| 🔧 zmienione | 1             |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.14 (2026-02-06)`- `API: 2.0.1`
+
+## 1. ksef-client
+
+### 1.1 api.builders
+- **InvoiceQueryFiltersBuilder.java**: 🔧 pole `Boolean hasAttachment` domyślnie null
+
+### 1.2 client.model
+- **lighthouse/Message.java**: 🔧 zmiana nazwy pola `String cat` na `String category`
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **LighthouseIntegrationTest.java**: 🔧 dodanie dodatkowych asercji
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 0             |
+| 🔧 zmienione | 3             |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.15 (2026-02-12)`- `API: 2.0.1`
+
+## 1. ksef-client
+
+### 1.1 api
+- **DefaultKsefClient.java**: 🔧 dodanie obsługi parsowania odpowiedzi dla status http 429 (Too Many Requests)  
+
+### 1.2 client
+- **ExceptionDetails.java**: 🔧 dodanie opisów pól i metody `toString`
+- **Headers.java**: 🔧 dodanie pola `String RETRY_AFTER = "Retry-After"`
+
+### 1.3 client.model
+- **ApiException.java**: 🔧 dodanie metody `toString`
+- **ExceptionObject.java**: 🔧 dodanie opisów pól i metody `toString`
+- **ExceptionResponse.java**: 🔧 dodanie opisów pól i metody `toString`, dodatkowo dodano pole dla obiektu z http status 429 `TooManyRequestsResponse status`
+- **HttpStatus.java**: 🔧 dodanie enuma `TOO_MANY_REQUESTS(429)`
+- **TooManyRequestsResponse.java**: ➕ dodanie klasy z modelem dla status http 429
+- **lighthouse/Categories.java**: 🔧 zmiana klasy na enuma
+- **lighthouse/Statuses.java**: 🔧 zmiana klasy na enuma
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BaseIntegrationTest.java**: 🔧 wydłużenie timeoutu przy oczekiwanie na konkretny status/proces
+- **KsefTokenIntegrationTest.java**: 🔧 wydłużenie timeoutu przy oczekiwanie na konkretny status/proces
+- **DuplicateInvoiceIntegrationTest.java**: 🔧 użycie `getContinuationToken` w scenariuszu przy pobieraniu błednie przetworzonych faktur 
+- **TechnicalCorrectionIntegrationTest.java**: ➕ dodanie scenariuszy testowych dla funkcjonalności korekty technicznej faktur 
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 2             |
+| 🔧 zmienione | 12            |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.16 (2026-02-19)`- `API: 2.1.1`
+
+## 1. ksef-client
+
+### 1.1 api
+- **Url.java**: 🔧 dodanie `LIMIT_CONTEXT_BLOCK("testdata/context/block", "apiV2LimitsContextBlock"),
+                            LIMIT_CONTEXT_UNBLOCK("testdata/context/unblock", "apiV2LimitsContextUnblock"),
+                            LIMIT_CONTEXT_SET("testdata/rate-limits", "apiV2LimitsSet"),
+                            LIMIT_CONTEXT_RESTORE("testdata/rate-limits", "apiV2LimitsRestore"),`
+- **DefaultKsefClient.java**: 🔧 dodanie brakujących metod do limitów `void blockContext(TestDataContextIdentifier contextIdentifier, String accessToken)`,
+  `void unblockContext(TestDataContextIdentifier contextIdentifier, String accessToken)`,
+  `void setRateLimits(SetRateLimitsRequest setRateLimitsRequest, String accessToken)`,
+  `void restoreRateLimits(String accessToken)`
+
+### 1.2 client.interfaces
+- **KsefClient.java**: 🔧 dodanie metod zgodnie z implementacją w `DefaultKsefClient.java`
+
+### 1.3 client.model
+- **ApiException.java**: 🔧 zabezpieczenie metody `toString` dla `responseHeaders = null`
+- **auth/AuthStatus.java**: 🔧 Pole `AuthenticationMethod` oznaczono jako deprecated (planowane wycofanie: 2026-11-16), Wprowadzono nowy model `AuthenticationMethodInfo` opisujący metodę uwierzytelniania
+- **session/AuthenticationListItem.java**: 🔧 Pole `AuthenticationMethod` oznaczono jako deprecated (planowane wycofanie: 2026-11-16), Wprowadzono nowy model `AuthenticationMethodInfo` opisujący metodę uwierzytelniania
+- **session/AuthenticationMethodInfo.java**: ➕ dodano klasę
+- **limit/EffectiveApiRateLimits.java**: ➕ dodano klasę
+- **limit/SetRateLimitsRequest.java**: ➕ dodano klasę
+- **testdata/ContextIdentifierType.java**: 🔧 dodanie enumów `INTERNAL_ID("InternalId"), NIP_VAT_UE("NipVatUe"), PEPPOL_ID("PeppolId");`
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **GetRateLimitIntegrationTest.java**: 🔧 dodanie nowych scenariuszy testowych
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 3             |
+| 🔧 zmienione | 8             |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.17 (2026-02-23)`- `API: 2.1.1`
+
+## 1. ksef-client
+
+### 1.1 api
+- **DefaultKsefClient.java**: 🔧 dodano parametr `enforceXadesCompliance` w metodzie `submitAuthTokenRequest`, umożliwiający wcześniejsze włączenie nowych wymagań walidacji XAdES na środowiskach DEMO i PRD poprzez nagłówek `X-KSeF-Feature: enforce-xades-compliance`.
+
+### 1.2 client
+- **Headers.java**: 🔧 dodanie pola `String ENFORCE_XADES_COMPLIANCE = "enforce-xades-compliance"`
+
+### 1.3 client.model
+- **limit/EffectiveApiRateLimits.java**: 🔧 pole `private InvoiceExportStatusRateLimit invoiceStatusExport` oznaczono `@JsonProperty("invoiceExportStatus")`
+- **limit/GetRateLimitResponse.java**: 🔧 pole `private InvoiceExportStatusRateLimit invoiceStatusExport` oznaczono `@JsonProperty("invoiceExportStatus")`
+- **permission/search/EntityAuthorizationGrant.java**: 🔧 dodano pole `EntityPermissionSubjectEntityDetails subjectEntityDetails`
+- **permission/search/EntityPermissionSubjectEntityDetails.java**: ➕ dodano klasę
+- **permission/search/EuEntityPermissionSubjectEntityDetails.java**: 🔧 dodano pole `String fullName`
+- **permission/search/PersonPermission.java**: 🔧 dodano pól `PersonPermissionSubjectPersonDetails subjectPersonDetails` i `EntityPermissionSubjectEntityDetails subjectEntityDetails`
+- **permission/search/QueryPersonalGrantItem.java**: 🔧 dodano pól `EntityPermissionSubjectEntityDetails subjectEntityDetails` i `PersonPermissionSubjectPersonDetails subjectPersonDetails`
+- **permission/search/PersonPermissionPersonIdentifier.java**: ➕ dodano klasę
+- **permission/search/PersonPermissionSubjectPersonDetails.java**: ➕ dodano klasę
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **EuEntityPermissionIntegrationTest.java**: 🔧 aktualizacja metod z utilsa `IdentifierGeneratorUtils.getRandomNip()` -> `IdentifierGeneratorUtils.generateRandomNIP()`
+- **EuEntityRepresentativePermissionIntegrationTest.java**: 🔧 aktualizacja metod z utilsa `IdentifierGeneratorUtils.getRandomNip()` -> `IdentifierGeneratorUtils.generateRandomNIP()`
+- **IndirectPermissionIntegrationTest.java**: 🔧 aktualizacja metod z utilsa `IdentifierGeneratorUtils.getRandomNip()` -> `IdentifierGeneratorUtils.generateRandomNIP()`
+- **PeppolInvoiceIntegrationTest.java**: 🔧 naprawa testu
+- **PermissionAttachmentStatusIntegrationTest.java**: 🔧 aktualizacja testu
+- **SubUnitPermissionIntegrationTest.java**: 🔧 użycie `IdentifierGeneratorUtils.generateInternalIdentifier()`
+- **QueryInvoiceIntegrationTest.java**: 🔧 dodanie scenariusza testowego z wysyłką faktury z załącznikiem i bez, następnie wyszukanie ich poprzez zapytanie o metadane faktur i w zapytanie do exportu faktur z parametrem hasAttachment (true/false/null) 
+
+### 2.2 api
+- 🔧 **IdentifierGeneratorUtils.java** 🔧 poprawki w metodach generujących nip (walidacja sum kontrolnych)(prawidłowy nip wymagany jest do użycia w `addAttachmentPermissionTest`), dodanie metod `String generateInternalIdentifier`
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 3             |
+| 🔧 zmienione | 16            |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.18 (2026-02-26)`- `API: 2.1.2`
+
+## 1. ksef-client
+- **build.gradle.kts**: 🔧 dodanie budowanie paczki ze źródłami - `withSourcesJar()`
+
+### 1.1 client.model
+- **auth/TokenPermissionType.java**: 🔧 dodano wartość enuma `INTROSPECTION("Introspection")`
+- **ApiException.java**: 🔧 dodanie `message` do metody `toString`
+
+### 1.2 api.client.interfaces
+- **CryptographyService.java**: 🔧 usunięcie błędnych opisów metod
+- 
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **RrInvoiceIntegrationTest.java**: ➕ dodano scenariusz testowy dla faktury VAT RR
+
+### 2.1.1 integrationTest.resources
+- **invoice-template-fa-rr-1.xml**: ➕ dodano plik zawierający przykładową fakturę VAT RR
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 2             |
+| 🔧 zmienione | 4             |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.19 (2026-03-06)`- `API: 2.2.0`
+
+## 1. ksef-client
+
+### 1.1 api
+- **Url.java**: 🔧 dodanie enuma `PERMISSION_SEARCH_ENTITIES_GRANTS("permissions/query/entities/grants", "apiV2PermissionsQueryEntitiesGrantsGet")`
+- **DefaultKsefClient.java**: 🔧 dodano metodę `QueryEntityPermissionsResponse searchEntityInvoiceContext(EntityPermissionsQueryRequest request, int pageOffset, int pageSize, String accessToken)` umożliwiającą pobranie listy uprawnień do obsługi faktur w bieżącym kontekście logowania.
+
+### 1.3 client.interfaces
+- **KsefClient.java**: 🔧 dodanie metod zgodnie z implementacją w `DefaultKsefClient.java`
+
+### 1.3 client.model
+- **auth/AuthenticationChallengeResponse.java**: 🔧 dodano pole `String clientIp`
+- **permission/search/EntityPermissionItem.java**: ➕ dodano klasę
+- **permission/search/EntityPermissionItemScope.java**: ➕ dodano enuma
+- **permission/search/EntityPermissionsQueryRequest.java**: ➕ dodano klasę
+- **permission/search/QueryEntityPermissionsResponse.java**: ➕ dodano klasę
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **SearchEntityPermissionsIntegrationTest.java**: ➕ dodano scenariusz testowy dla pobrania listy uprawnień do obsługi faktur w bieżącym kontekście logowania
+- **@.java**: 🔧 refactor - w scenariuszach testowych do `Awaitility.await()` dodano `pollDelay(Duration.ZERO)`
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 5             |
+| 🔧 zmienione | 32            |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.20 (2026-03-17)`- `API: 2.2.1`
+
+## 1. ksef-client
+
+### 1.1 system
+- **FilesUtil.java**: 🔧 dla metody `splitAndEncryptZipStream` zmiana parametru `cryptographyService` na interfejs
+
+### 1.2 api
+- **DefaultKsefClient.java**: 🔧 do response z błędem dodano informacje z url i method, dodanie obsługi mapowań dla kodów http 401 i 403 dla formatu Problem Details `(application/problem+json)`
+- **DefaultLighthouseKsefClient.java**: 🔧 do response z błędem dodano informacje z url i method
+
+### 1.3 client
+- **Headers.java**: 🔧 dodanie pola `String APPLICATION_PROBLEM_JSON = "application/problem+json"`
+
+### 1.4 api.services
+- **DefaultCryptographyService.java**: 🔧 dodanie metody `Exception getOfflineModeCause()` dającej informacje o powodzie przejścia w tryb offline
+
+### 1.5 api.client.interfaces
+- **CryptographyService.java**: 🔧 zmiany zgodnie z implementacja w `DefaultCryptographyService.java`
+
+### 1.6 api.client.model
+- **ApiException.java**: 🔧 dodanie pól `String url` i `String method`, zmiana na klasę abstrakcyjną
+- **model/session/SchemaVersion.java**: 🔧 dodanie enuma `VERSION_1_1E("1-1E")`
+- **UnauthorizedProblemDetails.java**: ➕ dodanie klasy
+- **ForbiddenProblemDetails.java**: ➕ dodanie klasy
+- **UnauthorizedApiException.java**: ➕ dodanie klasy, rozszerzającej `ApiException`
+- **ForbiddenApiException.java**: ➕ dodanie klasy, rozszerzającej `ApiException`
+- **KsefApiException.java**: ➕ dodanie klasy, rozszerzającej `ApiException`
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **QrCodeOnlineIntegrationTest.java**: 🔧 drobne zmiany w asercji
+- **RrInvoiceIntegrationTest.java**: 🔧 użycie nowej wersji schemy RR `SchemaVersion.VERSION_1_1E`
+- **KsefTokenIntegrationTest.java**: 🔧 zmiany kosmetyczne w assercji
+- **ExceptionsApiIntegrationTest.java**: ➕ dodanie scenariusza do obsługi kodów http 401 i 403 z API
+
+### 2.1.1 integrationTest.resources
+- **invoice-template-fa-rr-1.xml**: 🔧 aktualizacja pod nową wersję schemy RR
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 6             |
+| 🔧 zmienione | 12            |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.21 (2026-03-23)`- `API: 2.3.0`
+
+## 1. ksef-client
+
+### 1.1 api.client.model
+- **model/invoice/InvoiceExportRequest.java**: 🔧 dodanie pola `boolean onlyMetadata = false` umożliwiającego eksport paczki zawierającej wyłącznie plik `_metadata.json` bez plików faktur.
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **QueryInvoiceIntegrationTest.java**: 🔧 dodanie testu z użyciem `onlyMetadata = true` w `InvoiceExportRequest`
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|--------------|
+| ➕ dodane    | 0            |
+| 🔧 zmienione | 2            |
+| ➖ usunięte  | 0            |
+
+
+# Changelog zmian - `## 3.0.22 (2026-03-23)`- `API: 2.3.0`
+
+## 1. ksef-client
+
+### 1.1 api.client.model
+- **model/session/SessionValue.java**: 🔧 dodanie enuma `FA_RR("FA_RR")`
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **RrInvoiceIntegrationTest.java**: 🔧 użycie enuma z `FA_RR`
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 0             |
+| 🔧 zmienione | 2             |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.23 (2026-03-31)`- `API: 2.3.0`
+
+## 1. ksef-client
+
+### 1.1 api.client.model
+- **permission/search/QueryPersonalGrantContextIdentifier.java**: 🔧 dodanie enuma `INTERNAL_ID("InternalId")`
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BaseIntegrationTest.java**: 🔧 poprawka w `authAsInternalId` przy generowaniu certyfikatu dla nipu i/lub peselu
+- **PersonPermissionIntegrationTest.java**: 🔧 dodanie testu z filtrowaniem po InternalId
+- **SearchInvoiceForSubject3IntegrationTest.java**: 🔧 aktualizacja po zmianie szablonu xml faktury `invoice-template-fa-3-with-custom-subject_3.xml`
+- **SubUnitPermissionIntegrationTest.java**: 🔧 aktualizacja po zmianie szablonu xml faktury `invoice-template-fa-3-with-custom-subject_3.xml`
+
+### 2.1.1 integrationTest.resources
+- **xml/invoices/sample/invoice-template-fa-3-with-custom-subject_3.xml**: 🔧 dodanie placeholderów dla podmiotu 2 i podmiotu 3
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 0             |
+| 🔧 zmienione | 6             |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.24 (2026-04-22)`- `API: 2.4.0`
+
+## 1. ksef-client
+
+### 1.1 api.client.model
+- **exceptions/TooManyRequestsApiException.java**: ➕ dodanie klasy
+- **exceptions/TooManyRequestsProblemDetails.java**: ➕ dodanie klasy
+- **exceptions/BadRequestApiError.java**: ➕ dodanie klasy
+- **exceptions/BadRequestApiException.java**: ➕ dodanie klasy
+- **exceptions/BadRequestProblemDetails.java**: ➕ dodanie klasy
+- **exceptions/GoneApiException.java**: ➕ dodanie klasy
+- **exceptions/GoneProblemDetails.java**: ➕ dodanie klasy
+- **exceptions/UnauthorizedProblemDetails.java**: 🔧 dodanie pola `String timestamp`
+- **exceptions/ForbiddenProblemDetails.java**: 🔧 dodanie pola `String timestamp`
+- **exceptions/GetRateLimitIntegrationTest.java**: 🔧 aktualizacja testu
+- **HttpStatus.java**: 🔧 dodanie enuma `GONE(410)`
+
+### 1.2 client
+- **Headers.java**: 🔧 dodanie pól `X_ERROR_FORMAT = "X-Error-Format"` i `X_ERROR_FORMAT_PROBLEM_DETAILS = "problem-details"`
+
+### 1.3 system
+- **ExceptionHandler.java**: ➕ dodanie klasy odpowiedzialnej za parsowanie błedów odpowiedzi http, dodano obsługę dla http 400, 410, 429 zgodnie z propozycją API KSeF ([#764](https://github.com/CIRFMF/ksef-docs/issues/764)) - najpierw próba zdekodowania odpowiedzi w nowym modelu, a następnie cofa się do dotychczasowego formatu.
+
+### 1.4 api
+- **DefaultKsefClient.java**: 🔧 parsowanie błedów odpowiedzi http przeniesiono do `ExceptionHandler`
+
+### 1.5 api.services
+- **DefaultSignatureService.java**: 🔧 - dodano obsługę podpisywania dokumentów dla kluczy eksportowalnych
+
+### 1.6 sign
+- **CertUtil.java**: 🔧 rozbudowa metod o sprawdzanie algorytmów kluczy
+- **LocalSigningContext.java**: 🔧 dodano przeciążone metody `SignatureValue createSignatureValue` pod podpisywanie dla kluczy eksportowalnych, jedna oznaczona jako Deprecated
+- **SignContextProvider.java**: 🔧 zgodnie z `LocalSigningContext`
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **AuthorizationIntegrationTest.java**: 🔧 dodano test pod podpisywanie dla kluczy eksportowalnych
+- **BatchIntegrationTest.java**: 🔧 aktualizacja testów po przejściu na nowy model dla błedów http (nagłówek `X-Error-Format: "problem-details"`)
+- **QueryInvoiceIntegrationTest.java**: 🔧 aktualizacja testów po przejściu na nowy model dla błedów http (nagłówek `X-Error-Format: "problem-details"`)
+- **SessionIntegrationTest.java**: 🔧 aktualizacja testów po przejściu na nowy model dla błedów http (nagłówek `X-Error-Format: "problem-details"`)
+- **PeppolInvoiceIntegrationTest.java**: 🔧 zmiany związane z dodaniem placeholderów w `invoice_template_pef_correction.xml`
+- **ExceptionsApiIntegrationTest.java**: 🔧 dodanie testów o obsługę kolejnych typów błedów http zwracanych z API
+
+### 2.2 integrationTest.resources
+- **xml/invoices/sample/invoice_template_pef_correction.xml**: 🔧 dodanie placeholderów dla numeru KSeF i daty faktury korygowanej
+
+### 2.3 resources
+- **application.yaml**: 🔧 dodanie domyślnie nagłówka `X-Error-Format: "problem-details"`
+- **application-demo.yaml**: 🔧 dodanie domyślnie nagłówka `X-Error-Format: "problem-details"`
+- **application-prod.yaml**: 🔧 dodanie domyślnie nagłówka `X-Error-Format: "problem-details"`
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 8             |
+| 🔧 zmienione | 20            |
+| ➖ usunięte  | 0             |
+
+
+# Changelog zmian - `## 3.0.25 (2026-05-06)`- `API: 2.5.0`
+
+## 1. ksef-client
+
+### 1.1 api.client.model
+- **auth/AuthKsefTokenRequest.java**: 🔧 dodanie pola `String publicKeyId`
+- **certificate/publickey/PublicKeyCertificate.java**: 🔧 dodanie pola `String publicKeyId` i `String certificateId`
+- **invoice/InvoiceFormType.java**: 🔧 dodanie enuma `FA_RR("FA_RR")` i oznaczenie jako deprcated `RR("RR")` 
+- **session/EncryptionInfo.java**: 🔧 dodanie pola `String publicKeyId`
+- **session/SessionValue.java**: 🔧 oznaczenie enuma `RR("RR")` jako deprecated
+
+### 1.2 api.client.interfaces
+- **CryptographyService.java**: 🔧 dodanie metody `X509Certificate parseCertificate(String pem)`
+
+### 1.3 api.builders
+- **auth/AuthKsefTokenRequestBuilder.java**: 🔧 - dodanie pola `String publicKeyId`
+- **batch/OpenBatchSessionRequestBuilder.java**: 🔧 - rozszerzenie metody `withEncryption` o przekazanie `String publicKeyId`
+
+### 1.4 api.services
+- **DefaultCryptographyService.java**: 🔧 - dodanie metody `X509Certificate parseCertificate(String pem)`; aktualizacja pobierania kluczy publicznych (rotacja kluczy) w `initCryptographyService()`
+
+## 2. demo-web-app
+
+### 2.1 integrationTest
+- **BatchIntegrationTest.java**: 🔧 rozbudowa requestu `OpenBatchSessionRequest` o przekazanie `publicKeyId` w `encryptionData`
+- **DuplicateInvoiceIntegrationTest.java**: 🔧 rozbudowa requestu `OpenBatchSessionRequest` o przekazanie `publicKeyId` w `encryptionData`
+- **IncrementalInvoiceRetrieveIntegrationTest.java**: 🔧 rozbudowa requestu `OpenBatchSessionRequest` o przekazanie `publicKeyId` w `encryptionData`
+- **RrInvoiceIntegrationTest.java**: 🔧 rozbudowa jednego z testów o pobranie paczki faktur przy filtrowaniu po `InvoiceFormType.FA_RR`
+- **CertificateRotationTest.java**: ➕ dodano test z symulacją rotacji certyfikatów
+
+---
+## 3. Podsumowanie
+
+| Typ zmiany  | Liczba plików |
+|-------------|---------------|
+| ➕ dodane    | 1             |
+| 🔧 zmienione | 13            |
+| ➖ usunięte  | 0             |
+

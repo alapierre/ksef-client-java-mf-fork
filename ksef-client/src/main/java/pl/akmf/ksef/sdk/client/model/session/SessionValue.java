@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 public enum SessionValue {
     FA("FA"),
     FA_PEF("PEF"),
+    @Deprecated
+    RR("RR"),
     FA_RR("FA_RR");
 
     private final String value;

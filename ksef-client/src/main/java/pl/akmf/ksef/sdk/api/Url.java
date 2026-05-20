@@ -2,7 +2,6 @@ package pl.akmf.ksef.sdk.api;
 
 public enum Url {
     AUTH_CHALLENGE("auth/challenge", "apiV2AuthChallengePost"),
-    JWT_TOKEN_REVOKE("auth/token", "apiV2AuthTokenDelete"),
     JWT_TOKEN_REFRESH("auth/token/refresh", "apiV2AuthTokenRefreshPost"),
     AUTH_TOKEN_SIGNATURE("auth/xades-signature", "apiV2AuthTokenSignaturePost"),
     AUTH_TOKEN_STATUS("auth/{referenceNumber}", "apiV2AuthTokenTokenReferenceNumberGet"),
@@ -47,6 +46,7 @@ public enum Url {
     PERMISSION_SEARCH_PERSONAL_GRANTS("permissions/query/personal/grants", "apiV2PermissionsQueryPersonalGrants"),
     PERMISSION_SEARCH_AUTHORIZATIONS_GRANT("permissions/query/authorizations/grants", "apiV2PermissionsQueryAuthorizationsGrantsPost"),
     PERMISSION_SEARCH_ENTITY_ROLES("permissions/query/entities/roles", "apiV2PermissionsQueryEntitiesRolesGet"),
+    PERMISSION_SEARCH_ENTITIES_GRANTS("permissions/query/entities/grants", "apiV2PermissionsQueryEntitiesGrantsGet"),
     PERMISSION_SEARCH_EU_ENTITY_GRANT("permissions/query/eu-entities/grants", "apiV2PermissionsQueryEuEntitiesGrantsPost"),
     PERMISSION_SEARCH_PERSON_PERMISSION("permissions/query/persons/grants", "apiV2PermissionsQueryPersonsGrantsPost"),
     PERMISSION_SEARCH_SUBORDINATE_PERMISSION("permissions/query/subordinate-entities/roles", "apiV2PermissionsQuerySubordinateEntitiesRolesPost"),
@@ -70,6 +70,11 @@ public enum Url {
     GET_RATE_LIMIT("rate-limits", "apiV2RateLimit"),
 
     LIMIT_CONTEXT_SET_PRODUCTION("testdata/rate-limits/production", "apiV2LimitsSetProduction"),
+    LIMIT_CONTEXT_BLOCK("testdata/context/block", "apiV2LimitsContextBlock"),
+    LIMIT_CONTEXT_UNBLOCK("testdata/context/unblock", "apiV2LimitsContextUnblock"),
+    LIMIT_CONTEXT_SET("testdata/rate-limits", "apiV2LimitsSet"),
+    LIMIT_CONTEXT_RESTORE("testdata/rate-limits", "apiV2LimitsRestore"),
+
     LIMIT_CONTEXT_CHANGE_TEST("testdata/limits/context/session", "apiV2LimitsChange"),
     LIMIT_CONTEXT_RESET_TEST("testdata/limits/context/session", "apiV2LimitsReset"),
     LIMIT_SUBJECT_CERTIFICATE_CHANGE_TEST("testdata/limits/subject/certificate", "apiV2LimitsChange"),
@@ -88,7 +93,10 @@ public enum Url {
     TOKEN_LIST("tokens", "apiV2TokensGet"),
     TOKEN_GENERATE("tokens", "apiV2TokensPost"),
     TOKEN_REVOKE("tokens/{referenceNumber}", "apiV2TokensReferenceNumberDelete"),
-    TOKEN_STATUS("tokens/{referenceNumber}", "apiV2TokensReferenceNumberGet");
+    TOKEN_STATUS("tokens/{referenceNumber}", "apiV2TokensReferenceNumberGet"),
+
+    LIGHTHOUSE_STATUS("status", "apiV2LighthouseStatusGet"),
+    LIGHTHOUSE_MESSAGES("messages", "apiV2LighthouseMessagesGet");
 
     private final String url;
     private final String operationId;

@@ -2,19 +2,14 @@ package pl.akmf.ksef.sdk.client.interfaces;
 
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentsInfoResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CsrResult;
+import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionData;
 import pl.akmf.ksef.sdk.client.model.session.FileMetadata;
 import pl.akmf.ksef.sdk.system.KsefIntegrationMode;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
@@ -38,6 +33,7 @@ public interface CryptographyService {
      * @return
      * @throws SystemKSeFSDKException
      */
+    @Deprecated
     byte[] encryptKsefTokenWithRSAUsingPublicKey(String ksefToken, Instant challengeTimestamp) throws SystemKSeFSDKException;
 
     /**
@@ -46,8 +42,14 @@ public interface CryptographyService {
      * @param ksefToken
      * @param challengeTimestamp
      * @return
+     * @throws SystemKSeFSDKException
      */
+    @Deprecated
     byte[] encryptKsefTokenWithECDsaUsingPublicKey(String ksefToken, Instant challengeTimestamp) throws SystemKSeFSDKException;
+
+    byte[] encryptKsefTokenUsingPublicKey(String ksefToken, Instant challengeTimestamp);
+
+    byte[] encryptUsingPublicKey(byte[] content);
 
     /**
      * Zwraca zaszyfrowany content przy użyciu algorytmu RSA z publicznym kluczem.
@@ -56,6 +58,7 @@ public interface CryptographyService {
      * @return
      * @throws SystemKSeFSDKException
      */
+    @Deprecated
     byte[] encryptWithRSAUsingPublicKey(byte[] content) throws SystemKSeFSDKException;
 
     /**
@@ -63,7 +66,9 @@ public interface CryptographyService {
      *
      * @param content
      * @return
+     * @throws SystemKSeFSDKException
      */
+    @Deprecated
     byte[] encryptWithECDsaUsingPublicKey(byte[] content) throws SystemKSeFSDKException;
 
     /**
@@ -154,8 +159,7 @@ public interface CryptographyService {
     /**
      * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w RSA)
      *
-     * @param privateKey
-     * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w RSA)
+     * @param privateKey Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w RSA)
      * @throws SystemKSeFSDKException
      */
     PrivateKey parseRsaPrivateKeyFromPem(byte[] privateKey) throws SystemKSeFSDKException;
@@ -163,8 +167,7 @@ public interface CryptographyService {
     /**
      * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w Ecdsa)
      *
-     * @param privateKey
-     * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w Ecdsa)
+     * @param privateKey Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w Ecdsa)
      * @throws SystemKSeFSDKException
      */
     PrivateKey parseEcdsaPrivateKeyFromPem(byte[] privateKey) throws SystemKSeFSDKException;
@@ -173,8 +176,7 @@ public interface CryptographyService {
      * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w Ecdsa)
      *
      * @param pemBytes
-     * @param password
-     * Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w Ecdsa)
+     * @param password Zwraca klucz prywatny w formacie PrivateKey na podstawie klucza w przechowywanego byte[] (zakodowanego w Ecdsa)
      * @throws SystemKSeFSDKException
      */
     PrivateKey parseEncryptedEcdsaPrivateKeyFromPem(byte[] pemBytes, char[] password);
@@ -182,16 +184,24 @@ public interface CryptographyService {
     /**
      * Zwraca certyfikat w formacie X509Certificate na podstawie tablicy byte zawierającej certyfikat
      *
-     * @param certBytes
-     * Zwraca certyfikat w formacie X509Certificate na podstawie tablicy byte zawierającej certyfikat
+     * @param certBytes Zwraca certyfikat w formacie X509Certificate na podstawie tablicy byte zawierającej certyfikat
      * @throws SystemKSeFSDKException
      */
     X509Certificate parseCertificateFromBytes(byte[] certBytes) throws CertificateException;
 
     /**
+     * Zwraca certyfikat w formacie X509Certificate na podstawie pem zawierającego certyfikat
+     *
+     * @param pem Zwraca certyfikat w formacie X509Certificate na podstawie pem zawierającego certyfikat
+     * @throws CertificateException
+     */
+    X509Certificate parseCertificate(String pem) throws CertificateException;
+
+    /**
+     * Inicjuje pobranie certyfikat z API KSEF
+     * <p>
      * Inicjuje pobranie certyfikat z API KSEF
      *
-     * Inicjuje pobranie certyfikat z API KSEF
      * @throws SystemKSeFSDKException
      */
     void initCryptographyService();
@@ -199,9 +209,31 @@ public interface CryptographyService {
     /**
      * Zwraca status serwisu (w razie nieudanego pobrania certyfikatów podczas inicjowania serwisu jest ustawiony na OFFLINE).
      * Możliwe jest wtedy ponowne wywyłanie usługi initCryptographyService() w celu próby inicjalizacji serwisu
-     *
+     * <p>
      * Zwraca status serwisu (w razie nieudanego pobrania certyfikatów podczas inicjowania serwisu jest ustawiony na OFFLINE)
-     * @throws SystemKSeFSDKException
      */
     KsefIntegrationMode getKsefIntegrationMode();
+
+    /**
+     * Zwraca powód przejścia w tryb OFFLINE
+     */
+    Exception getOfflineModeCause();
+
+    // Certyfikat używany do szyfrowania klucza symetrycznego w formacie PEM.
+    String getSymmetricKeyEncryptionPem();
+
+    // Certyfikat używany do szyfrowania tokenu KSeF w formacie PEM.
+    String getKsefTokenPem();
+
+    // Certyfikat używany do szyfrowania klucza symetrycznego w formie PublicKeyCertificate.
+    PublicKeyCertificate getSymmetricKeyEncryption();
+
+    // Certyfikat używany do szyfrowania tokenu KSeF w formie PublicKeyCertificate.
+    PublicKeyCertificate getKsefToken();
+
+    // Certyfikat używany do szyfrowania symetrycznego klucza AES.
+    X509Certificate getSymmetricKeyCertificate() throws CertificateException;
+
+    // Certyfikat używany do szyfrowania tokena KSeF.
+    X509Certificate getKsefTokenCertificate() throws CertificateException;
 }

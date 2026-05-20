@@ -7,6 +7,7 @@ public class AuthKsefTokenRequestBuilder {
     private String challenge;
     private ContextIdentifier contextIdentifier;
     private String encryptedToken;
+    private String publicKeyId;
     private AuthKsefTokenRequest.IpAddressPolicy ipAddressPolicy;
 
     public AuthKsefTokenRequestBuilder withChallenge(final String challenge) {
@@ -29,7 +30,12 @@ public class AuthKsefTokenRequestBuilder {
         return this;
     }
 
+    public AuthKsefTokenRequestBuilder withPublicKeyId(final String publicKeyId) {
+        this.publicKeyId = publicKeyId;
+        return this;
+    }
+
     public AuthKsefTokenRequest build() {
-        return new AuthKsefTokenRequest(challenge, contextIdentifier, encryptedToken, ipAddressPolicy);
+        return new AuthKsefTokenRequest(challenge, contextIdentifier, encryptedToken, publicKeyId, ipAddressPolicy);
     }
 }

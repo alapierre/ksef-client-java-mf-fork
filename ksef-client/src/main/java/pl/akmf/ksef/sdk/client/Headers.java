@@ -13,6 +13,12 @@ public final class Headers {
     public static final String ACCEPT = "Accept";
     public static final String OCTET_STREAM = "application/octet-stream";
     public static final String APPLICATION_JSON = "application/json";
+    public static final String APPLICATION_PROBLEM_JSON = "application/problem+json";
+    public static final String APPLICATION_XML =  "application/xml";
     public static final String BEARER = "Bearer ";
     public static final String X_KSEF_FEATURE = "X-KSeF-Feature";
+    public static final String ENFORCE_XADES_COMPLIANCE = "enforce-xades-compliance";
+    public static final String RETRY_AFTER = "Retry-After";
+    public static final String X_ERROR_FORMAT = "X-Error-Format";
+    public static final String X_ERROR_FORMAT_PROBLEM_DETAILS = "problem-details";
 }
