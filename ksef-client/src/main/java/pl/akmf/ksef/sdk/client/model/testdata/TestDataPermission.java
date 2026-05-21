@@ -1,10 +1,12 @@
 package pl.akmf.ksef.sdk.client.model.testdata;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public class TestDataPermission {
     private String description;
+    @JsonProperty("permissionType")
     private PermissionType permission;
 
     public TestDataPermission(String description, PermissionType permission) {
