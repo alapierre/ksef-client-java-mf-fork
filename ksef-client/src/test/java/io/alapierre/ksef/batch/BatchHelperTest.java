@@ -1,5 +1,7 @@
 package io.alapierre.ksef.batch;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.alapierre.ksef.batch.model.BatchConfig;
 import io.alapierre.ksef.batch.model.BatchResult;
 import lombok.val;
@@ -40,7 +42,8 @@ public class BatchHelperTest {
     public void setUp() {
         apiClient = createHttpBuilder().build();
         ExampleApiProperties exampleApiProperties = new ExampleApiProperties();
-        ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties);
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties, objectMapper);
         cryptographyService = new DefaultCryptographyService(ksefClient);
         helper = new BatchHelper(cryptographyService, ksefClient);
 

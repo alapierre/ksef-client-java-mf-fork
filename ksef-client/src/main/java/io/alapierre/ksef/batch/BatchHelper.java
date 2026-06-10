@@ -12,6 +12,7 @@ import pl.akmf.ksef.sdk.api.builders.batch.OpenBatchSessionRequestBuilder;
 import pl.akmf.ksef.sdk.client.interfaces.CryptographyService;
 import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.KsefApiException;
 import pl.akmf.ksef.sdk.client.model.UpoVersion;
 import pl.akmf.ksef.sdk.client.model.session.*;
 import pl.akmf.ksef.sdk.client.model.session.batch.*;
@@ -192,7 +193,7 @@ public class BatchHelper {
                 // 4. Sprawdź błędy natychmiast
                 if (!errors.isEmpty()) {
                     String errorMsg = String.join("\n", errors);
-                    throw new ApiException("Błąd wysyłki części " + partInfo.index() + ": " + errorMsg);
+                    throw new KsefApiException("Błąd wysyłki części " + partInfo.index() + ": " + errorMsg);
                 }
 
             } catch (IOException e) {
