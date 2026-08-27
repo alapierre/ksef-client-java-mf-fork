@@ -12,7 +12,8 @@ public enum QueryPersonalPermissionTypes {
     INTROSPECTION("Introspection"),
     SUBUNIT_MANAGE("SubunitManage"),
     ENFORCEMENT_OPERATION("EnforcementOperations"),
-    VAT_UE_MANAGE("VatUeManage");
+    VAT_UE_MANAGE("VatUeManage"),
+    COLLECTIVE_IDENTIFIER_MANAGE("CollectiveIdentifierManage");
 
     private final String value;
 

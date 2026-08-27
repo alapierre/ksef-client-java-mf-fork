@@ -33,6 +33,7 @@ import pl.akmf.ksef.sdk.client.model.certificate.CertificateRevokeRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.QueryCertificatesRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierResponse;
@@ -223,7 +224,6 @@ import static pl.akmf.ksef.sdk.client.Parameter.DESCRIPTION;
 import static pl.akmf.ksef.sdk.client.Parameter.PAGE_OFFSET;
 import static pl.akmf.ksef.sdk.client.Parameter.PAGE_SIZE;
 import static pl.akmf.ksef.sdk.client.Parameter.PATH_CERTIFICATE_SERIAL_NUMBER;
-import static pl.akmf.ksef.sdk.client.Parameter.PATH_COLLECTIVE_IDENTIFIER_NUMBER;
 import static pl.akmf.ksef.sdk.client.Parameter.PATH_INVOICE_NUMBER;
 import static pl.akmf.ksef.sdk.client.Parameter.PATH_KSEF_NUMBER;
 import static pl.akmf.ksef.sdk.client.Parameter.PATH_KSEF_REFERENCE_NUMBER;
@@ -2371,15 +2371,15 @@ public class DefaultKsefClient implements KSeFClient {
      * Pobranie listy faktur wchodzących w skład identyfikatora zbiorczego
      * Zwraca listę numerów KSeF faktur wchodzących w skład identyfikatora zbiorczego.
      *
-     * @param collectiveIdentifierNumber Numer identyfikatora zbiorczego. (required)
-     * @param continuationToken          Token służący do pobrania kolejnej strony wyników. (optional)
-     * @param pageSize                   Rozmiar strony wyników. (optional, default to 10)
-     * @param accessToken                Token dostępowy.
+     * @param request           Zapytanie o faktury identyfikatorów zbiorczych. (required)
+     * @param continuationToken Token służący do pobrania kolejnej strony wyników. (optional)
+     * @param pageSize          Rozmiar strony wyników. (optional, default to 10)
+     * @param accessToken       Token dostępowy.
      * @return CollectiveIdentifierInvoicesQueryResponse
      * @throws ApiException if fails to make API call
      */
     @Override
-    public CollectiveIdentifierInvoicesQueryResponse getCollectiveIdentifierInvoices(String collectiveIdentifierNumber,
+    public CollectiveIdentifierInvoicesQueryResponse getCollectiveIdentifierInvoices(CollectiveIdentifierInvoicesQueryRequest request,
                                                                                       String continuationToken,
                                                                                       Integer pageSize,
                                                                                       String accessToken) throws ApiException {
@@ -2388,18 +2388,18 @@ public class DefaultKsefClient implements KSeFClient {
             params.put(PAGE_SIZE, String.valueOf(pageSize));
         }
 
-        String uri = buildUrlWithParams(COLLECTIVE_IDENTIFIER_INVOICES.getUrl(), params)
-                .replace(PATH_COLLECTIVE_IDENTIFIER_NUMBER, collectiveIdentifierNumber);
+        String uri = buildUrlWithParams(COLLECTIVE_IDENTIFIER_INVOICES.getUrl(), params);
 
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
 
         if (continuationToken != null) {
             headers.put(CONTINUATION_TOKEN, continuationToken);
         }
 
-        HttpResponse<byte[]> response = get(uri, headers);
+        HttpResponse<byte[]> response = post(uri, request, headers);
 
         return getResponse(response, OK, COLLECTIVE_IDENTIFIER_INVOICES, CollectiveIdentifierInvoicesQueryResponse.class);
     }

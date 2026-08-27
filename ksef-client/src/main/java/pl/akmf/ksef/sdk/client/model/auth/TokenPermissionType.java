@@ -11,7 +11,8 @@ public enum TokenPermissionType {
     PEPPOL_ID("PeppolId"),
     INTROSPECTION("Introspection"),
     CREDENTIALS_READ("CredentialsRead"),
-    CREDENTIALS_MANAGE("CredentialsManage");
+    CREDENTIALS_MANAGE("CredentialsManage"),
+    COLLECTIVE_IDENTIFIER_MANAGE("CollectiveIdentifierManage");
 
     private final String value;
 

@@ -38,7 +38,8 @@ public class TestDataPermission {
         CREDENTIAL_READ("CredentialsRead"),
         CREDENTIAL_MANAGE("CredentialsManage"),
         ENFORCEMENT_OPERATION("EnforcementOperations"),
-        SUBUNIT_MANAGE("SubunitManage");
+        SUBUNIT_MANAGE("SubunitManage"),
+        COLLECTIVE_IDENTIFIER_MANAGE("CollectiveIdentifierManage");
 
         private final String value;
 

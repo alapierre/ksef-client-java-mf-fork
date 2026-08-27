@@ -20,7 +20,9 @@ public enum PersonPermissionType {
 
     SUBUNITMANAGE("SubunitManage"),
 
-    ENFORCEMENTOPERATIONS("EnforcementOperations");
+    ENFORCEMENTOPERATIONS("EnforcementOperations"),
+
+    COLLECTIVEIDENTIFIERMANAGE("CollectiveIdentifierManage");
 
     private final String value;
 

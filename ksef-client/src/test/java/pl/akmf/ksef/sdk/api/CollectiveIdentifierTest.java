@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.Before;
 import org.junit.Test;
+import pl.akmf.ksef.sdk.api.builders.collectiveidentifier.CollectiveIdentifierInvoicesQueryRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.collectiveidentifier.GenerateCollectiveIdentifierRequestBuilder;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoice;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicePayment;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierResponse;
@@ -78,12 +80,31 @@ public class CollectiveIdentifierTest {
     }
 
     @Test
+    public void testSerializationInvoicesQueryRequest() throws Exception {
+        CollectiveIdentifierInvoicesQueryRequest request = new CollectiveIdentifierInvoicesQueryRequestBuilder()
+                .addCollectiveIdentifierNumber("1111111111-IZ202607-65ED02180000-E7")
+                .addCollectiveIdentifierNumber("2222222222-IZ202607-65ED02180000-E8")
+                .build();
+
+        String json = objectMapper.writeValueAsString(request);
+        assertNotNull(json);
+        assertTrue(json.contains("1111111111-IZ202607-65ED02180000-E7"));
+        assertTrue(json.contains("2222222222-IZ202607-65ED02180000-E8"));
+
+        CollectiveIdentifierInvoicesQueryRequest deserialized = objectMapper.readValue(json, CollectiveIdentifierInvoicesQueryRequest.class);
+        assertEquals(2, deserialized.getCollectiveIdentifierNumbers().size());
+        assertEquals("1111111111-IZ202607-65ED02180000-E7", deserialized.getCollectiveIdentifierNumbers().get(0));
+        assertEquals("2222222222-IZ202607-65ED02180000-E8", deserialized.getCollectiveIdentifierNumbers().get(1));
+    }
+
+    @Test
     public void testDeserializationInvoicesQueryResponse() throws Exception {
         String json = "{\n" +
                 "  \"continuationToken\": \"token123\",\n" +
                 "  \"invoices\": [\n" +
                 "    {\n" +
                 "      \"ksefNumber\": \"1111111111-20260101-111111111111-11\",\n" +
+                "      \"collectiveIdentifierNumber\": \"1111111111-IZ202607-65ED02180000-E7\",\n" +
                 "      \"payment\": {\n" +
                 "        \"amount\": 250.0,\n" +
                 "        \"currency\": \"PLN\"\n" +
@@ -98,6 +119,7 @@ public class CollectiveIdentifierTest {
         assertEquals("token123", response.getContinuationToken());
         assertEquals(1, response.getInvoices().size());
         assertEquals("1111111111-20260101-111111111111-11", response.getInvoices().get(0).getKsefNumber());
+        assertEquals("1111111111-IZ202607-65ED02180000-E7", response.getInvoices().get(0).getCollectiveIdentifierNumber());
         assertEquals(Double.valueOf(250.0), response.getInvoices().get(0).getPayment().getAmount());
         assertEquals("PLN", response.getInvoices().get(0).getPayment().getCurrency());
         assertEquals("Opis faktury", response.getInvoices().get(0).getDescription());
@@ -138,6 +160,7 @@ public class CollectiveIdentifierTest {
                 "  \"invoices\": [\n" +
                 "    {\n" +
                 "      \"ksefNumber\": \"1111111111-20260101-111111111111-11\",\n" +
+                "      \"collectiveIdentifierNumber\": \"1111111111-IZ202607-65ED02180000-E7\",\n" +
                 "      \"detailsHidden\": false\n" +
                 "    }\n" +
                 "  ]\n" +
@@ -148,8 +171,12 @@ public class CollectiveIdentifierTest {
 
         DefaultKsefClient client = new DefaultKsefClient(mockHttpClient, properties, objectMapper);
 
+        CollectiveIdentifierInvoicesQueryRequest request = new CollectiveIdentifierInvoicesQueryRequestBuilder()
+                .addCollectiveIdentifierNumber("1111111111-IZ202607-65ED02180000-E7")
+                .build();
+
         CollectiveIdentifierInvoicesQueryResponse response = client.getCollectiveIdentifierInvoices(
-                "1111111111-IZ202607-65ED02180000-E7",
+                request,
                 "token-current",
                 20,
                 "test-access-token"
@@ -158,12 +185,14 @@ public class CollectiveIdentifierTest {
         assertNotNull(response);
         assertEquals("next-page", response.getContinuationToken());
         assertEquals(1, response.getInvoices().size());
+        assertEquals("1111111111-IZ202607-65ED02180000-E7", response.getInvoices().get(0).getCollectiveIdentifierNumber());
 
         HttpRequest sentRequest = mockHttpClient.getLastRequest();
         assertNotNull(sentRequest);
-        assertEquals("GET", sentRequest.method());
-        assertEquals("https://ksef-test.mf.gov.pl/api/v2/collective-identifiers/1111111111-IZ202607-65ED02180000-E7/invoices?pageSize=20", sentRequest.uri().toString());
+        assertEquals("POST", sentRequest.method());
+        assertEquals("https://ksef-test.mf.gov.pl/api/v2/collective-identifiers/invoices?pageSize=20", sentRequest.uri().toString());
         assertEquals("Bearer test-access-token", sentRequest.headers().firstValue("Authorization").orElse(null));
+        assertEquals("application/json", sentRequest.headers().firstValue("Content-Type").orElse(null));
         assertEquals("token-current", sentRequest.headers().firstValue("x-continuation-token").orElse(null));
         assertEquals("application/json", sentRequest.headers().firstValue("Accept").orElse(null));
     }

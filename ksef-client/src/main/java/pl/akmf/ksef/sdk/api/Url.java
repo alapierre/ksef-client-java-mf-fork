@@ -96,7 +96,7 @@ public enum Url {
     TOKEN_STATUS("tokens/{referenceNumber}", "apiV2TokensReferenceNumberGet"),
 
     COLLECTIVE_IDENTIFIER_GENERATE("collective-identifiers", "apiV2CollectiveIdentifiersPost"),
-    COLLECTIVE_IDENTIFIER_INVOICES("collective-identifiers/{collectiveIdentifierNumber}/invoices", "apiV2CollectiveIdentifiersInvoicesGet"),
+    COLLECTIVE_IDENTIFIER_INVOICES("collective-identifiers/invoices", "apiV2CollectiveIdentifiersInvoicesPost"),
 
     LIGHTHOUSE_STATUS("status", "apiV2LighthouseStatusGet"),
     LIGHTHOUSE_MESSAGES("messages", "apiV2LighthouseMessagesGet");

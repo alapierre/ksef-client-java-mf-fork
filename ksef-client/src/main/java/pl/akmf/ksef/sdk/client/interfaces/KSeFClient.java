@@ -25,6 +25,7 @@ import pl.akmf.ksef.sdk.client.model.certificate.CertificateRevokeRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.QueryCertificatesRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierResponse;
@@ -950,12 +951,12 @@ public interface KSeFClient {
      * Pobranie listy faktur wchodzących w skład identyfikatora zbiorczego
      * Zwraca listę numerów KSeF faktur wchodzących w skład identyfikatora zbiorczego.
      *
-     * @param collectiveIdentifierNumber Numer identyfikatora zbiorczego. (required)
-     * @param continuationToken          Token służący do pobrania kolejnej strony wyników. (optional)
-     * @param pageSize                   Rozmiar strony wyników. (optional, default to 10)
-     * @param accessToken                Token dostępowy.
+     * @param request           Zapytanie o faktury identyfikatorów zbiorczych. (required)
+     * @param continuationToken Token służący do pobrania kolejnej strony wyników. (optional)
+     * @param pageSize          Rozmiar strony wyników. (optional, default to 10)
+     * @param accessToken       Token dostępowy.
      * @return CollectiveIdentifierInvoicesQueryResponse
      * @throws ApiException if fails to make API call
      */
-    CollectiveIdentifierInvoicesQueryResponse getCollectiveIdentifierInvoices(String collectiveIdentifierNumber, String continuationToken, Integer pageSize, String accessToken) throws ApiException;
+    CollectiveIdentifierInvoicesQueryResponse getCollectiveIdentifierInvoices(CollectiveIdentifierInvoicesQueryRequest request, String continuationToken, Integer pageSize, String accessToken) throws ApiException;
 }
