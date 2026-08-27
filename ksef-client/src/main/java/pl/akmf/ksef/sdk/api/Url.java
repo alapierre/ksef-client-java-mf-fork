@@ -95,6 +95,9 @@ public enum Url {
     TOKEN_REVOKE("tokens/{referenceNumber}", "apiV2TokensReferenceNumberDelete"),
     TOKEN_STATUS("tokens/{referenceNumber}", "apiV2TokensReferenceNumberGet"),
 
+    COLLECTIVE_IDENTIFIER_GENERATE("collective-identifiers", "apiV2CollectiveIdentifiersPost"),
+    COLLECTIVE_IDENTIFIER_INVOICES("collective-identifiers/{collectiveIdentifierNumber}/invoices", "apiV2CollectiveIdentifiersInvoicesGet"),
+
     LIGHTHOUSE_STATUS("status", "apiV2LighthouseStatusGet"),
     LIGHTHOUSE_MESSAGES("messages", "apiV2LighthouseMessagesGet");
 

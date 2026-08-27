@@ -6,7 +6,7 @@ release:
   github:
     enabled: true
     skipTag: true
-    skipRelease: true
+    skipRelease: false
     uploadAssets: NEVER
     owner: alapierre
     name: ksef-client-java-mf-fork

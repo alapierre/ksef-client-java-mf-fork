@@ -33,6 +33,9 @@ import pl.akmf.ksef.sdk.client.model.certificate.CertificateRevokeRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.QueryCertificatesRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryResponse;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierRequest;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierResponse;
 import pl.akmf.ksef.sdk.system.ExceptionHandler;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
@@ -132,6 +135,8 @@ import static pl.akmf.ksef.sdk.api.Url.CERTIFICATE_METADATA;
 import static pl.akmf.ksef.sdk.api.Url.CERTIFICATE_RETRIEVE;
 import static pl.akmf.ksef.sdk.api.Url.CERTIFICATE_REVOKE;
 import static pl.akmf.ksef.sdk.api.Url.CERTIFICATE_STATUS;
+import static pl.akmf.ksef.sdk.api.Url.COLLECTIVE_IDENTIFIER_GENERATE;
+import static pl.akmf.ksef.sdk.api.Url.COLLECTIVE_IDENTIFIER_INVOICES;
 import static pl.akmf.ksef.sdk.api.Url.GET_RATE_LIMIT;
 import static pl.akmf.ksef.sdk.api.Url.GRANT_AUTHORIZED_SUBJECT_PERMISSION;
 import static pl.akmf.ksef.sdk.api.Url.GRANT_EU_ADMINISTRATOR_PERMISSION;
@@ -218,6 +223,7 @@ import static pl.akmf.ksef.sdk.client.Parameter.DESCRIPTION;
 import static pl.akmf.ksef.sdk.client.Parameter.PAGE_OFFSET;
 import static pl.akmf.ksef.sdk.client.Parameter.PAGE_SIZE;
 import static pl.akmf.ksef.sdk.client.Parameter.PATH_CERTIFICATE_SERIAL_NUMBER;
+import static pl.akmf.ksef.sdk.client.Parameter.PATH_COLLECTIVE_IDENTIFIER_NUMBER;
 import static pl.akmf.ksef.sdk.client.Parameter.PATH_INVOICE_NUMBER;
 import static pl.akmf.ksef.sdk.client.Parameter.PATH_KSEF_NUMBER;
 import static pl.akmf.ksef.sdk.client.Parameter.PATH_KSEF_REFERENCE_NUMBER;
@@ -2337,6 +2343,65 @@ public class DefaultKsefClient implements KSeFClient {
                 response.headers(),
                 response.body()
         ).getData();
+    }
+
+    /**
+     * Generowanie identyfikatora zbiorczego
+     * Generuje identyfikator zbiorczy dla przekazanej listy numerów KSeF faktur wystawionych przez tego samego sprzedawcę.
+     *
+     * @param generateCollectiveIdentifierRequest Lista faktur wchodząca w skład identyfikatora zbiorczego. Limit faktur wynosi 500.
+     * @param accessToken                        Token dostępowy.
+     * @return GenerateCollectiveIdentifierResponse
+     * @throws ApiException if fails to make API call
+     */
+    @Override
+    public GenerateCollectiveIdentifierResponse generateCollectiveIdentifier(GenerateCollectiveIdentifierRequest generateCollectiveIdentifierRequest,
+                                                                              String accessToken) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        HttpResponse<byte[]> response = post(COLLECTIVE_IDENTIFIER_GENERATE.getUrl(), generateCollectiveIdentifierRequest, headers);
+
+        return getResponse(response, CREATED, COLLECTIVE_IDENTIFIER_GENERATE, GenerateCollectiveIdentifierResponse.class);
+    }
+
+    /**
+     * Pobranie listy faktur wchodzących w skład identyfikatora zbiorczego
+     * Zwraca listę numerów KSeF faktur wchodzących w skład identyfikatora zbiorczego.
+     *
+     * @param collectiveIdentifierNumber Numer identyfikatora zbiorczego. (required)
+     * @param continuationToken          Token służący do pobrania kolejnej strony wyników. (optional)
+     * @param pageSize                   Rozmiar strony wyników. (optional, default to 10)
+     * @param accessToken                Token dostępowy.
+     * @return CollectiveIdentifierInvoicesQueryResponse
+     * @throws ApiException if fails to make API call
+     */
+    @Override
+    public CollectiveIdentifierInvoicesQueryResponse getCollectiveIdentifierInvoices(String collectiveIdentifierNumber,
+                                                                                      String continuationToken,
+                                                                                      Integer pageSize,
+                                                                                      String accessToken) throws ApiException {
+        HashMap<String, String> params = new HashMap<>();
+        if (pageSize != null) {
+            params.put(PAGE_SIZE, String.valueOf(pageSize));
+        }
+
+        String uri = buildUrlWithParams(COLLECTIVE_IDENTIFIER_INVOICES.getUrl(), params)
+                .replace(PATH_COLLECTIVE_IDENTIFIER_NUMBER, collectiveIdentifierNumber);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
+
+        if (continuationToken != null) {
+            headers.put(CONTINUATION_TOKEN, continuationToken);
+        }
+
+        HttpResponse<byte[]> response = get(uri, headers);
+
+        return getResponse(response, OK, COLLECTIVE_IDENTIFIER_INVOICES, CollectiveIdentifierInvoicesQueryResponse.class);
     }
 
     protected HttpResponse<byte[]> sendHttpRequest(HttpRequest request, HttpResponse.BodyHandler<byte[]> bodyHandler) {

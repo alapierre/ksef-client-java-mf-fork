@@ -33,4 +33,5 @@ public final class Parameter {
     public static final String PATH_INVOICE_NUMBER = "{invoiceReferenceNumber}";
     public static final String PATH_PERMISSION_ID = "{permissionId}";
     public static final String PATH_CERTIFICATE_SERIAL_NUMBER = "{certificateSerialNumber}";
+    public static final String PATH_COLLECTIVE_IDENTIFIER_NUMBER = "{collectiveIdentifierNumber}";
 }
