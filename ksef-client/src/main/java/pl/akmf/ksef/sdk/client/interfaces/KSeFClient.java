@@ -27,6 +27,9 @@ import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentReques
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryResponse;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifiersByKsefNumberQueryResponse;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifiersQueryRequest;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifiersQueryResponse;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
@@ -90,12 +93,32 @@ import pl.akmf.ksef.sdk.client.model.testdata.TestDataPersonCreateRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataPersonRemoveRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataSubjectCreateRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataSubjectRemoveRequest;
+import pl.akmf.ksef.sdk.client.model.testdata.TestDataUpdateCertificateRequest;
 import pl.akmf.ksef.sdk.client.model.util.SortOrder;
 import pl.akmf.ksef.sdk.client.peppol.PeppolProvidersListResponse;
+import pl.akmf.ksef.sdk.system.headerobservation.ResponseHeaderCaptureHandler;
 
 import java.util.List;
 
 public interface KSeFClient {
+
+    /**
+     * Zwraca handler obserwacji nagłówków odpowiedzi. Obserwacja wymaga subskrypcji
+     * przez subscribe; po odczycie nagłówków należy wywołać clear.
+     *
+     * @return Handler obserwacji nagłówków.
+     */
+    ResponseHeaderCaptureHandler getResponseHeaderCaptureHandler();
+
+    /**
+     * Aktualizuje datę ważności certyfikatu na środowisku testowym.
+     *
+     * @param serialNumber Numer seryjny certyfikatu.
+     * @param request Nowa data ważności, nie późniejsza niż dotychczasowa.
+     * @param accessToken Token dostępowy.
+     * @throws ApiException jeśli API odrzuci żądanie
+     */
+    void updateCertificate(String serialNumber, TestDataUpdateCertificateRequest request, String accessToken) throws ApiException;
 
     /**
      * Otwarcie sesji wsadowej
@@ -959,4 +982,29 @@ public interface KSeFClient {
      * @throws ApiException if fails to make API call
      */
     CollectiveIdentifierInvoicesQueryResponse getCollectiveIdentifierInvoices(CollectiveIdentifierInvoicesQueryRequest request, String continuationToken, Integer pageSize, String accessToken) throws ApiException;
+
+    /**
+     * Pobranie listy identyfikatorów zbiorczych powiązanych z kontekstem.
+     *
+     * @param request Filtry zapytania. Daty dateCreatedFrom i dateCreatedTo są wymagane; maksymalny przedział to 100 dni.
+     * @param continuationToken Token kolejnej strony wyników. (optional)
+     * @param pageSize Rozmiar strony: od 10 do 200, domyślnie 10. (optional)
+     * @param accessToken Token dostępowy.
+     * @return CollectiveIdentifiersQueryResponse
+     * @throws ApiException if fails to make API call
+     */
+    CollectiveIdentifiersQueryResponse getCollectiveIdentifiers(CollectiveIdentifiersQueryRequest request, String continuationToken, Integer pageSize, String accessToken) throws ApiException;
+
+    /**
+     * Pobranie listy identyfikatorów zbiorczych po numerze KSeF.
+     *
+     * @param ksefNumber Numer KSeF faktury. (required)
+     * @param continuationToken Token kolejnej strony wyników. (optional)
+     * @param pageSize Rozmiar strony: od 10 do 200, domyślnie 10. (optional)
+     * @param accessToken Token dostępowy.
+     * @return CollectiveIdentifiersByKsefNumberQueryResponse
+     * @throws ApiException if fails to make API call
+     */
+    CollectiveIdentifiersByKsefNumberQueryResponse getCollectiveIdentifiersByKsefNumber(String ksefNumber, String continuationToken, Integer pageSize, String accessToken) throws ApiException;
+
 }

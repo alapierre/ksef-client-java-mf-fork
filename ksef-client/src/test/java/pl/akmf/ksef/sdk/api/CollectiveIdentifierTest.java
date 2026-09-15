@@ -5,11 +5,15 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.Before;
 import org.junit.Test;
 import pl.akmf.ksef.sdk.api.builders.collectiveidentifier.CollectiveIdentifierInvoicesQueryRequestBuilder;
+import pl.akmf.ksef.sdk.api.builders.collectiveidentifier.CollectiveIdentifiersQueryRequestBuilder;
 import pl.akmf.ksef.sdk.api.builders.collectiveidentifier.GenerateCollectiveIdentifierRequestBuilder;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoice;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicePayment;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryResponse;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifiersByKsefNumberQueryResponse;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifiersQueryRequest;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifiersQueryResponse;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.CurrencyCode;
@@ -27,6 +31,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -195,6 +200,91 @@ public class CollectiveIdentifierTest {
         assertEquals("application/json", sentRequest.headers().firstValue("Content-Type").orElse(null));
         assertEquals("token-current", sentRequest.headers().firstValue("x-continuation-token").orElse(null));
         assertEquals("application/json", sentRequest.headers().firstValue("Accept").orElse(null));
+    }
+
+    @Test
+    public void testCollectiveIdentifiersQueryFilters() throws Exception {
+        OffsetDateTime from = OffsetDateTime.parse("2026-07-10T12:00:00+02:00");
+        OffsetDateTime to = from.plusDays(31);
+        CollectiveIdentifiersQueryRequest request = new CollectiveIdentifiersQueryRequestBuilder()
+                .withCollectiveIdentifierNumber("1111111111-IZ202607-65ED02180000-E7")
+                .withDateCreatedFrom(from)
+                .withDateCreatedTo(to)
+                .withInvoiceCountFrom(10)
+                .withInvoiceCountTo(100)
+                .withCreatedInCurrentContext(false)
+                .build();
+        var json = objectMapper.readTree(objectMapper.writeValueAsString(request));
+        assertEquals("1111111111-IZ202607-65ED02180000-E7", json.get("collectiveIdentifierNumber").asText());
+        assertEquals(10, json.get("invoiceCountFrom").asInt());
+        assertEquals(100, json.get("invoiceCountTo").asInt());
+        assertEquals(false, json.get("createdInCurrentContext").asBoolean());
+        var restored = objectMapper.treeToValue(json, CollectiveIdentifiersQueryRequest.class);
+        assertEquals(from.toInstant(), restored.getDateCreatedFrom().toInstant());
+        assertEquals(to.toInstant(), restored.getDateCreatedTo().toInstant());
+    }
+
+    @Test
+    public void testClientGetCollectiveIdentifiers() throws Exception {
+        MockHttpClient http = new MockHttpClient(200, """
+                {"continuationToken":"next-page","collectiveIdentifiers":[{
+                  "collectiveIdentifierNumber":"1111111111-IZ202607-65ED02180000-E7",
+                  "dateCreated":"2026-07-10T12:00:00+02:00",
+                  "invoiceCount":16,"createdInCurrentContext":true}]}
+                """);
+        DefaultKsefClient client = new DefaultKsefClient(http,
+                new TestApiProperties("https://ksef-test.mf.gov.pl/api/v2"), objectMapper);
+        CollectiveIdentifiersQueryRequest query = new CollectiveIdentifiersQueryRequestBuilder()
+                .withDateCreatedFrom(OffsetDateTime.parse("2026-07-10T12:00:00+02:00"))
+                .withDateCreatedTo(OffsetDateTime.parse("2026-08-10T12:00:00+02:00"))
+                .build();
+        CollectiveIdentifiersQueryResponse response = client.getCollectiveIdentifiers(query, "current", 20, "access");
+        assertEquals("next-page", response.getContinuationToken());
+        assertEquals(1, response.getCollectiveIdentifiers().size());
+        var item = response.getCollectiveIdentifiers().get(0);
+        assertEquals("1111111111-IZ202607-65ED02180000-E7", item.getCollectiveIdentifierNumber());
+        assertEquals(Integer.valueOf(16), item.getInvoiceCount());
+        assertEquals(Boolean.TRUE, item.getCreatedInCurrentContext());
+        assertEquals(OffsetDateTime.parse("2026-07-10T10:00:00Z").toInstant(), item.getDateCreated().toInstant());
+        assertEquals("POST", http.getLastRequest().method());
+        assertEquals("https://ksef-test.mf.gov.pl/api/v2/collective-identifiers/query?pageSize=20", http.getLastRequest().uri().toString());
+        assertEquals("application/json", http.getLastRequest().headers().firstValue("Content-Type").orElse(null));
+        assertQueryHeaders(http.getLastRequest());
+        client.getCollectiveIdentifiers(query, null, null, "access");
+        assertEquals(null, http.getLastRequest().uri().getQuery());
+        assertTrue(http.getLastRequest().headers().firstValue("x-continuation-token").isEmpty());
+    }
+
+    @Test
+    public void testClientGetCollectiveIdentifiersByKsefNumber() throws Exception {
+        MockHttpClient http = new MockHttpClient(200, """
+                {"continuationToken":null,"collectiveIdentifiers":[{
+                  "collectiveIdentifierNumber":"1111111111-IZ202607-65ED02180000-E7",
+                  "dateCreated":"2026-07-10T12:00:00+02:00","createdInCurrentContext":false}]}
+                """);
+        DefaultKsefClient client = new DefaultKsefClient(http,
+                new TestApiProperties("https://ksef-test.mf.gov.pl/api/v2"), objectMapper);
+        String number = "1111111111-20260101-111111111111-11";
+        CollectiveIdentifiersByKsefNumberQueryResponse response = client.getCollectiveIdentifiersByKsefNumber(number, "current", 200, "access");
+        assertEquals(null, response.getContinuationToken());
+        assertEquals(1, response.getCollectiveIdentifiers().size());
+        var item = response.getCollectiveIdentifiers().get(0);
+        assertEquals("1111111111-IZ202607-65ED02180000-E7", item.getCollectiveIdentifierNumber());
+        assertEquals(Boolean.FALSE, item.getCreatedInCurrentContext());
+        assertEquals(OffsetDateTime.parse("2026-07-10T10:00:00Z").toInstant(), item.getDateCreated().toInstant());
+        assertEquals("GET", http.getLastRequest().method());
+        assertEquals("https://ksef-test.mf.gov.pl/api/v2/collective-identifiers/ksef/" + number + "?pageSize=200", http.getLastRequest().uri().toString());
+        assertTrue(http.getLastRequest().bodyPublisher().isEmpty());
+        assertQueryHeaders(http.getLastRequest());
+        client.getCollectiveIdentifiersByKsefNumber(number, null, null, "access");
+        assertEquals(null, http.getLastRequest().uri().getQuery());
+        assertTrue(http.getLastRequest().headers().firstValue("x-continuation-token").isEmpty());
+    }
+
+    private void assertQueryHeaders(HttpRequest request) {
+        assertEquals("Bearer access", request.headers().firstValue("Authorization").orElse(null));
+        assertEquals("application/json", request.headers().firstValue("Accept").orElse(null));
+        assertEquals("current", request.headers().firstValue("x-continuation-token").orElse(null));
     }
 
     private static class TestApiProperties extends KsefApiProperties {

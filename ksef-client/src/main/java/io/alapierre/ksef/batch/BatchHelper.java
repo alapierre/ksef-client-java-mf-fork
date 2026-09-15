@@ -50,6 +50,10 @@ public class BatchHelper {
      */
     public BatchResult prepareBatch(InvoiceSource source, BatchConfig config) {
 
+        if (config.maxPartSize() <= 0) {
+            throw new IllegalArgumentException("maxPartSize must be positive.");
+        }
+
         // 1. Utwórz ZIP i zbierz hashe faktur (zapis do pliku tymczasowego)
         ZipContext zipContext = createZipWithHashes(source);
         File plainZipFile = zipContext.file();
@@ -63,6 +67,11 @@ public class BatchHelper {
         long zipSize = 0;
 
         try {
+            // Sprawdź ograniczenia przed pobraniem kluczy, szyfrowaniem i zapisem części.
+            BatchFileValidation.validateFileSize(plainZipFile.length());
+            long partCount = (plainZipFile.length() - 1) / config.maxPartSize() + 1;
+            BatchFileValidation.validatePartCount(partCount);
+
             // 2. Pobierz dane kryptograficzne (klucz AES i IV)
             EncryptionData encryptionData = cryptographyService.getEncryptionData();
             aesKey = encryptionData.cipherKey();
@@ -85,7 +94,7 @@ public class BatchHelper {
                 int partIndex = 1; // KSeF wymaga indeksowania od 1
 
 
-                while ((bytesRead = fis.read(buffer)) > 0) {
+                while ((bytesRead = fis.readNBytes(buffer, 0, buffer.length)) > 0) {
                     // Jeśli przeczytano mniej niż bufor (ostatnia część), przytnij tablicę
                     byte[] partData;
                     if (bytesRead < buffer.length) {

@@ -24,11 +24,17 @@ public enum InvoiceMetadataInvoiceType {
 
     VAT_PEF("VatPef"),
 
+    VAT_PEF_SP("VatPefSp"),
+
     KOR_PEF("KorPef"),
 
     VAT_RR("VatRr"),
 
-    KOR_VAT_SP("KorVatRr");
+    /** @deprecated Use {@link #KOR_VAT_RR}. */
+    @Deprecated
+    KOR_VAT_SP("KorVatRr"),
+
+    KOR_VAT_RR("KorVatRr");
 
     private final String value;
 

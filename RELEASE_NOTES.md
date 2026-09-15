@@ -1,3 +1,39 @@
+# v2.3.9
+
+### Dodane
+
+- Uzupełniono obsługę identyfikatorów zbiorczych o wyszukiwanie w bieżącym kontekście
+  oraz po numerze KSeF faktury, z filtrowaniem i paginacją.
+- Dodano odczyt limitów identyfikatorów zbiorczych oraz możliwość zmiany ich limitów
+  kontekstu w środowisku testowym.
+- Udostępniono odczyt wybranych nagłówków odpowiedzi, np. `X-System-Warning`, aby integracja
+  mogła reagować na ostrzeżenia API. Obserwacja jest domyślnie wyłączona; po włączeniu
+  zgromadzone wyniki należy czyścić po odczycie przez `clear()`.
+- Dodano możliwość skrócenia ważności certyfikatu w środowisku testowym, przydatną
+  przy sprawdzaniu obsługi wygasających certyfikatów.
+- Dodano typ faktury specjalizowanej PEF (`VatPefSp`) i poprawną nazwę `KOR_VAT_RR`
+  dla korekty VAT RR. Dotychczasowa nazwa pozostaje dostępna jako przestarzała;
+  deserializacja zachowuje dotychczasowe zachowanie.
+- Ułatwiono przekazywanie identyfikatora klucza publicznego przy tworzeniu danych szyfrowania.
+
+### Wysyłka wsadowa
+
+- Niepoprawne metadane paczek są odrzucane przed wysyłką: sprawdzane są rozmiar paczki
+  (1–5 000 000 000 bajtów), liczba części (1–50), dodatnie numery i rozmiary części
+  oraz format skrótów SHA-256 w Base64. Błędy, które wcześniej mogły trafić do API,
+  są teraz zgłaszane lokalnie.
+- Helper wykrywa przekroczenie rozmiaru paczki lub liczby części przed pobraniem kluczy
+  i szyfrowaniem, oszczędzając czas oraz miejsce na dysku. Niedodatni rozmiar części
+  jest odrzucany przed odczytem faktur.
+
+### Zgodność istniejących integracji
+
+- Zachowano kompresję ZIP i interfejs dotychczasowej obsługi identyfikatorów zbiorczych.
+  Wybrane funkcje z upstream 3.0.27 przeniesiono bez wprowadzania circuit breakera
+  ani zmiany domyślnego formatu paczek.
+
+---
+
 # Changelog zmian – `## 2.0.0 (2025-07-17)`
 
 > Info: 🔧 zmienione • ➕ dodane • ➖ usunięte
@@ -2174,4 +2210,3 @@
 | ➕ dodane    | 1             |
 | 🔧 zmienione | 13            |
 | ➖ usunięte  | 0             |
-

@@ -3,7 +3,22 @@
 
 # KSeF 2.0 SDK (Community Fork)
 
-A community-maintained fork of the official KSeF 2.0 SDK — created to fix critical issues, update dependencies, and make the SDK usable in real-world integrations until the official version catches up.
+An independently maintained community fork of the official KSeF 2.0 SDK, focused on reliable integrations, API coverage, and backward compatibility.
+
+## Independent development and upstream changes
+
+We have decided to develop this fork independently and stop merging upstream releases.
+We consider some recent upstream changes—particularly the circuit breaker integration
+and changes to default behavior—too risky to adopt in existing integrations without
+individual review. These changes can affect how a working integration sends requests
+and handles failures, even when its own code has not changed.
+
+We will continue to review upstream improvements and port selected fixes and API features
+when they benefit this fork. Each change will be assessed for compatibility and tested
+against the fork's existing functionality, including its batch processing helpers.
+Backward compatibility and predictable behavior take priority over matching upstream's
+implementation. Changes that affect existing behavior will be documented in the
+[release notes](RELEASE_NOTES.md).
 
 ## 🚀 Motivation
 
@@ -22,7 +37,7 @@ This situation has caused understandable frustration among developers integratin
 
 ## 🎯 Goal of This Project
 
-The goal of this fork is not to create a competing SDK, but to provide a practical, temporary solution for developers who need a reliable, secure, and working client for KSeF integration today.
+The goal of this fork is to provide a reliable Java client for KSeF, maintained independently with the needs of existing integrations in mind.
 
 Specifically, this fork:
 
@@ -31,7 +46,7 @@ Specifically, this fork:
 - Aligns the SDK with the latest version of the KSeF 2.0 API.
 - Publishes the library to a public Maven repository for easier integration in Java projects.
 
-The intent is to support the developer community until the official SDK regains active maintenance and stability.
+Development will follow the KSeF API contract and the needs of this fork’s users, with upstream changes evaluated individually.
 
 ## 🧱 Differences from the Official SDK
 
@@ -39,7 +54,7 @@ The intent is to support the developer community until the official SDK regains 
 | Area                  | Official SDK           | This Fork                                   |
 |-----------------------|------------------------|---------------------------------------------|
 | Dependency management | it varies              | Updated and secure dependencies             |
-| Maven publishing	     | Github Packages        | Published to public Maven repository        |
+| Maven publishing      | Github Packages        | Published to public Maven repository        |
 | Maintenance           | Irregular / no updates | Community maintained                        |
 | Build system          | Unmodified             | Cleaned up and improved for reproducibility |
 

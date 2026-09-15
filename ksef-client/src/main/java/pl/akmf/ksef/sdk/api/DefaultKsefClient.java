@@ -35,8 +35,12 @@ import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentReques
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifierInvoicesQueryResponse;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifiersByKsefNumberQueryResponse;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifiersQueryRequest;
+import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifiersQueryResponse;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierResponse;
+import pl.akmf.ksef.sdk.client.model.testdata.TestDataUpdateCertificateRequest;
 import pl.akmf.ksef.sdk.system.ExceptionHandler;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
@@ -102,6 +106,8 @@ import pl.akmf.ksef.sdk.client.model.testdata.TestDataSubjectRemoveRequest;
 import pl.akmf.ksef.sdk.client.model.util.SortOrder;
 import pl.akmf.ksef.sdk.client.peppol.PeppolProvidersListResponse;
 import pl.akmf.ksef.sdk.system.SystemKSeFSDKException;
+import pl.akmf.ksef.sdk.system.headerobservation.ResponseHeaderCaptureHandler;
+import pl.akmf.ksef.sdk.system.headerobservation.ResponseHeaderObservationProperties;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,6 +121,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static pl.akmf.ksef.sdk.api.Url.COLLECTIVE_IDENTIFIERS_QUERY;
+import static pl.akmf.ksef.sdk.api.Url.COLLECTIVE_IDENTIFIERS_BY_KSEF_NUMBER;
 import static pl.akmf.ksef.sdk.api.HttpStatus.ACCEPTED;
 import static pl.akmf.ksef.sdk.api.HttpStatus.CREATED;
 import static pl.akmf.ksef.sdk.api.HttpStatus.NO_CONTENT;
@@ -202,6 +210,7 @@ import static pl.akmf.ksef.sdk.api.Url.TOKEN_GENERATE;
 import static pl.akmf.ksef.sdk.api.Url.TOKEN_LIST;
 import static pl.akmf.ksef.sdk.api.Url.TOKEN_REVOKE;
 import static pl.akmf.ksef.sdk.api.Url.TOKEN_STATUS;
+import static pl.akmf.ksef.sdk.api.Url.UPDATE_CERTIFICATE_DATA;
 import static pl.akmf.ksef.sdk.client.Headers.ACCEPT;
 import static pl.akmf.ksef.sdk.client.Headers.APPLICATION_JSON;
 import static pl.akmf.ksef.sdk.client.Headers.APPLICATION_XML;
@@ -250,6 +259,7 @@ public class DefaultKsefClient implements KSeFClient {
     private final Duration timeout;
     private final Map<String, String> defaultHeaders;
     private final ExceptionHandler exceptionHandler;
+    private final ResponseHeaderCaptureHandler responseHeaderCaptureHandler = new ResponseHeaderCaptureHandler();
 
     public DefaultKsefClient(HttpClient apiClient,
                              KsefApiProperties ksefApiProperties,
@@ -261,6 +271,24 @@ public class DefaultKsefClient implements KSeFClient {
         this.suffixURl = ksefApiProperties.getSuffixUri();
         this.objectMapper = objectMapper;
         this.exceptionHandler = new ExceptionHandler(objectMapper);
+    }
+
+    public DefaultKsefClient(HttpClient apiClient,
+                             KsefApiProperties ksefApiProperties,
+                             ResponseHeaderObservationProperties responseHeaderObservationProperties,
+                             ObjectMapper objectMapper) {
+        this(apiClient, ksefApiProperties, objectMapper);
+        if (responseHeaderObservationProperties != null) {
+            var options = responseHeaderObservationProperties.getResponseHeaderObservationOptions();
+            if (options != null && options.isEnabled() && options.getHeaderNames() != null) {
+                options.getHeaderNames().forEach(responseHeaderCaptureHandler::subscribe);
+            }
+        }
+    }
+
+    @Override
+    public ResponseHeaderCaptureHandler getResponseHeaderCaptureHandler() {
+        return responseHeaderCaptureHandler;
     }
 
     /**
@@ -2150,6 +2178,15 @@ public class DefaultKsefClient implements KSeFClient {
         }
     }
 
+    private HttpResponse<byte[]> put(String uri, Object body, Map<String, String> headers) {
+        try {
+            HttpRequest request = buildRequest(uri, PUT, body, headers);
+            return sendHttpRequest(request, HttpResponse.BodyHandlers.ofByteArray());
+        } catch (IOException e) {
+            throw new SystemKSeFSDKException(e.getMessage(), e);
+        }
+    }
+
     private HttpResponse<byte[]> get(String uri, Map<String, String> headers) {
         HttpRequest request = buildRequest(uri, GET, null, headers);
 
@@ -2404,9 +2441,100 @@ public class DefaultKsefClient implements KSeFClient {
         return getResponse(response, OK, COLLECTIVE_IDENTIFIER_INVOICES, CollectiveIdentifierInvoicesQueryResponse.class);
     }
 
+    /**
+     * Pobranie listy identyfikatorów zbiorczych powiązanych z kontekstem.
+     *
+     * @param request Filtry zapytania. Daty dateCreatedFrom i dateCreatedTo są wymagane; maksymalny przedział to 100 dni.
+     * @param continuationToken Token kolejnej strony wyników. (optional)
+     * @param pageSize Rozmiar strony: od 10 do 200, domyślnie 10. (optional)
+     * @param accessToken Token dostępowy.
+     * @return CollectiveIdentifiersQueryResponse
+     * @throws ApiException if fails to make API call
+     */
+    @Override
+    public CollectiveIdentifiersQueryResponse getCollectiveIdentifiers(CollectiveIdentifiersQueryRequest request, String continuationToken, Integer pageSize, String accessToken) throws ApiException {
+        Map<String, String> params = new HashMap<>();
+        if (pageSize != null) {
+            params.put(PAGE_SIZE, String.valueOf(pageSize));
+        }
+
+        String uri = buildUrlWithParams(COLLECTIVE_IDENTIFIERS_QUERY.getUrl(), params);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+        if (continuationToken != null) {
+            headers.put(CONTINUATION_TOKEN, continuationToken);
+        }
+
+        HttpResponse<byte[]> response = post(uri, request, headers);
+
+        return getResponse(response, OK, COLLECTIVE_IDENTIFIERS_QUERY, CollectiveIdentifiersQueryResponse.class);
+    }
+
+    /**
+     * Pobranie listy identyfikatorów zbiorczych po numerze KSeF.
+     *
+     * @param ksefNumber Numer KSeF faktury. (required)
+     * @param continuationToken Token kolejnej strony wyników. (optional)
+     * @param pageSize Rozmiar strony: od 10 do 200, domyślnie 10. (optional)
+     * @param accessToken Token dostępowy.
+     * @return CollectiveIdentifiersByKsefNumberQueryResponse
+     * @throws ApiException if fails to make API call
+     */
+    @Override
+    public CollectiveIdentifiersByKsefNumberQueryResponse getCollectiveIdentifiersByKsefNumber(String ksefNumber, String continuationToken, Integer pageSize, String accessToken) throws ApiException {
+        Map<String, String> params = new HashMap<>();
+        if (pageSize != null) {
+            params.put(PAGE_SIZE, String.valueOf(pageSize));
+        }
+
+        String uri = buildUrlWithParams(COLLECTIVE_IDENTIFIERS_BY_KSEF_NUMBER.getUrl(), params).replace(PATH_KSEF_NUMBER, ksefNumber);
+
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(ACCEPT, APPLICATION_JSON);
+        if (continuationToken != null) {
+            headers.put(CONTINUATION_TOKEN, continuationToken);
+        }
+
+        HttpResponse<byte[]> response = get(uri, headers);
+
+        return getResponse(response, OK, COLLECTIVE_IDENTIFIERS_BY_KSEF_NUMBER, CollectiveIdentifiersByKsefNumberQueryResponse.class);
+    }
+
+    /**
+     * Aktualizuje datę ważności certyfikatu na środowisku testowym.
+     *
+     * @param serialNumber Numer seryjny certyfikatu.
+     * @param request Nowa data ważności, nie późniejsza niż dotychczasowa.
+     * @param accessToken Token dostępowy.
+     * @throws ApiException jeśli API odrzuci żądanie
+     */
+    @Override
+    public void updateCertificate(String serialNumber, TestDataUpdateCertificateRequest request, String accessToken) throws ApiException {
+        if (serialNumber == null || serialNumber.isBlank()) {
+            throw new IllegalArgumentException("serialNumber cannot be null or blank");
+        }
+        String uri = buildUrlWithParams(UPDATE_CERTIFICATE_DATA.getUrl(), new HashMap<>())
+                .replace(PATH_CERTIFICATE_SERIAL_NUMBER, serialNumber);
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        HttpResponse<byte[]> response = put(uri, request, headers);
+        // Local OpenAPI specifies 200; upstream SDK 3.0.27 expects 204.
+        if (response.statusCode() != OK.getCode()) {
+            validResponse(response, NO_CONTENT, UPDATE_CERTIFICATE_DATA);
+        }
+    }
+
     protected HttpResponse<byte[]> sendHttpRequest(HttpRequest request, HttpResponse.BodyHandler<byte[]> bodyHandler) {
         try {
-            return apiClient.send(request, bodyHandler);
+            return apiClient.send(request, responseInfo -> {
+                responseHeaderCaptureHandler.capture(request, responseInfo.headers());
+                return bodyHandler.apply(responseInfo);
+            });
         } catch (IOException | InterruptedException e) {
             throw new SystemKSeFSDKException(request.method() + " " + request.uri() + " "
                     + (e.getMessage() != null ? e.getMessage() : ""), e);

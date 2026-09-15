@@ -85,6 +85,8 @@ public enum Url {
     TEST_PERSON_DELETE("testdata/person/remove", "personTestDelete"),
     TEST_PERMISSION("testdata/permissions", "permissionTestCreate"),
     TEST_PERMISSION_REVOKE("testdata/permissions/revoke", "permissionTestRevoke"),
+    UPDATE_CERTIFICATE_DATA("testdata/certificates/{certificateSerialNumber}", "apiV2UpdateCertificateData"),
+
     TEST_ATTACHMENT("testdata/attachment", "attachmentTestCreate"),
     TEST_ATTACHMENT_REVOKE("testdata/attachment/revoke", "attachmentTestRevoke"),
 
@@ -95,6 +97,8 @@ public enum Url {
     TOKEN_REVOKE("tokens/{referenceNumber}", "apiV2TokensReferenceNumberDelete"),
     TOKEN_STATUS("tokens/{referenceNumber}", "apiV2TokensReferenceNumberGet"),
 
+    COLLECTIVE_IDENTIFIERS_QUERY("collective-identifiers/query", "apiV2CollectiveIdentifiersQueryPost"),
+    COLLECTIVE_IDENTIFIERS_BY_KSEF_NUMBER("collective-identifiers/ksef/{ksefNumber}", "apiV2CollectiveIdentifiersKsefKsefNumberGet"),
     COLLECTIVE_IDENTIFIER_GENERATE("collective-identifiers", "apiV2CollectiveIdentifiersPost"),
     COLLECTIVE_IDENTIFIER_INVOICES("collective-identifiers/invoices", "apiV2CollectiveIdentifiersInvoicesPost"),
 

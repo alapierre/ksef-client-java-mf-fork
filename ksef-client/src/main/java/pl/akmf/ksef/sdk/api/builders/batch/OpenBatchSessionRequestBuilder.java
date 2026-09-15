@@ -6,6 +6,7 @@ import pl.akmf.ksef.sdk.client.model.session.SchemaVersion;
 import pl.akmf.ksef.sdk.client.model.session.SessionValue;
 import pl.akmf.ksef.sdk.client.model.session.SystemCode;
 import pl.akmf.ksef.sdk.client.model.session.batch.BatchFileInfo;
+import pl.akmf.ksef.sdk.client.model.session.batch.BatchFileValidation;
 import pl.akmf.ksef.sdk.client.model.session.batch.BatchFilePartInfo;
 import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionRequest;
 
@@ -42,9 +43,7 @@ public class OpenBatchSessionRequestBuilder {
     }
 
     public OpenBatchSessionRequestBuilder withBatchFile(long fileSize, String fileHash) {
-        if (fileSize < 0 || isNullOrBlank(fileHash)) {
-            throw new IllegalArgumentException("BatchFile parameters are invalid.");
-        }
+        BatchFileValidation.validateFile(fileSize, fileHash);
 
         this.batchFileSize = fileSize;
         this.batchFileHash = fileHash;
@@ -57,9 +56,8 @@ public class OpenBatchSessionRequestBuilder {
     }
 
     public OpenBatchSessionRequestBuilder addBatchFilePart(int ordinalNumber, long fileSize, String fileHash) {
-        if (ordinalNumber < 0 || fileSize < 0 || isNullOrBlank(fileHash)) {
-            throw new IllegalArgumentException("BatchFilePart parameters are invalid.");
-        }
+        BatchFileValidation.validatePart(ordinalNumber, fileSize, fileHash);
+        BatchFileValidation.validatePartCount(parts.size() + 1L);
 
         BatchFilePartInfo batchFilePartInfo = new BatchFilePartInfo();
         batchFilePartInfo.setOrdinalNumber(ordinalNumber);
@@ -98,6 +96,9 @@ public class OpenBatchSessionRequestBuilder {
         if (isNullOrBlank(encryption.getEncryptedSymmetricKey()) || isNullOrBlank(encryption.getInitializationVector())) {
             throw new IllegalStateException("Encryption configuration is incomplete.");
         }
+
+        BatchFileValidation.validateFile(batchFileSize, batchFileHash);
+        BatchFileValidation.validatePartCount(parts.size());
 
         BatchFileInfo batchFile = new BatchFileInfo();
         batchFile.setFileSize(batchFileSize);
