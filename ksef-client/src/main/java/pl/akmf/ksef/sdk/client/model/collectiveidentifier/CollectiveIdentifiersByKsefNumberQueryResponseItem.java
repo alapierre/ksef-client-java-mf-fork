@@ -1,7 +1,12 @@
 package pl.akmf.ksef.sdk.client.model.collectiveidentifier;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.OffsetDateTime;
 
+@Setter
+@Getter
 public class CollectiveIdentifiersByKsefNumberQueryResponseItem {
     private String collectiveIdentifierNumber;
     private OffsetDateTime dateCreated;
@@ -16,27 +21,4 @@ public class CollectiveIdentifiersByKsefNumberQueryResponseItem {
         this.createdInCurrentContext = createdInCurrentContext;
     }
 
-    public String getCollectiveIdentifierNumber() {
-        return collectiveIdentifierNumber;
-    }
-
-    public void setCollectiveIdentifierNumber(String collectiveIdentifierNumber) {
-        this.collectiveIdentifierNumber = collectiveIdentifierNumber;
-    }
-
-    public OffsetDateTime getDateCreated() {
-        return dateCreated;
-    }
-
-    public void setDateCreated(OffsetDateTime dateCreated) {
-        this.dateCreated = dateCreated;
-    }
-
-    public Boolean getCreatedInCurrentContext() {
-        return createdInCurrentContext;
-    }
-
-    public void setCreatedInCurrentContext(Boolean createdInCurrentContext) {
-        this.createdInCurrentContext = createdInCurrentContext;
-    }
 }

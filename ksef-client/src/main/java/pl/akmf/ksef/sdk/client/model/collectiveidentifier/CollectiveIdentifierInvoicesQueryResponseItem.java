@@ -1,5 +1,10 @@
 package pl.akmf.ksef.sdk.client.model.collectiveidentifier;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Setter
+@Getter
 public class CollectiveIdentifierInvoicesQueryResponseItem {
     private String ksefNumber;
     private String collectiveIdentifierNumber;
@@ -25,43 +30,4 @@ public class CollectiveIdentifierInvoicesQueryResponseItem {
         this.detailsHidden = detailsHidden;
     }
 
-    public String getKsefNumber() {
-        return ksefNumber;
-    }
-
-    public void setKsefNumber(String ksefNumber) {
-        this.ksefNumber = ksefNumber;
-    }
-
-    public String getCollectiveIdentifierNumber() {
-        return collectiveIdentifierNumber;
-    }
-
-    public void setCollectiveIdentifierNumber(String collectiveIdentifierNumber) {
-        this.collectiveIdentifierNumber = collectiveIdentifierNumber;
-    }
-
-    public CollectiveIdentifierInvoicesQueryResponseItemPayment getPayment() {
-        return payment;
-    }
-
-    public void setPayment(CollectiveIdentifierInvoicesQueryResponseItemPayment payment) {
-        this.payment = payment;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Boolean getDetailsHidden() {
-        return detailsHidden;
-    }
-
-    public void setDetailsHidden(Boolean detailsHidden) {
-        this.detailsHidden = detailsHidden;
-    }
 }

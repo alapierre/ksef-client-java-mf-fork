@@ -1,7 +1,12 @@
 package pl.akmf.ksef.sdk.client.model.collectiveidentifier;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.time.OffsetDateTime;
 
+@Setter
+@Getter
 public class CollectiveIdentifiersQueryRequest {
     private String collectiveIdentifierNumber;
     private OffsetDateTime dateCreatedFrom;
@@ -22,51 +27,4 @@ public class CollectiveIdentifiersQueryRequest {
         this.createdInCurrentContext = createdInCurrentContext;
     }
 
-    public String getCollectiveIdentifierNumber() {
-        return collectiveIdentifierNumber;
-    }
-
-    public void setCollectiveIdentifierNumber(String collectiveIdentifierNumber) {
-        this.collectiveIdentifierNumber = collectiveIdentifierNumber;
-    }
-
-    public OffsetDateTime getDateCreatedFrom() {
-        return dateCreatedFrom;
-    }
-
-    public void setDateCreatedFrom(OffsetDateTime dateCreatedFrom) {
-        this.dateCreatedFrom = dateCreatedFrom;
-    }
-
-    public OffsetDateTime getDateCreatedTo() {
-        return dateCreatedTo;
-    }
-
-    public void setDateCreatedTo(OffsetDateTime dateCreatedTo) {
-        this.dateCreatedTo = dateCreatedTo;
-    }
-
-    public Integer getInvoiceCountFrom() {
-        return invoiceCountFrom;
-    }
-
-    public void setInvoiceCountFrom(Integer invoiceCountFrom) {
-        this.invoiceCountFrom = invoiceCountFrom;
-    }
-
-    public Integer getInvoiceCountTo() {
-        return invoiceCountTo;
-    }
-
-    public void setInvoiceCountTo(Integer invoiceCountTo) {
-        this.invoiceCountTo = invoiceCountTo;
-    }
-
-    public Boolean getCreatedInCurrentContext() {
-        return createdInCurrentContext;
-    }
-
-    public void setCreatedInCurrentContext(Boolean createdInCurrentContext) {
-        this.createdInCurrentContext = createdInCurrentContext;
-    }
 }

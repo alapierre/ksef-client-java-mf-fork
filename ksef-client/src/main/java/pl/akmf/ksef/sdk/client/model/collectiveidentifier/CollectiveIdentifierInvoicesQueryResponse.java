@@ -1,8 +1,13 @@
 package pl.akmf.ksef.sdk.client.model.collectiveidentifier;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Setter
+@Getter
 public class CollectiveIdentifierInvoicesQueryResponse {
     private String continuationToken;
     private List<CollectiveIdentifierInvoicesQueryResponseItem> invoices = new ArrayList<>();
@@ -15,19 +20,4 @@ public class CollectiveIdentifierInvoicesQueryResponse {
         this.invoices = invoices;
     }
 
-    public String getContinuationToken() {
-        return continuationToken;
-    }
-
-    public void setContinuationToken(String continuationToken) {
-        this.continuationToken = continuationToken;
-    }
-
-    public List<CollectiveIdentifierInvoicesQueryResponseItem> getInvoices() {
-        return invoices;
-    }
-
-    public void setInvoices(List<CollectiveIdentifierInvoicesQueryResponseItem> invoices) {
-        this.invoices = invoices;
-    }
 }
