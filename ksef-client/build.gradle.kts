@@ -15,17 +15,11 @@ java {
     withJavadocJar()
 }
 
-configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
-    }
-}
-
 repositories {
     mavenCentral()
 }
 
-val bouncycastleVersion = "1.84"
+val bouncycastleVersion = "1.85"
 val jsr310Version = "2.21.3"
 val junitVersion = "4.4"
 val junitEngineVersion = "5.8.2"
@@ -35,7 +29,7 @@ val xjc by configurations.creating
 val xadesVersion = "6.0.1"
 val googleZxingCodeVersion = "3.5.3"
 val googleZxingJavaseVersion = "3.5.3"
-val lombokVersion = "1.18.46"
+val lombokVersion = "1.18.48"
 val commonsLangsVersion = "3.18.0"
 
 dependencies {
