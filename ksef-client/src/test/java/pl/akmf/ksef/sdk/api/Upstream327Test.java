@@ -1,11 +1,14 @@
 package pl.akmf.ksef.sdk.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.Test;
 import pl.akmf.ksef.sdk.client.Headers;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.KsefApiException;
+import pl.akmf.ksef.sdk.client.model.exceptions.BadRequestApiException;
 import pl.akmf.ksef.sdk.client.model.invoice.CurrencyCode;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceMetadataInvoiceType;
 import pl.akmf.ksef.sdk.client.model.limit.*;
@@ -213,6 +216,58 @@ public class Upstream327Test {
     public void supportsApi280CurrencyCodes() throws Exception {
         for (String value : new String[]{"CNH", "VED", "XTS", "ZWG", "SLE"}) {
             assertEquals(value, mapper.readValue('"' + value + '"', CurrencyCode.class).getValue());
+        }
+    }
+
+    @Test
+    public void fallsBackToLegacyErrorsWithTolerantObjectMapper() throws Exception {
+        ObjectMapper tolerantMapper = new ObjectMapper().registerModule(new JavaTimeModule())
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        String legacyException = """
+                {"exception":{"exceptionDetailList":[{"exceptionCode":21405,
+                "exceptionDescription":"Legacy validation error","details":["field"]}],
+                "serviceCode":"test","timestamp":"2026-09-01T12:00:00Z"}}
+                """;
+        String legacyRateLimit = """
+                {"status":{"code":429,"description":"Legacy rate limit","details":[]}}
+                """;
+
+        for (Object[] testCase : new Object[][]{
+                {400, legacyException},
+                {410, legacyException},
+                {429, legacyRateLimit}
+        }) {
+            MockHttpClient http = new MockHttpClient((int) testCase[0], (String) testCase[1]);
+            try {
+                new DefaultKsefClient(http, properties, tolerantMapper).retrievePublicKeyCertificate();
+                fail("Expected legacy API error for HTTP " + testCase[0]);
+            } catch (KsefApiException expected) {
+                assertEquals((int) testCase[0], expected.getCode());
+                assertNotNull(expected.getExceptionResponse());
+                if ((int) testCase[0] == 429) {
+                    assertEquals("Legacy rate limit", expected.getExceptionResponse().getStatus().getDescription());
+                } else {
+                    assertEquals("test", expected.getExceptionResponse().getException().getServiceCode());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void keepsProblemDetailsErrorsWithTolerantObjectMapper() throws Exception {
+        ObjectMapper tolerantMapper = new ObjectMapper()
+                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        MockHttpClient http = new MockHttpClient(400, """
+                {"title":"Bad Request","status":400,"detail":"Invalid request",
+                "instance":"/test","timestamp":"2026-09-01T12:00:00Z","traceId":"trace"}
+                """);
+
+        try {
+            new DefaultKsefClient(http, properties, tolerantMapper).retrievePublicKeyCertificate();
+            fail("Expected Problem Details API error");
+        } catch (BadRequestApiException expected) {
+            assertEquals("Bad Request", expected.getBadRequestProblemDetails().getTitle());
+            assertEquals(400, expected.getBadRequestProblemDetails().getStatus());
         }
     }
 
