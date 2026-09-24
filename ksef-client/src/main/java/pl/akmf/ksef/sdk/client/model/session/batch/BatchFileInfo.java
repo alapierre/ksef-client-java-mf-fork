@@ -6,6 +6,7 @@ public class BatchFileInfo {
     private long fileSize;
     private String fileHash;
     private List<BatchFilePartInfo> fileParts;
+    private CompressionType compressionType;
 
     public BatchFileInfo() {
 
@@ -15,6 +16,12 @@ public class BatchFileInfo {
         this.fileSize = fileSize;
         this.fileHash = fileHash;
         this.fileParts = fileParts;
+    }
+
+    public BatchFileInfo(long fileSize, String fileHash, List<BatchFilePartInfo> fileParts,
+                         CompressionType compressionType) {
+        this(fileSize, fileHash, fileParts);
+        this.compressionType = compressionType;
     }
 
     public long getFileSize() {
@@ -39,5 +46,13 @@ public class BatchFileInfo {
 
     public void setFileParts(List<BatchFilePartInfo> fileParts) {
         this.fileParts = fileParts;
+    }
+
+    public CompressionType getCompressionType() {
+        return compressionType;
+    }
+
+    public void setCompressionType(CompressionType compressionType) {
+        this.compressionType = compressionType;
     }
 }

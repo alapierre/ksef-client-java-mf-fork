@@ -8,6 +8,7 @@ import pl.akmf.ksef.sdk.client.model.session.SystemCode;
 import pl.akmf.ksef.sdk.client.model.session.batch.BatchFileInfo;
 import pl.akmf.ksef.sdk.client.model.session.batch.BatchFileValidation;
 import pl.akmf.ksef.sdk.client.model.session.batch.BatchFilePartInfo;
+import pl.akmf.ksef.sdk.client.model.session.batch.CompressionType;
 import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionRequest;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ public class OpenBatchSessionRequestBuilder {
     private final List<BatchFilePartInfo> parts = new ArrayList<>();
     private long batchFileSize;
     private String batchFileHash = "";
+    private CompressionType compressionType;
     private final EncryptionInfo encryption = new EncryptionInfo();
     private boolean offlineMode = false;
 
@@ -47,6 +49,20 @@ public class OpenBatchSessionRequestBuilder {
 
         this.batchFileSize = fileSize;
         this.batchFileHash = fileHash;
+        return this;
+    }
+
+    /**
+     * Configures metadata for an archive prepared by the caller. This builder does not convert
+     * the archive between ZIP and TAR.GZ formats.
+     */
+    public OpenBatchSessionRequestBuilder withBatchFile(long fileSize, String fileHash,
+                                                        CompressionType compressionType) {
+        if (compressionType == null) {
+            throw new IllegalArgumentException("compressionType cannot be null.");
+        }
+        withBatchFile(fileSize, fileHash);
+        this.compressionType = compressionType;
         return this;
     }
 
@@ -104,6 +120,7 @@ public class OpenBatchSessionRequestBuilder {
         batchFile.setFileSize(batchFileSize);
         batchFile.setFileHash(batchFileHash);
         batchFile.setFileParts(parts);
+        batchFile.setCompressionType(compressionType);
         OpenBatchSessionRequest openBatchSessionRequest = new OpenBatchSessionRequest();
         openBatchSessionRequest.setFormCode(formCode);
         openBatchSessionRequest.setBatchFile(batchFile);

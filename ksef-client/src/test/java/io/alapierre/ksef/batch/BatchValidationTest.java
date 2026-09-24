@@ -1,10 +1,12 @@
 package io.alapierre.ksef.batch;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.alapierre.ksef.batch.model.*;
 import org.junit.Test;
 import pl.akmf.ksef.sdk.api.builders.batch.OpenBatchSessionRequestBuilder;
 import pl.akmf.ksef.sdk.client.interfaces.CryptographyService;
 import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportPackage;
 import pl.akmf.ksef.sdk.client.model.session.*;
 import pl.akmf.ksef.sdk.client.model.session.batch.*;
 
@@ -44,6 +46,41 @@ public class BatchValidationTest {
         rejects(() -> builder.addBatchFilePart(51, 1, HASH));
         assertEquals(50, builder.build().getBatchFile().getFileParts().size());
         assertEquals(1, builder().withBatchFile(1, HASH).addBatchFilePart(1, 1, HASH).build().getBatchFile().getFileSize());
+    }
+
+    @Test
+    public void builderPreservesLegacyCompressionAndAllowsExplicitSelection() {
+        var legacy = builder().withBatchFile(1, HASH)
+                .addBatchFilePart(1, 1, HASH)
+                .build();
+        assertNull(legacy.getBatchFile().getCompressionType());
+
+        for (CompressionType compressionType : CompressionType.values()) {
+            var request = builder().withBatchFile(1, HASH, compressionType)
+                    .addBatchFilePart(1, 1, HASH)
+                    .build();
+            assertEquals(compressionType, request.getBatchFile().getCompressionType());
+        }
+
+        try {
+            builder().withBatchFile(1, HASH, null);
+            fail("Expected null compression type to be rejected");
+        } catch (IllegalArgumentException expected) {
+            assertEquals("compressionType cannot be null.", expected.getMessage());
+        }
+    }
+
+    @Test
+    public void compressionTypesFollowApiJsonContract() throws Exception {
+        var mapper = new ObjectMapper();
+        var request = builder().withBatchFile(1, HASH, CompressionType.Zip)
+                .addBatchFilePart(1, 1, HASH)
+                .build();
+
+        assertEquals("Zip", mapper.readTree(mapper.writeValueAsString(request))
+                .path("batchFile").path("compressionType").asText());
+        assertEquals(CompressionType.TarGz, mapper.readValue(
+                "{\"compressionType\":\"TarGz\"}", InvoiceExportPackage.class).getCompressionType());
     }
 
     @Test
@@ -165,6 +202,7 @@ public class BatchValidationTest {
             assertEquals(1, sent.size());
             assertEquals(result.parts().size(), uploaded.get());
             assertEquals(result.zipHash(), sent.get(0).getBatchFile().getFileHash());
+            assertEquals(CompressionType.Zip, sent.get(0).getBatchFile().getCompressionType());
         } finally {
             if (result != null) helper.removeEncryptedParts(result);
             Files.deleteIfExists(output);

@@ -218,7 +218,7 @@ public class BatchHelper {
         var builder = OpenBatchSessionRequestBuilder.create()
                     .withFormCode(formCode.getSystemCode(), formCode.getSchemaVersion(), formCode.getValue())
                     .withOfflineMode(false)
-                    .withBatchFile(batchResult.zipSize(), batchResult.zipHash())
+                    .withBatchFile(batchResult.zipSize(), batchResult.zipHash(), CompressionType.Zip)
                     .withEncryption(
                             batchResult.encryptedCipherKey(),
                             batchResult.encodedIv());
