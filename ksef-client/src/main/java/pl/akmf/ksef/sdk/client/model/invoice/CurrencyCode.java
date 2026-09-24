@@ -369,7 +369,17 @@ public enum CurrencyCode {
   
   ZMW("ZMW"),
   
-  ZWL("ZWL");
+  ZWL("ZWL"),
+
+  CNH("CNH"),
+
+  VED("VED"),
+
+  XTS("XTS"),
+
+  ZWG("ZWG"),
+
+  SLE("SLE");
 
   private String value;
 
@@ -397,4 +407,3 @@ public enum CurrencyCode {
     throw new IllegalArgumentException("Unexpected value '" + value + "'");
   }
 }
-

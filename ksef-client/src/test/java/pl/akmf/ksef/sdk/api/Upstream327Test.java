@@ -4,10 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.Test;
+import pl.akmf.ksef.sdk.client.Headers;
 import pl.akmf.ksef.sdk.client.model.ApiException;
+import pl.akmf.ksef.sdk.client.model.invoice.CurrencyCode;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceMetadataInvoiceType;
 import pl.akmf.ksef.sdk.client.model.limit.*;
 import pl.akmf.ksef.sdk.client.model.session.EncryptionInfo;
+import pl.akmf.ksef.sdk.client.model.session.batch.OpenBatchSessionRequest;
+import pl.akmf.ksef.sdk.client.model.session.online.OpenOnlineSessionRequest;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataUpdateCertificateRequest;
 import pl.akmf.ksef.sdk.system.headerobservation.*;
 import java.time.OffsetDateTime;
@@ -154,6 +158,62 @@ public class Upstream327Test {
         assertEquals("\"KorVatRr\"", mapper.writeValueAsString(InvoiceMetadataInvoiceType.KOR_VAT_RR));
         assertEquals(InvoiceMetadataInvoiceType.KOR_VAT_SP, InvoiceMetadataInvoiceType.fromValue("KorVatRr"));
         assertEquals("key-id", new EncryptionInfo("encrypted", "iv", "key-id").getPublicKeyId());
+    }
+
+    @Test
+    public void supportsApi280RateLimitContract() throws Exception {
+        String json = """
+                {
+                  "onlineSessionClose":{"perSecond":20,"perMinute":60,"perHour":240},
+                  "batchSessionClose":{"perSecond":20,"perMinute":40,"perHour":120},
+                  "anonymous":{"perSecond":10,"perMinute":20,"perHour":30},
+                  "global":{"perSecond":-1,"perMinute":-1,"perHour":-1}
+                }
+                """;
+
+        var response = mapper.readValue(json, GetRateLimitResponse.class);
+        assertEquals(240, response.getOnlineSessionClose().getPerHour());
+        assertEquals(120, response.getBatchSessionClose().getPerHour());
+        assertEquals(10, response.getAnonymous().getPerSecond());
+        assertEquals(-1, response.getGlobal().getPerHour());
+
+        var effective = mapper.readValue(json, EffectiveApiRateLimits.class);
+        assertEquals(60, effective.getOnlineSessionClose().getPerMinute());
+        assertEquals(40, effective.getBatchSessionClose().getPerMinute());
+
+        var change = new ApiRateLimitsChangeRequest();
+        change.setOnlineSession(new OnlineSessionRateLimit(1, 2, 3));
+        var serialized = mapper.readTree(mapper.writeValueAsString(new SetRateLimitsRequest(change)))
+                .path("rateLimits");
+        assertEquals(3, serialized.path("onlineSession").path("perHour").asInt());
+        assertFalse(serialized.has("onlineSessionClose"));
+        assertFalse(serialized.has("batchSessionClose"));
+        assertFalse(serialized.has("anonymous"));
+        assertFalse(serialized.has("global"));
+    }
+
+    @Test
+    public void sendsOptionalApiFeatureWhenOpeningSessions() throws Exception {
+        MockHttpClient http = new MockHttpClient(201, "{}");
+        DefaultKsefClient client = new DefaultKsefClient(http, properties, mapper);
+
+        client.openBatchSession(new OpenBatchSessionRequest(), "access");
+        assertFalse(http.getLastRequest().headers().firstValue(Headers.X_KSEF_FEATURE).isPresent());
+
+        client.openBatchSession(new OpenBatchSessionRequest(), "access", Headers.SUBJECT_IDENTIFIER_VALIDATION);
+        assertEquals(Headers.SUBJECT_IDENTIFIER_VALIDATION,
+                http.getLastRequest().headers().firstValue(Headers.X_KSEF_FEATURE).orElse(null));
+
+        client.openOnlineSession(new OpenOnlineSessionRequest(), "access", Headers.SUBJECT_IDENTIFIER_VALIDATION);
+        assertEquals(Headers.SUBJECT_IDENTIFIER_VALIDATION,
+                http.getLastRequest().headers().firstValue(Headers.X_KSEF_FEATURE).orElse(null));
+    }
+
+    @Test
+    public void supportsApi280CurrencyCodes() throws Exception {
+        for (String value : new String[]{"CNH", "VED", "XTS", "ZWG", "SLE"}) {
+            assertEquals(value, mapper.readValue('"' + value + '"', CurrencyCode.class).getValue());
+        }
     }
 
     private byte[] body(HttpRequest request) throws Exception {

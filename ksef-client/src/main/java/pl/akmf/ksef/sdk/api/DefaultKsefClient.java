@@ -340,7 +340,8 @@ public class DefaultKsefClient implements KSeFClient {
      * @return OpenBatchSessionResponse
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
-     */
+    */
+    @Deprecated
     @Override
     public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest openBatchSessionRequest, UpoVersion upoVersion, String accessToken) throws ApiException {
         Map<String, String> headers = new HashMap<>();
@@ -348,6 +349,28 @@ public class DefaultKsefClient implements KSeFClient {
         headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
         headers.put(X_KSEF_FEATURE, upoVersion.value());
+
+        HttpResponse<byte[]> response = post(BATCH_SESSION_OPEN.getUrl(), openBatchSessionRequest, headers);
+
+        return getResponse(response, CREATED, BATCH_SESSION_OPEN, OpenBatchSessionResponse.class);
+    }
+
+    @Override
+    public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest openBatchSessionRequest,
+                                                     String accessToken) throws ApiException {
+        return openBatchSession(openBatchSessionRequest, accessToken, null);
+    }
+
+    @Override
+    public OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest openBatchSessionRequest,
+                                                     String accessToken, String feature) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+        if (feature != null) {
+            headers.put(X_KSEF_FEATURE, feature);
+        }
 
         HttpResponse<byte[]> response = post(BATCH_SESSION_OPEN.getUrl(), openBatchSessionRequest, headers);
 
@@ -449,7 +472,8 @@ public class DefaultKsefClient implements KSeFClient {
      * @param upoVersion               - Opcjonalna wersja formatu UPO. Dostępne wartości: "upo-v4-3". Generuje nagłówek X-KSeF-Feature z odpowiednią wartością. Domyślnie: v4-2 (v4-3 od 05.01.2026).
      * @return ApiResponse&lt;OpenOnlineSessionResponse&gt;
      * @throws ApiException if fails to make API call
-     */
+    */
+    @Deprecated
     @Override
     public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest openOnlineSessionRequest, UpoVersion upoVersion, String accessToken) throws ApiException {
         Map<String, String> headers = new HashMap<>();
@@ -457,6 +481,28 @@ public class DefaultKsefClient implements KSeFClient {
         headers.put(CONTENT_TYPE, APPLICATION_JSON);
         headers.put(ACCEPT, APPLICATION_JSON);
         headers.put(X_KSEF_FEATURE, upoVersion.value());
+
+        HttpResponse<byte[]> response = post(SESSION_OPEN.getUrl(), openOnlineSessionRequest, headers);
+
+        return getResponse(response, CREATED, SESSION_OPEN, OpenOnlineSessionResponse.class);
+    }
+
+    @Override
+    public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest openOnlineSessionRequest,
+                                                       String accessToken) throws ApiException {
+        return openOnlineSession(openOnlineSessionRequest, accessToken, null);
+    }
+
+    @Override
+    public OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest openOnlineSessionRequest,
+                                                       String accessToken, String feature) throws ApiException {
+        Map<String, String> headers = new HashMap<>();
+        headers.put(AUTHORIZATION, BEARER + accessToken);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
+        headers.put(ACCEPT, APPLICATION_JSON);
+        if (feature != null) {
+            headers.put(X_KSEF_FEATURE, feature);
+        }
 
         HttpResponse<byte[]> response = post(SESSION_OPEN.getUrl(), openOnlineSessionRequest, headers);
 

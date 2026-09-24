@@ -130,7 +130,18 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
+    @Deprecated
     OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, UpoVersion upoVersion, String accessToken) throws ApiException;
+
+    /**
+     * Otwiera sesję wsadową bez opcjonalnego nagłówka X-KSeF-Feature.
+     */
+    OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, String accessToken) throws ApiException;
+
+    /**
+     * Otwiera sesję wsadową z opcjonalną funkcją API przekazywaną w X-KSeF-Feature.
+     */
+    OpenBatchSessionResponse openBatchSession(OpenBatchSessionRequest body, String accessToken, String feature) throws ApiException;
 
     /**
      * Zamknięcie sesji wsadowej.
@@ -170,7 +181,18 @@ public interface KSeFClient {
      * @throws ApiException - Nieprawidłowe żądanie. (400 Bad request)
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
+    @Deprecated
     OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, UpoVersion upoVersion, String accessToken) throws ApiException;
+
+    /**
+     * Otwiera sesję interaktywną bez opcjonalnego nagłówka X-KSeF-Feature.
+     */
+    OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, String accessToken) throws ApiException;
+
+    /**
+     * Otwiera sesję interaktywną z opcjonalną funkcją API przekazywaną w X-KSeF-Feature.
+     */
+    OpenOnlineSessionResponse openOnlineSession(OpenOnlineSessionRequest body, String accessToken, String feature) throws ApiException;
 
     /**
      * Zamknięcie sesji interaktywnej

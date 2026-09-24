@@ -2,11 +2,10 @@ package pl.akmf.ksef.sdk.client.model.limit;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class GetRateLimitResponse {
+// Limity, które mogą zostać zmienione przez endpoint środowiska testowego.
+public class ApiRateLimitsChangeRequest {
     private OnlineSessionRateLimit onlineSession;
-    private OnlineSessionRateLimit onlineSessionClose;
     private BatchSessionRateLimit batchSession;
-    private BatchSessionRateLimit batchSessionClose;
     private InvoiceSendRateLimit invoiceSend;
     private InvoiceStatusRateLimit invoiceStatus;
     private SessionListRateLimit sessionList;
@@ -19,11 +18,31 @@ public class GetRateLimitResponse {
     private InvoiceDownloadRateLimit invoiceDownload;
     private OtherRateLimit other;
     private CollectiveIdentifierRateLimit collectiveIdentifier;
-    private AnonymousRateLimit anonymous;
-    private GlobalRateLimit global;
 
-    public GetRateLimitResponse() {
+    public ApiRateLimitsChangeRequest() {
+    }
 
+    public ApiRateLimitsChangeRequest(OnlineSessionRateLimit onlineSession, BatchSessionRateLimit batchSession,
+                                      InvoiceSendRateLimit invoiceSend, InvoiceStatusRateLimit invoiceStatus,
+                                      SessionListRateLimit sessionList, SessionInvoiceListRateLimit sessionInvoiceList,
+                                      SessionMiscRateLimits sessionMisc, InvoiceMetadataRateLimit invoiceMetadata,
+                                      InvoiceExportRateLimit invoiceExport,
+                                      InvoiceExportStatusRateLimit invoiceStatusExport,
+                                      InvoiceDownloadRateLimit invoiceDownload, OtherRateLimit other,
+                                      CollectiveIdentifierRateLimit collectiveIdentifier) {
+        this.onlineSession = onlineSession;
+        this.batchSession = batchSession;
+        this.invoiceSend = invoiceSend;
+        this.invoiceStatus = invoiceStatus;
+        this.sessionList = sessionList;
+        this.sessionInvoiceList = sessionInvoiceList;
+        this.sessionMisc = sessionMisc;
+        this.invoiceMetadata = invoiceMetadata;
+        this.invoiceExport = invoiceExport;
+        this.invoiceStatusExport = invoiceStatusExport;
+        this.invoiceDownload = invoiceDownload;
+        this.other = other;
+        this.collectiveIdentifier = collectiveIdentifier;
     }
 
     public OnlineSessionRateLimit getOnlineSession() {
@@ -34,28 +53,12 @@ public class GetRateLimitResponse {
         this.onlineSession = onlineSession;
     }
 
-    public OnlineSessionRateLimit getOnlineSessionClose() {
-        return onlineSessionClose;
-    }
-
-    public void setOnlineSessionClose(OnlineSessionRateLimit onlineSessionClose) {
-        this.onlineSessionClose = onlineSessionClose;
-    }
-
     public BatchSessionRateLimit getBatchSession() {
         return batchSession;
     }
 
     public void setBatchSession(BatchSessionRateLimit batchSession) {
         this.batchSession = batchSession;
-    }
-
-    public BatchSessionRateLimit getBatchSessionClose() {
-        return batchSessionClose;
-    }
-
-    public void setBatchSessionClose(BatchSessionRateLimit batchSessionClose) {
-        this.batchSessionClose = batchSessionClose;
     }
 
     public InvoiceSendRateLimit getInvoiceSend() {
@@ -144,21 +147,5 @@ public class GetRateLimitResponse {
 
     public void setCollectiveIdentifier(CollectiveIdentifierRateLimit collectiveIdentifier) {
         this.collectiveIdentifier = collectiveIdentifier;
-    }
-
-    public AnonymousRateLimit getAnonymous() {
-        return anonymous;
-    }
-
-    public void setAnonymous(AnonymousRateLimit anonymous) {
-        this.anonymous = anonymous;
-    }
-
-    public GlobalRateLimit getGlobal() {
-        return global;
-    }
-
-    public void setGlobal(GlobalRateLimit global) {
-        this.global = global;
     }
 }

@@ -51,19 +51,64 @@ Development will follow the KSeF API contract and the needs of this fork’s use
 ## 🧱 Differences from the Official SDK
 
 
-| Area                  | Official SDK           | This Fork                                   |
-|-----------------------|------------------------|---------------------------------------------|
-| Dependency management | it varies              | Updated and secure dependencies             |
-| Maven publishing      | Github Packages        | Published to public Maven repository        |
-| Maintenance           | Irregular / no updates | Community maintained                        |
-| Build system          | Unmodified             | Cleaned up and improved for reproducibility |
+| Area                  | Official SDK             | This Fork                                   |
+|-----------------------|--------------------------|---------------------------------------------|
+| Dependency management | it varies                | Updated and secure dependencies             |
+| Maven publishing      | Github Packages          | Published to public Maven repository        |
+| Maintenance           | Irregular / no updates   | Community maintained                        |
+| Build system          | Unmodified               | Cleaned up and improved for reproducibility |
+| Circuit breaker       | Enabled by default       | Not enabled implicitly                      |
+| Batch compression     | TAR.GZ-oriented defaults | Existing `BatchHelper` behavior remains ZIP |
 
 ## Some useful utilities
 
-- `io.alapierre.ksef.batch.BatchHelper` - a utility class for preparing and sanding batches of invoices without going to OutOfMemory Exceptions
+- `io.alapierre.ksef.batch.BatchHelper` - a utility class for preparing and sending ZIP batches of invoices without loading the entire batch into memory
 - `io.alapierre.ksef.qr.VerificationLinkGenerator` - working version of the QR code link generator from the official SDK
 
 The current release fixes the original [DefaultVerificationLinkService.java](ksef-client/src/main/java/pl/akmf/ksef/sdk/api/services/DefaultVerificationLinkService.java) to work properly with certs issued by Aplikacja Podatnika and MCU.
+
+## Compression behavior
+
+`BatchHelper` continues to create ZIP archives and explicitly declares
+`CompressionType.Zip` when opening a batch session. This preserves the behavior of
+existing integrations.
+
+Callers that prepare an archive themselves can declare its format through the batch
+request builder:
+
+```java
+OpenBatchSessionRequest request = OpenBatchSessionRequestBuilder.create()
+        .withFormCode(SystemCode.FA_3, SchemaVersion.VERSION_1_0E, SessionValue.FA)
+        .withBatchFile(fileSize, fileHash, CompressionType.TarGz)
+        .addBatchFilePart(1, encryptedPartSize, encryptedPartHash)
+        .withEncryption(encryptedSymmetricKey, initializationVector)
+        .build();
+```
+
+The builder only describes an already prepared archive; it does not convert ZIP files
+to TAR.GZ. The export response exposes `InvoiceExportPackage.compressionType`, but the
+fork does not currently provide TAR.GZ export creation or extraction helpers.
+
+## KSeF API 2.8 compatibility
+
+The client supports the API 2.8 rate-limit model, including separate online and batch
+session-close limits, anonymous limits and global IP limits. Changes made through the
+test-data endpoint use `ApiRateLimitsChangeRequest`, matching the narrower request
+contract of the API.
+
+Session opening methods accept an optional `X-KSeF-Feature` value. For example, the
+test-environment subject identifier validation feature can be enabled with:
+
+```java
+client.openOnlineSession(
+        request,
+        accessToken,
+        Headers.SUBJECT_IDENTIFIER_VALIDATION
+);
+```
+
+The previous overloads accepting `UpoVersion` remain available for source compatibility,
+but are deprecated.
 
 ## Public maven repo dependency
 
