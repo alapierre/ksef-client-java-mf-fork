@@ -19,8 +19,8 @@ repositories {
     mavenCentral()
 }
 
-val bouncycastleVersion = "1.85"
-val jsr310Version = "2.21.4"
+val bouncycastleVersion = "1.86"
+val jsr310Version = "2.21.7"
 val junitVersion = "4.4"
 val junitEngineVersion = "5.8.2"
 val jsxbVarsion = "4.0.6"
