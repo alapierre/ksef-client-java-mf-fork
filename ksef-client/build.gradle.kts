@@ -20,7 +20,7 @@ repositories {
 }
 
 val bouncycastleVersion = "1.86"
-val jsr310Version = "2.21.7"
+val jsr310Version = "2.22.3"
 val junitVersion = "4.4"
 val junitEngineVersion = "5.8.2"
 val jsxbVarsion = "4.0.6"
