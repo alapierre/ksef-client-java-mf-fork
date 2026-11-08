@@ -129,6 +129,85 @@ We encourage the maintainers of the official SDK to continue improving it and to
 
 ## Contributing
 
+### Building and testing
+
+Use JDK 21 and the Maven Wrapper (`mvnw.cmd` on Windows):
+
+```shell
+./mvnw clean verify
+```
+
+The default build runs local tests only. They need no KSeF connection, token,
+private certificate, or GitHub secret. HTTP contract tests use an in-memory
+client; cryptographic tests generate their own keys. Tests cover request/response
+mapping, error handling, ZIP contents and encrypted batch parts, certificate-link
+signatures, and authentication XML validation against the bundled XSD.
+Dependencies and the pinned Maven distribution are downloaded on the first run.
+After dependencies have been cached, the default build can also run with `-o`.
+
+XJC generates the authentication model into
+`ksef-client/target/generated-sources/jaxb` during `generate-sources`.
+Do not edit or commit generated Java files. Change the schema or generator
+configuration instead. Generated classes are included in the binary, sources,
+and Javadoc JARs, retaining the existing packages and fluent `with…` methods.
+`IpChangePolicyEnum` is retained in the source tree for compatibility with older
+releases; it is no longer declared by the current schema.
+
+The Maven coordinates remain `io.alapierre.ksef-sdk:ksef-client` and the automatic
+module name remains `io.alapierre.ksef.client`. The build migration does not
+change the client's public API or production dependency versions.
+
+### Optional KSeF TEST integration
+
+The `ksef-live` profile explicitly enables `*LiveIT` tests using Maven Failsafe:
+
+```shell
+# Set KSEF_TOKEN and KSEF_NIP in your environment first.
+./mvnw -Pksef-live clean verify
+```
+
+This sends one generated invoice, using the existing FA(2) test fixture, to
+**KSeF TEST** and checks that it was accepted. It requires a token authorized for
+the supplied NIP and a working test environment that accepts this fixture.
+Missing credentials fail before connecting; authentication and processing waits
+are bounded. These tests never run in the default build or release workflow.
+Their failure remains visible and does not block releases.
+
+The **KSeF TEST integration (manual)** GitHub workflow uses repository secrets
+`KSEF_TOKEN` and `KSEF_NIP`. It is opt-in and is not a required release check.
+Surefire and Failsafe reports are uploaded separately from normal build artifacts.
+
+### Releases
+
+JReleaser continues to publish to Maven Central and create GitHub Releases.
+Push a tag such as `v2.3.15` **containing the Maven migration**, or dispatch the
+release workflow with an existing tag. Manual runs default to a dry run. Tags
+such as `v2.4.0-rc.1` are marked as prereleases. The major version continues to
+correspond to KSeF API 2; the build migration does not require a 3.x release.
+
+The workflow checks out the exact tag, derives the Maven `revision` from it,
+runs all local tests, signs the artifacts and stages them in
+`target/staging-deploy` before invoking JReleaser. The parent POM is published
+alongside the client. Flattened publication POMs contain resolved versions so
+consumers do not need to supply `revision`. The default development version is
+`2.3.15-SNAPSHOT`; it can be overridden with `-Drevision=...`.
+
+Existing publication secrets are reused: `SIGNING_KEY`, `SIGNING_PASSWORD`,
+`MAVENCENTRAL_USERNAME`, `MAVENCENTRAL_TOKEN`, and optionally
+`JRELEASER_GITHUB_TOKEN` (otherwise the workflow token is used). Maven's BC signer
+reads the exported private signing key directly from the environment; it does
+not need `SIGNING_KEY_ID` or a locally imported keyring.
+
+To verify signed staging locally, using your configured GPG signer:
+
+```shell
+./mvnw -Prelease -Drevision=2.3.15 \
+  -DaltDeploymentRepository="staging::file://$(pwd)/target/staging-deploy" clean deploy
+```
+
+This command stages locally; publication is a separate JReleaser operation.
+Neither local verification nor release requires KSeF TEST credentials.
+
 Contributions and pull requests are welcome.
 If you have fixes, improvements, or API updates — please open an issue or submit a PR.
 

@@ -37,8 +37,8 @@ public class CertUtilTest {
     }
 
     @Test
-    // RSA: should detect non-matching private key
-    public void testNonMatchingRsaPair() {
+    // CertUtil checks algorithm compatibility, not whether the keys form a cryptographic pair.
+    public void rsaAlgorithmCompatibilityDoesNotProveKeyPairMatch() {
         SelfSignedCertificate rsa1 = new DefaultCertificateService().generateSelfSignedCertificateRsa(x500Name);
         SelfSignedCertificate rsa2 = new DefaultCertificateService().generateSelfSignedCertificateRsa(x500Name);
 
@@ -74,8 +74,8 @@ public class CertUtilTest {
     }
 
     @Test
-    // ECDSA: should detect non-matching private key
-    public void testNonMatchingEcdsaPairs() {
+    // CertUtil checks algorithm compatibility, not whether the keys form a cryptographic pair.
+    public void ecAlgorithmCompatibilityDoesNotProveKeyPairMatch() {
         SelfSignedCertificate ecdsa1 = new DefaultCertificateService().generateSelfSignedCertificateEcdsa(x500Name);
         SelfSignedCertificate ecdsa2 = new DefaultCertificateService().generateSelfSignedCertificateEcdsa(x500Name);
 

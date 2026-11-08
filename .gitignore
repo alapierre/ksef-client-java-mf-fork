@@ -1,6 +1,8 @@
 **/build/
 /.idea/
 .gradle
+**/target/
+**/.flattened-pom.xml
 /private.env
 /ksef-client/src/test/resources/SignTest.crt
 /ksef-client/src/test/resources/SignTest.key

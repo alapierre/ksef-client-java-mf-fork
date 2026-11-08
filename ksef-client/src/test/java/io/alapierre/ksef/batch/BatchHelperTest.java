@@ -1,230 +1,47 @@
 package io.alapierre.ksef.batch;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.alapierre.ksef.batch.model.BatchConfig;
-import io.alapierre.ksef.batch.model.BatchResult;
-import lombok.val;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.junit.*;
-import pl.akmf.ksef.sdk.api.DefaultKsefClient;
-import pl.akmf.ksef.sdk.api.KsefApiProperties;
-import pl.akmf.ksef.sdk.api.builders.auth.AuthKsefTokenRequestBuilder;
-import pl.akmf.ksef.sdk.api.services.DefaultCryptographyService;
-import pl.akmf.ksef.sdk.client.interfaces.CryptographyService;
-import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
-import pl.akmf.ksef.sdk.client.model.auth.AuthStatus;
-import pl.akmf.ksef.sdk.client.model.auth.ContextIdentifier;
-import pl.akmf.ksef.sdk.client.model.session.*;
+import io.alapierre.ksef.batch.model.InvoiceHash;
+import io.alapierre.ksef.batch.model.InvoiceItem;
+import org.junit.Test;
 
-import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Duration;
+import java.security.MessageDigest;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ForkJoinPool;
+import java.util.List;
+import java.util.zip.ZipInputStream;
 
-/**
- * @author Adrian Lapierre {@literal al@alapierre.io}
- * Copyrights by original author 26.11.2025
- */
+import static org.junit.Assert.*;
+
 public class BatchHelperTest {
-
-    private HttpClient apiClient;
-    private BatchHelper helper;
-    private KSeFClient ksefClient;
-    private CryptographyService cryptographyService;
-
-    @Before
-    public void setUp() {
-        apiClient = createHttpBuilder().build();
-        ExampleApiProperties exampleApiProperties = new ExampleApiProperties();
-        ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties, objectMapper);
-        cryptographyService = new DefaultCryptographyService(ksefClient);
-        helper = new BatchHelper(cryptographyService, ksefClient);
-
-    }
-
-    @After
-    public void tearDown() {
-        if (apiClient != null) {
-            apiClient.close();
-        }
-    }
-
     @Test
-    public void createZip() {
-        val result = helper.createZipWithHashes(new MockInvoiceSource("/xml/invoice-template.xml", "1234567890", 100));
+    public void zipPreservesInvoiceNamesContentsAndHashOrder() throws Exception {
+        byte[] first = "<invoice>Zażółć gęślą jaźń</invoice>".getBytes(StandardCharsets.UTF_8);
+        byte[] second = "<invoice>2</invoice>".getBytes(StandardCharsets.UTF_8);
+        String firstHash = hash(first);
+        String secondHash = hash(second);
+        InvoiceSource source = () -> List.of(
+                new InvoiceItem("1", "first.xml", first, firstHash),
+                new InvoiceItem("2", "second.xml", second, secondHash)).iterator();
 
-        if(result.file() != null) {
-            val f = result.file();
-            System.out.println(f.getAbsolutePath());
-            //f.delete();
-        }
-    }
-
-    @Test
-    public void testPrepare() throws Exception {
-
-        Path outputDir = null;
-        BatchResult res = null;
-
+        // ZIP creation must not need either an API client or a cryptography service.
+        var result = new BatchHelper(null, null).createZipWithHashes(source);
         try {
-            val source = new MockInvoiceSource("/xml/invoice-template.xml", "1234567890", 100);
-            outputDir = Files.createTempDirectory("invoices_");
-            val config = new BatchConfig(
-                    outputDir,
-                    1024 * 100,
-                    true
-            );
-
-            res = helper.prepareBatch(source, config);
-            System.out.println(config.outputDir());
+            assertEquals(List.of(new InvoiceHash("first.xml", firstHash),
+                    new InvoiceHash("second.xml", secondHash)), result.hashes());
+            try (var zip = new ZipInputStream(Files.newInputStream(result.file().toPath()))) {
+                assertEquals("first.xml", zip.getNextEntry().getName());
+                assertArrayEquals(first, zip.readAllBytes());
+                assertEquals("second.xml", zip.getNextEntry().getName());
+                assertArrayEquals(second, zip.readAllBytes());
+                assertNull(zip.getNextEntry());
+            }
         } finally {
-            if(res != null) {
-                helper.removeEncryptedParts(res);
-            }
-            if(outputDir != null) {
-                outputDir.toFile().delete();
-            }
+            Files.deleteIfExists(result.file().toPath());
         }
     }
 
-    @Test
-    @Ignore("Test integracyjny - wymaga tokena i NIP")
-    public void testSend() throws Exception {
-
-        final String KSEF_TOKEN = System.getenv("KSEF_TOKEN");
-        Objects.requireNonNull(KSEF_TOKEN, "KSEF_TOKEN env variable is not set");
-        final String NIP = System.getenv("KSEF_NIP");
-        Objects.requireNonNull(NIP, "KSEF_NIP env variable is not set");
-
-        Path outputDir = null;
-        BatchResult batchResult = null;
-
-        try {
-            val source = new MockInvoiceSource("/xml/invoice-template.xml", NIP, 100);
-            outputDir = Files.createTempDirectory("invoices_");
-            val config = new BatchConfig(
-                    outputDir,
-                    1024 * 100,
-                    false
-            );
-
-            batchResult = helper.prepareBatch(source, config);
-            System.out.println(config.outputDir());
-
-            val authToken = auth(KSEF_TOKEN, NIP);
-            val session = helper.sendBatch(batchResult, authToken, new FormCode(SystemCode.FA_2, SchemaVersion.VERSION_1_0E, SessionValue.FA));
-
-            System.out.println("waiting before close session...");
-            Thread.sleep(100);
-
-            ksefClient.closeBatchSession(session.getReferenceNumber(), authToken);
-
-            SessionStatusResponse status;
-            int retry = 0;
-            do {
-                System.out.println("waiting...");
-                Thread.sleep(2000);
-                status = ksefClient.getSessionStatus(session.getReferenceNumber(), authToken);
-                System.out.println("Current status: " + status.getStatus().getCode());
-                retry++;
-            } while (status.getStatus().getCode() != 200 && retry < 30); // Max 60 sec
-
-            Assert.assertNotNull("Timeout", status);
-            int code = status.getStatus().getCode();
-            Assert.assertEquals("Oczekiwany status przetworzonej sesji wsadowej to 200", 200, code);
-
-        } finally {
-            if(batchResult != null) {
-                helper.removeEncryptedParts(batchResult);
-            }
-            if(outputDir != null) {
-                outputDir.toFile().delete();
-            }
-        }
+    private static String hash(byte[] content) throws Exception {
+        return Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(content));
     }
-
-    public static HttpClient.Builder createHttpBuilder() {
-        return HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(5))
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .version(HttpClient.Version.HTTP_2)
-                .executor(ForkJoinPool.commonPool());
-    }
-
-    protected String auth(String t, String n) throws Exception {
-
-        var challenge = ksefClient.getAuthChallenge();
-
-        var token = cryptographyService.encryptKsefTokenWithRSAUsingPublicKey(
-                t,
-                challenge.getTimestamp());
-
-        var a = ksefClient.authenticateByKSeFToken(
-                new AuthKsefTokenRequestBuilder()
-                        .withChallenge(challenge.getChallenge())
-                        .withContextIdentifier(new ContextIdentifier(ContextIdentifier.IdentifierType.NIP, n))
-                        .withEncryptedToken(Base64.getEncoder().encodeToString(token))
-                        .build());
-
-        AuthStatus authStatus;
-
-        do {
-            authStatus = ksefClient.getAuthStatus(a.getReferenceNumber(), a.getAuthenticationToken().getToken());
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                System.out.println("Can't wait");
-                System.exit(1);
-            }
-
-        } while (authStatus.getStatus().getCode() != 200);
-
-        val oauth = ksefClient.redeemToken(a.getAuthenticationToken().getToken());
-
-        return oauth.getAccessToken().getToken();
-    }
-
-    private static class ExampleApiProperties extends KsefApiProperties {
-
-        @Override
-        public String getBaseUri() {
-            return "https://api-test.ksef.mf.gov.pl/v2";
-        }
-
-        @Override
-        public String getSuffixUri() {
-            return "";
-        }
-
-        @Override
-        public String getQrUri() {
-            return "";
-        }
-
-        @Override
-        public Duration getRequestTimeout() {
-            return Duration.ofSeconds(5);
-        }
-
-        @Override
-        public Map<String, String> getDefaultHeaders() {
-            Map<String, String> headers = new HashMap<>();
-            return headers;
-        }
-    }
-
-    static String toStringBuilder(Object o) {
-        ReflectionToStringBuilder b = new ReflectionToStringBuilder(o);
-        return b.build();
-    }
-
 }
-

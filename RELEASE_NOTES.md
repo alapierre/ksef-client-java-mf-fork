@@ -1,3 +1,12 @@
+# Unreleased — Maven build migration
+
+- Replace Gradle with Maven Wrapper and a parent/client reactor; JDK 21 remains required.
+- Preserve the published client coordinates, public API, automatic module name and production dependency versions.
+- Generate JAXB sources under `target`, retaining fluent methods and the legacy `IpChangePolicyEnum` type.
+- Run local tests without KSeF access or credentials; move live batch submission to the optional `ksef-live` profile and manual workflow.
+- Add assertions for JSON property naming, ZIP contents, RSA/EC certificate-link signatures and schema-valid authentication XML.
+- Keep JReleaser publication, with mandatory local tests, signed staging, resolved publication POMs and explicit release tags for manual runs.
+
 # v2.3.9
 
 ### Dodane

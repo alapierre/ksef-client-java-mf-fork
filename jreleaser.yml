@@ -10,6 +10,9 @@ release:
     uploadAssets: NEVER
     owner: alapierre
     name: ksef-client-java-mf-fork
+    prerelease:
+      pattern: '.*-.*'
+    makeLatest: legacy
 
 deploy:
   maven:
@@ -19,4 +22,4 @@ deploy:
         sign: false
         url: https://central.sonatype.com/api/v1/publisher
         stagingRepositories:
-          - ./build/staging-deploy
+          - ./target/staging-deploy
