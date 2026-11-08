@@ -1,9 +1,10 @@
 package io.alapierre.ksef;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.val;
 import org.junit.Test;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryFilters;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Adrian Lapierre {@literal al@alapierre.io}
@@ -12,18 +13,19 @@ import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryFilters;
 public class TestJackson {
 
     @Test
-    public void testSerialize() throws Exception {
+    public void selfInvoicingUsesApiPropertyName() throws Exception {
 
         InvoiceQueryFilters q = new InvoiceQueryFilters();
         q.setSelfInvoicing(true);
 
         ObjectMapper mapper = new ObjectMapper();
 
-        val res = mapper.writeValueAsString(q);
-
-        System.out.println(res);
-
-
+        var json = mapper.readTree(mapper.writeValueAsBytes(q));
+        assertTrue(json.has("isSelfInvoicing"));
+        assertTrue(json.get("isSelfInvoicing").booleanValue());
+        assertFalse(json.has("selfInvoicing"));
+        assertEquals(Boolean.TRUE, mapper.readValue("{\"isSelfInvoicing\":true}",
+                InvoiceQueryFilters.class).getSelfInvoicing());
     }
 
 }

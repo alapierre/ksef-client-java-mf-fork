@@ -66,11 +66,10 @@ public class MockInvoiceSource implements InvoiceSource {
         }
 
         private String loadTemplate() {
-            try {
-                var in = Objects.requireNonNull(
+            try (var in = Objects.requireNonNull(
                         MockInvoiceSource.class.getResourceAsStream(templatePath),
                         "Template not found on classpath: " + templatePath
-                );
+                )) {
                 return new String(in.readAllBytes(), StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new RuntimeException("Cannot read template: " + templatePath, e);

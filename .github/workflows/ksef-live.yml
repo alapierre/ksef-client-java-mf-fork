@@ -1,0 +1,38 @@
+name: KSeF TEST integration (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# This workflow sends one invoice to KSeF TEST. It is never a release prerequisite.
+concurrency:
+  group: ksef-test-integration
+  cancel-in-progress: false
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Run local and live tests
+        env:
+          KSEF_TOKEN: ${{ secrets.KSEF_TOKEN }}
+          KSEF_NIP: ${{ secrets.KSEF_NIP }}
+        run: ./mvnw -B -ntp -Pksef-live clean verify
+      - name: Test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ksef-live-test-reports
+          path: |
+            ksef-client/target/surefire-reports/
+            ksef-client/target/failsafe-reports/
+          if-no-files-found: ignore
