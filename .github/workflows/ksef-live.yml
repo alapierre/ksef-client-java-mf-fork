@@ -35,6 +35,6 @@ jobs:
         with:
           name: ksef-live-test-reports
           path: |
-            ksef-client/target/surefire-reports/
+            **/target/surefire-reports/
             ksef-client/target/failsafe-reports/
           if-no-files-found: ignore

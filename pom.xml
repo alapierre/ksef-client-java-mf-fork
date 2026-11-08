@@ -30,6 +30,9 @@
         <url>https://github.com/alapierre/ksef-client-java-mf-fork</url>
     </scm>
     <modules>
+        <module>ksef-json-serializer</module>
+        <module>ksef-json-serializer-jackson</module>
+        <module>ksef-json-serializer-gson</module>
         <module>ksef-client</module>
     </modules>
     <properties>
@@ -40,10 +43,12 @@
         <project.build.outputTimestamp>2026-11-08T00:00:00Z</project.build.outputTimestamp>
         <bouncycastle.version>1.86</bouncycastle.version>
         <jackson.version>2.22.4</jackson.version>
+        <gson.version>2.15.0</gson.version>
         <dss.version>6.0.1</dss.version>
         <jaxb.version>4.0.6</jaxb.version>
         <lombok.version>1.18.48</lombok.version>
         <zxing.version>3.5.3</zxing.version>
+        <junit.version>4.13.2</junit.version>
         <surefire.version>3.5.4</surefire.version>
         <api.baseline.version>2.3.15</api.baseline.version>
     </properties>
@@ -84,11 +89,41 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${surefire.version}</version>
+                    <configuration>
+                        <failIfNoTests>true</failIfNoTests>
+                        <forkedProcessTimeoutInSeconds>180</forkedProcessTimeoutInSeconds>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${surefire.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.3.1</version>
+                    <executions>
+                        <execution>
+                            <id>sources</id>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.11.3</version>
+                    <executions>
+                        <execution>
+                            <id>javadoc</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

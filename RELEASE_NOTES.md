@@ -1,6 +1,19 @@
-# Unreleased — Release tooling
+# Unreleased — JSON serialization and release tooling
 
-- Check source and binary API compatibility against 2.3.15 with japicmp in CI and release builds.
+- Add the library-neutral `JsonSerializer`, `JsonType<T>` and `JsonSerializationException` contracts, with UTF-8 byte and string support.
+- Route both HTTP clients and API error handling through the injected serializer, including generic certificate lists.
+- Add `JacksonJsonSerializer`: copy a configured mapper or choose defaults with Java time support, ISO dates and tolerance for unknown properties. Install `KsefJsonModule` on the copy to support neutral mapping annotations.
+- Add optional `ksef-json-serializer-gson` with `GsonJsonSerializer`, requiring neither Jackson nor the client module. Support neutral annotations, enum aliases, generic types, ISO dates/durations and Base64; accept a configured Gson instance without modifying it.
+- Clarify the shared wire contract and test both adapters against KSeF models and HTTP/error handling. Reject empty and trailing JSON, preserve decimal precision in default untyped maps, and encode default Jackson durations as ISO strings instead of numeric timestamps.
+- Replace boilerplate model getters/setters with Lombok while retaining accessor names and JSON annotations. Generate client Javadocs from delomboked sources so generated accessors remain documented.
+- Extract the JSON contract into `ksef-json-serializer` (no production dependencies) and the optional Jackson adapter into `ksef-json-serializer-jackson` (no dependency on the client). The client brings in only the contract; applications must select an adapter explicitly.
+- **Breaking:** remove all four `ObjectMapper` constructors from `DefaultKsefClient`, `DefaultLighthouseKsefClient` and `ExceptionHandler`. Pass a `JsonSerializer` and recompile the application. Remove Jackson from the client's production dependencies and replace model annotations with library-neutral `JsonName`, `JsonValue` and `JsonCreator`. Direct Jackson use with models now requires `KsefJsonModule`. See the README and dependency setup guide for migration.
+- Build and publish the new modules with sources, Javadocs and distinct automatic module names; collect test reports from all modules in CI and release workflows.
+- Verify stable JPMS names from packaged JARs, including after renaming the files. Compile and run named consumer modules with each JSON adapter and the client's runtime dependencies during `verify`; document module-path setup and automatic-module limitations.
+- Preserve HTTP metadata for empty, null or malformed API error bodies; recognize legacy 401/403 responses with tolerant parsers and avoid null dereferences for incomplete 429 responses.
+- Add local JSON contract and client tests covering property aliases, enums, dates, generic types, custom serializers, Problem Details, legacy errors and Retry-After.
+
+- Check source and binary API compatibility against 2.3.15 with japicmp in CI and release builds, with signature-level exclusions for only the four intentionally removed constructors. Jackson is available only on the comparison classpath for reading the baseline. Enforce the absence of production Jackson/Gson/adapter dependencies and test a client with Gson or a custom serializer without Jackson classes available.
 - Add weekly Dependabot updates, CodeQL analysis of Maven-built Java and GitHub Actions, and a private vulnerability reporting policy.
 - Pin Actions to verified commit SHAs and stop persisting checkout credentials.
 - Allow release dry runs from untagged branches without signing or publication secrets; require real releases to reference commits on main.

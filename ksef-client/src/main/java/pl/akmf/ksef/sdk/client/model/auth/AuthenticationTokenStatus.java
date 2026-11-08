@@ -1,7 +1,8 @@
 package pl.akmf.ksef.sdk.client.model.auth;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 public enum AuthenticationTokenStatus {
     PENDING("Pending"),
@@ -10,15 +11,11 @@ public enum AuthenticationTokenStatus {
     REVOKED("Revoked"),
     FAILED("Failed");
 
+    @Getter(onMethod_ = @JsonValue)
     private final String value;
 
     AuthenticationTokenStatus(String value) {
         this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
     }
 
     @Override

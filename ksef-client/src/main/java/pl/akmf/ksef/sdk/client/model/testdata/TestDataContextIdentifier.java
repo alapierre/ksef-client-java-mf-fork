@@ -1,30 +1,18 @@
 package pl.akmf.ksef.sdk.client.model.testdata;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class TestDataContextIdentifier {
     private ContextIdentifierType type;
     private String value;
 
     public TestDataContextIdentifier(ContextIdentifierType type, String value) {
         this.type = type;
-        this.value = value;
-    }
-
-    public ContextIdentifierType getType() {
-        return type;
-    }
-
-    public void setType(ContextIdentifierType type) {
-        this.type = type;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
         this.value = value;
     }
 
@@ -35,15 +23,11 @@ public class TestDataContextIdentifier {
         NIP_VAT_UE("NipVatUe"),
         PEPPOL_ID("PeppolId");
 
+        @Getter(onMethod_ = @JsonValue)
         private final String value;
 
         ContextIdentifierType(String value) {
             this.value = value;
-        }
-
-        @JsonValue
-        public String getValue() {
-            return value;
         }
 
         @Override

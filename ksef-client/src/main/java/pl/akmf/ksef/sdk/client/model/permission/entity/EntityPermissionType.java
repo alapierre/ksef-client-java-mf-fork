@@ -1,6 +1,7 @@
 package pl.akmf.ksef.sdk.client.model.permission.entity;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 public enum EntityPermissionType {
   
@@ -8,21 +9,16 @@ public enum EntityPermissionType {
 
   INVOICE_READ("InvoiceRead");
 
+  @Getter(onMethod_ = @JsonValue)
   private final String value;
 
   EntityPermissionType(String value) {
     this.value = value;
   }
 
-  @JsonValue
-  public String getValue() {
-    return value;
-  }
-
   @Override
   public String toString() {
     return String.valueOf(value);
   }
-
 }
 

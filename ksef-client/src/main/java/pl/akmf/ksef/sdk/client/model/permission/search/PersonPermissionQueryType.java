@@ -1,21 +1,18 @@
 package pl.akmf.ksef.sdk.client.model.permission.search;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 public enum PersonPermissionQueryType {
     PERMISSION_IN_CURRENT_CONTEXT("PermissionsInCurrentContext"),
     PERMISSION_GRANTED_IN_CURRENT_CONTEXT("PermissionsGrantedInCurrentContext");
 
+    @Getter(onMethod_ = @JsonValue)
     private final String value;
 
     PersonPermissionQueryType(String value) {
         this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
     }
 
     @Override

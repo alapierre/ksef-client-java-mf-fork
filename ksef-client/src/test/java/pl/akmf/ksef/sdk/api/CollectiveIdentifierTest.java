@@ -1,5 +1,7 @@
 package pl.akmf.ksef.sdk.api;
 
+import io.alapierre.ksef.json.jackson.JacksonJsonSerializer;
+import io.alapierre.ksef.json.jackson.KsefJsonModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.Before;
@@ -49,7 +51,7 @@ public class CollectiveIdentifierTest {
 
     @Before
     public void setUp() {
-        objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        objectMapper = new ObjectMapper().registerModule(new KsefJsonModule()).registerModule(new JavaTimeModule());
     }
 
     @Test
@@ -138,7 +140,7 @@ public class CollectiveIdentifierTest {
         MockHttpClient mockHttpClient = new MockHttpClient(201, expectedResponseJson);
         TestApiProperties properties = new TestApiProperties("https://ksef-test.mf.gov.pl/api/v2");
 
-        DefaultKsefClient client = new DefaultKsefClient(mockHttpClient, properties, objectMapper);
+        DefaultKsefClient client = new DefaultKsefClient(mockHttpClient, properties, new JacksonJsonSerializer(objectMapper));
 
         GenerateCollectiveIdentifierRequest request = new GenerateCollectiveIdentifierRequestBuilder()
                 .addInvoice(new CollectiveIdentifierInvoice("1111111111-20260101-111111111111-11"))
@@ -174,7 +176,7 @@ public class CollectiveIdentifierTest {
         MockHttpClient mockHttpClient = new MockHttpClient(200, expectedResponseJson);
         TestApiProperties properties = new TestApiProperties("https://ksef-test.mf.gov.pl/api/v2");
 
-        DefaultKsefClient client = new DefaultKsefClient(mockHttpClient, properties, objectMapper);
+        DefaultKsefClient client = new DefaultKsefClient(mockHttpClient, properties, new JacksonJsonSerializer(objectMapper));
 
         CollectiveIdentifierInvoicesQueryRequest request = new CollectiveIdentifierInvoicesQueryRequestBuilder()
                 .addCollectiveIdentifierNumber("1111111111-IZ202607-65ED02180000-E7")
@@ -233,7 +235,7 @@ public class CollectiveIdentifierTest {
                   "invoiceCount":16,"createdInCurrentContext":true}]}
                 """);
         DefaultKsefClient client = new DefaultKsefClient(http,
-                new TestApiProperties("https://ksef-test.mf.gov.pl/api/v2"), objectMapper);
+                new TestApiProperties("https://ksef-test.mf.gov.pl/api/v2"), new JacksonJsonSerializer(objectMapper));
         CollectiveIdentifiersQueryRequest query = new CollectiveIdentifiersQueryRequestBuilder()
                 .withDateCreatedFrom(OffsetDateTime.parse("2026-07-10T12:00:00+02:00"))
                 .withDateCreatedTo(OffsetDateTime.parse("2026-08-10T12:00:00+02:00"))
@@ -263,7 +265,7 @@ public class CollectiveIdentifierTest {
                   "dateCreated":"2026-07-10T12:00:00+02:00","createdInCurrentContext":false}]}
                 """);
         DefaultKsefClient client = new DefaultKsefClient(http,
-                new TestApiProperties("https://ksef-test.mf.gov.pl/api/v2"), objectMapper);
+                new TestApiProperties("https://ksef-test.mf.gov.pl/api/v2"), new JacksonJsonSerializer(objectMapper));
         String number = "1111111111-20260101-111111111111-11";
         CollectiveIdentifiersByKsefNumberQueryResponse response = client.getCollectiveIdentifiersByKsefNumber(number, "current", 200, "access");
         assertEquals(null, response.getContinuationToken());

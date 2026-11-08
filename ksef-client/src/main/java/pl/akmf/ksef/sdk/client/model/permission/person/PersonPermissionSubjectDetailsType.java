@@ -1,7 +1,8 @@
 package pl.akmf.ksef.sdk.client.model.permission.person;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 public enum PersonPermissionSubjectDetailsType {
 
@@ -9,15 +10,11 @@ public enum PersonPermissionSubjectDetailsType {
     PERSON_BY_FINGERPRINT_WITH_IDENTIFIER("PersonByFingerprintWithIdentifier"),
     PERSON_BY_FINGERPRINT_WITHOUT_IDENTIFIER("PersonByFingerprintWithoutIdentifier");
 
+    @Getter(onMethod_ = @JsonValue)
     private final String value;
 
     PersonPermissionSubjectDetailsType(String value) {
         this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
     }
 
     @Override

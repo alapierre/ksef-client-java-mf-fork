@@ -1,30 +1,17 @@
 package pl.akmf.ksef.sdk.client.model.permission.search;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class EuEntityPermissionsAuthorIdentifier {
     private String value;
     private IdentifierType type;
 
     public EuEntityPermissionsAuthorIdentifier() {
-
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public IdentifierType getType() {
-        return type;
-    }
-
-    public void setType(IdentifierType type) {
-        this.type = type;
     }
 
     public enum IdentifierType {
@@ -35,15 +22,11 @@ public class EuEntityPermissionsAuthorIdentifier {
 
         FINGERPRINT("Fingerprint");
 
+        @Getter(onMethod_ = @JsonValue)
         private final String value;
 
         IdentifierType(String value) {
             this.value = value;
-        }
-
-        @JsonValue
-        public String getValue() {
-            return value;
         }
 
         @Override

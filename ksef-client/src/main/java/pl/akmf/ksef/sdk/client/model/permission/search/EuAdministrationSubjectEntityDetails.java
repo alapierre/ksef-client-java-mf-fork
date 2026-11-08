@@ -1,14 +1,17 @@
 package pl.akmf.ksef.sdk.client.model.permission.search;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class EuAdministrationSubjectEntityDetails {
     private String fullName;
     private SubjectDetailType subjectDetailType;
 
     public EuAdministrationSubjectEntityDetails() {
-
     }
 
     public EuAdministrationSubjectEntityDetails(final String fullName, final SubjectDetailType subjectDetailType) {
@@ -16,35 +19,15 @@ public class EuAdministrationSubjectEntityDetails {
         this.subjectDetailType = subjectDetailType;
     }
 
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public SubjectDetailType getSubjectDetailType() {
-        return subjectDetailType;
-    }
-
-    public void setSubjectDetailType(SubjectDetailType subjectDetailType) {
-        this.subjectDetailType = subjectDetailType;
-    }
-
     public enum SubjectDetailType {
 
         ENTITY_BY_IDENTIFIER("EntityByIdentifier");
 
+        @Getter(onMethod_ = @JsonValue)
         private final String value;
 
         SubjectDetailType(String value) {
             this.value = value;
-        }
-
-        @JsonValue
-        public String getValue() {
-            return value;
         }
 
         @Override

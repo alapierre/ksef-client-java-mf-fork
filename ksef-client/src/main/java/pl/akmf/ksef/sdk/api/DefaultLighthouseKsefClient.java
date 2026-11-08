@@ -1,6 +1,7 @@
 package pl.akmf.ksef.sdk.api;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.alapierre.ksef.json.JsonSerializationException;
+import io.alapierre.ksef.json.JsonSerializer;
 import pl.akmf.ksef.sdk.client.interfaces.LighthouseKsefClient;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ApiResponse;
@@ -18,6 +19,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import static pl.akmf.ksef.sdk.api.HttpStatus.OK;
@@ -31,15 +33,15 @@ import static pl.akmf.ksef.sdk.client.Headers.CONTENT_TYPE;
 
 public class DefaultLighthouseKsefClient implements LighthouseKsefClient {
 
-    private final ObjectMapper objectMapper;
+    private final JsonSerializer jsonSerializer;
     private final HttpClient httpClient;
     private final String baseURl;
     private final Duration timeout;
     private final Map<String, String> defaultHeaders;
 
-    public DefaultLighthouseKsefClient(ObjectMapper objectMapper, HttpClient httpClient,
+    public DefaultLighthouseKsefClient(JsonSerializer jsonSerializer, HttpClient httpClient,
                                        String baseURl, Duration timeout, Map<String, String> defaultHeaders) {
-        this.objectMapper = objectMapper;
+        this.jsonSerializer = Objects.requireNonNull(jsonSerializer, "jsonSerializer");
         this.httpClient = httpClient;
         this.baseURl = baseURl;
         this.timeout = timeout;
@@ -103,7 +105,7 @@ public class DefaultLighthouseKsefClient implements LighthouseKsefClient {
             return new ApiResponse<>(
                     response.statusCode(),
                     response.headers(),
-                    response.body() == null ? null : objectMapper.readValue(response.body(), classType))
+                    response.body() == null ? null : jsonSerializer.fromJson(response.body(), classType))
                     .getData();
         } catch (IOException e) {
             throw new KsefApiException(e);
@@ -113,29 +115,29 @@ public class DefaultLighthouseKsefClient implements LighthouseKsefClient {
     private void validResponse(HttpResponse<byte[]> response,
                                HttpStatus expectedStatus,
                                Url operation) throws ApiException {
-        try {
-            if (!isValidResponse(response, expectedStatus)) {
-                ExceptionResponse exception = null;
-                String uri = response.uri().toString();
-                String method = Optional.of(response)
-                        .map(HttpResponse::request)
-                        .map(HttpRequest::method)
-                        .orElse("");
+        if (!isValidResponse(response, expectedStatus)) {
+            ExceptionResponse exception = null;
+            String uri = response.uri().toString();
+            String method = Optional.of(response)
+                    .map(HttpResponse::request)
+                    .map(HttpRequest::method)
+                    .orElse("");
 
-                String contentType = response.headers()
-                        .firstValue(CONTENT_TYPE)
-                        .orElse("")
-                        .toLowerCase();
+            String contentType = response.headers()
+                    .firstValue(CONTENT_TYPE)
+                    .orElse("")
+                    .toLowerCase();
 
-                if (contentType.contains(APPLICATION_JSON)) {
-                    exception = response.body() == null ? null :
-                            objectMapper.readValue(response.body(), ExceptionResponse.class);
+            if (contentType.contains(APPLICATION_JSON)
+                    && response.body() != null && response.body().length > 0) {
+                try {
+                    exception = jsonSerializer.fromJson(response.body(), ExceptionResponse.class);
+                } catch (JsonSerializationException ignored) {
+                    // Keep HTTP status and headers even when the error body cannot be decoded.
                 }
-                String message = formatExceptionMessage(operation.getOperationId(), response.statusCode(), response.body());
-                throw new KsefApiException(response.statusCode(), uri, method, message, response.headers(), exception);
             }
-        } catch (IOException e) {
-            throw new KsefApiException(e);
+            String message = formatExceptionMessage(operation.getOperationId(), response.statusCode(), response.body());
+            throw new KsefApiException(response.statusCode(), uri, method, message, response.headers(), exception);
         }
     }
 }

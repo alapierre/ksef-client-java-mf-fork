@@ -1,7 +1,8 @@
 package pl.akmf.ksef.sdk.client.model.permission.search;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 public enum EuEntityPermissionsQueryPermissionType {
 
@@ -13,15 +14,11 @@ public enum EuEntityPermissionsQueryPermissionType {
 
     INTROSPECTION("Introspection");
 
+    @Getter(onMethod_ = @JsonValue)
     private final String value;
 
     EuEntityPermissionsQueryPermissionType(String value) {
         this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
     }
 
     @Override

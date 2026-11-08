@@ -76,7 +76,8 @@ jobs:
         with:
           name: release-dry-run-reports
           path: |
-            ksef-client/target/surefire-reports/
+            **/target/surefire-reports/
+            **/target/failsafe-reports/
             ksef-client/target/japicmp/
           if-no-files-found: ignore
 
@@ -149,6 +150,7 @@ jobs:
         with:
           name: release-test-reports
           path: |
-            ksef-client/target/surefire-reports/
+            **/target/surefire-reports/
+            **/target/failsafe-reports/
             ksef-client/target/japicmp/
           if-no-files-found: ignore

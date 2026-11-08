@@ -1,15 +1,18 @@
 package pl.akmf.ksef.sdk.client.model.limit;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class ChangeSubjectCertificateLimitRequest {
     private EnrollmentLimit enrollment;
     private CertificateLimit certificate;
     private SubjectType subjectIdentifierType;
 
     public ChangeSubjectCertificateLimitRequest() {
-
     }
 
     public ChangeSubjectCertificateLimitRequest(EnrollmentLimit enrollment, CertificateLimit certificate, SubjectType subjectIdentifierType) {
@@ -18,44 +21,16 @@ public class ChangeSubjectCertificateLimitRequest {
         this.subjectIdentifierType = subjectIdentifierType;
     }
 
-    public EnrollmentLimit getEnrollment() {
-        return enrollment;
-    }
-
-    public void setEnrollment(EnrollmentLimit enrollment) {
-        this.enrollment = enrollment;
-    }
-
-    public CertificateLimit getCertificate() {
-        return certificate;
-    }
-
-    public void setCertificate(CertificateLimit certificate) {
-        this.certificate = certificate;
-    }
-
-    public SubjectType getSubjectIdentifierType() {
-        return subjectIdentifierType;
-    }
-
-    public void setSubjectIdentifierType(SubjectType subjectIdentifierType) {
-        this.subjectIdentifierType = subjectIdentifierType;
-    }
-
     public enum SubjectType {
         NIP("Nip"),
         PESEL("Pesel"),
         FINGERPRING("Fingerprint");
 
+        @Getter(onMethod_ = @JsonValue)
         private final String value;
 
         SubjectType(String value) {
             this.value = value;
-        }
-
-        @JsonValue
-        public String getValue() {
-            return value;
         }
 
         @Override

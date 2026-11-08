@@ -1,7 +1,8 @@
 package pl.akmf.ksef.sdk.client.model.session;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 public enum SessionValue {
     FA("FA"),
@@ -10,15 +11,11 @@ public enum SessionValue {
     RR("RR"),
     FA_RR("FA_RR");
 
+    @Getter(onMethod_ = @JsonValue)
     private final String value;
 
     SessionValue(String value) {
         this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
     }
 
     @Override

@@ -1,21 +1,18 @@
 package pl.akmf.ksef.sdk.client.model.certificate.publickey;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 public enum PublicKeyCertificateUsage {
     KSEFTOKENENCRYPTION("KsefTokenEncryption"),
     SYMMETRICKEYENCRYPTION("SymmetricKeyEncryption");
 
+    @Getter(onMethod_ = @JsonValue)
     private final String value;
 
     PublicKeyCertificateUsage(String value) {
         this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
     }
 
     @Override

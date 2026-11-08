@@ -1,8 +1,12 @@
 package pl.akmf.ksef.sdk.client.model.session;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class AuthenticationMethodInfo {
     private AuthenticationMethodInfoCategory category;
     private String code;
@@ -14,30 +18,6 @@ public class AuthenticationMethodInfo {
     public AuthenticationMethodInfo(AuthenticationMethodInfoCategory category, String code, String displayName) {
         this.category = category;
         this.code = code;
-        this.displayName = displayName;
-    }
-
-    public AuthenticationMethodInfoCategory getCategory() {
-        return category;
-    }
-
-    public void setCategory(AuthenticationMethodInfoCategory category) {
-        this.category = category;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
 
@@ -55,15 +35,11 @@ public class AuthenticationMethodInfo {
         //Uwierzytelnienie inną metodą.
         OTHER("Other");
 
+        @Getter(onMethod_ = @JsonValue)
         private final String value;
 
         AuthenticationMethodInfoCategory(String value) {
             this.value = value;
-        }
-
-        @JsonValue
-        public String getValue() {
-            return value;
         }
 
         @Override

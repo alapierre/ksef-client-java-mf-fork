@@ -1,32 +1,20 @@
 package pl.akmf.ksef.sdk.client.model.testdata;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonName;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class TestDataPermission {
     private String description;
-    @JsonProperty("permissionType")
+    @JsonName("permissionType")
     private PermissionType permission;
 
     public TestDataPermission(String description, PermissionType permission) {
         this.description = description;
-        this.permission = permission;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public PermissionType getPermission() {
-        return permission;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public void setPermission(PermissionType permission) {
         this.permission = permission;
     }
 
@@ -41,15 +29,11 @@ public class TestDataPermission {
         SUBUNIT_MANAGE("SubunitManage"),
         COLLECTIVE_IDENTIFIER_MANAGE("CollectiveIdentifierManage");
 
+        @Getter(onMethod_ = @JsonValue)
         private final String value;
 
         PermissionType(String value) {
             this.value = value;
-        }
-
-        @JsonValue
-        public String getValue() {
-            return value;
         }
 
         @Override
