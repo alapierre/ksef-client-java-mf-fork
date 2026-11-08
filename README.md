@@ -7,6 +7,7 @@ An independently maintained community fork of the official KSeF 2.0 SDK, focused
 
 For setup and maintenance, see [using the library](maven-package.md),
 [building and testing](#building-and-testing), [releases](#releases),
+[cryptographic limitations](#cryptographic-limitations-of-the-ksef-protocol),
 and [release notes](RELEASE_NOTES.md).
 
 ## Independent development and upstream changes
@@ -113,6 +114,45 @@ client.openOnlineSession(
 
 The previous overloads accepting `UpoVersion` remain available for source compatibility,
 but are deprecated.
+
+## Cryptographic limitations of the KSeF protocol
+
+KSeF requires **AES-256-CBC with PKCS#7 padding** for invoice and batch-part
+encryption, as specified in the Ministry of Finance documentation for
+[interactive sessions](https://github.com/CIRFMF/ksef-api/blob/main/sesja-interaktywna.md)
+and [batch sessions](https://github.com/CIRFMF/ksef-api/blob/main/sesja-wsadowa.md).
+The client implements this in `DefaultCryptographyService` using the Java
+transformation `AES/CBC/PKCS5Padding`, which provides the corresponding padding
+for AES's 16-byte blocks.
+
+There are two relevant security limitations:
+
+- **CBC does not authenticate ciphertext.** CBC with padding can be vulnerable
+  to padding-oracle attacks if an attacker can submit modified ciphertext and
+  distinguish padding failures. A scanner warning identifies a risky construction;
+  it does not by itself prove that a particular KSeF endpoint is exploitable.
+- **KSeF defines one IV per session.** The same key and IV are reused for
+  multiple invoices in an interactive session or separately encrypted parts of
+  a batch. Reuse in CBC can reveal equal plaintext prefixes through equal
+  ciphertext prefixes. Generating a random IV when opening the session does
+  not remove this within-session limitation.
+
+The IV-reuse problem was reported by this project's maintainer in
+[CIRFMF/ksef-api#355](https://github.com/CIRFMF/ksef-api/issues/355).
+These protocol constraints also affect independently implemented clients.
+Replacing CBC with authenticated encryption such as AES-GCM, or supplying a
+different IV for each invoice or batch part, requires support in the KSeF API;
+changing only this client would break interoperability.
+
+Use fresh encryption data for each new session (`getEncryptionData()` generates
+a new key and IV), and retain HTTPS certificate validation. These measures do
+not eliminate the protocol limitations described above. The KSeF encryption
+helpers should not be used as a general-purpose encryption design for other data.
+
+CodeQL and other scanner findings concerning these CBC operations must be
+reviewed in this context. Protocol compatibility explains why the operations
+remain; it does not make the risk disappear or justify dismissing unrelated
+cryptographic findings. See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ## Using the library
 
@@ -226,6 +266,8 @@ formats or runtime behavior.
 The separate CodeQL workflow analyzes Java after a Maven build, including JAXB
 generation, and also scans GitHub Actions. It runs on PRs, pushes to `main` and
 weekly. GitHub's CodeQL Default setup must be disabled when using this workflow.
+For findings involving KSeF's required CBC encryption, see
+[cryptographic limitations](#cryptographic-limitations-of-the-ksef-protocol).
 CodeQL and dependency update services are separate from the publication workflow.
 Dependabot checks Maven dependencies and pinned GitHub Actions weekly; security
 updates also require Dependabot alerts and security updates to be enabled in
