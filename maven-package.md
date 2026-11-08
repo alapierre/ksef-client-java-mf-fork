@@ -1,45 +1,55 @@
-## Paczka Maven
-06.11.2025
+# Korzystanie z biblioteki
 
-Paczki maven dostępne są pod adresem: https://github.com/orgs/CIRFMF/packages
+Ten fork jest publikowany w [Maven Central](https://central.sonatype.com/artifact/io.alapierre.ksef-sdk/ksef-client)
+pod współrzędnymi `io.alapierre.ksef-sdk:ksef-client`. Wymaga Javy 21.
+Pobieranie biblioteki nie wymaga tokena GitHub ani konfiguracji GitHub Packages.
 
-### Wymagania wstępne
+Poniższe przykłady używają wersji `2.3.15`, pierwszej zbudowanej przez Maven.
+Informacje o zmianach w kolejnych wersjach znajdują się w [release notes](RELEASE_NOTES.md).
 
-Aby korzystać z biblioteki ksef-client w swoim projekcie, należy najpierw skonfigurować dostęp do paczek Maven hostowanych w GitHub Packages organizacji CIRFMF.
-Wymaga to autoryzacji przy pomocy osobistego tokena dostępu (Personal Access Token – PAT) z uprawnieniem read:packages.
+## Maven
 
-### 1. Wygenerowanie tokena dostępu (PAT)
+W sekcji `<properties>` swojego `pom.xml` ustaw wersję:
 
-Aby uzyskać dostęp do paczek z GitHub Packages, należy utworzyć Personal Access Token (PAT) z odpowiednimi uprawnieniami:
-
-Scieżka: GitHub -> Settings -> Developer settings -> Personal access tokens -> Tokens (classic) -> Generate new token -> Generate new token (classic)
-
-W sekcji **Select scopes** należy wybrać **read:packages** a następnie wygenerować i skopiować wartość tokena (będzie widoczna tylko raz)
-
-### 2. Dodanie źródła pakietów
-
-Aby móc pobierać paczki z GitHub Packages, należy dodać źródło z repozytoruim.
-
+```xml
+<ksef.client.version>2.3.15</ksef.client.version>
 ```
+
+W sekcji `<dependencies>` dodaj:
+
+```xml
+<dependency>
+    <groupId>io.alapierre.ksef-sdk</groupId>
+    <artifactId>ksef-client</artifactId>
+    <version>${ksef.client.version}</version>
+</dependency>
+```
+
+Maven Central jest domyślnym repozytorium Mavena; dodatkowa sekcja `<repositories>`
+nie jest potrzebna. Publikowany parent POM jest pobierany automatycznie.
+Nie trzeba dodawać go jako zależności ani ustawiać właściwości `revision`.
+
+## Gradle — Kotlin DSL
+
+```kotlin
 repositories {
-    maven {
-        url = uri("https://maven.pkg.github.com/CIRFMF/ksef-client-java")
-        credentials {
-            username = System.getenv("GITHUB_ACTOR") ?: "youUsername"
-            password = System.getenv("GITHUB_TOKEN") ?: "yourToken"
-        }
-    }
+    mavenCentral()
 }
-```
 
-Jeśli źródło zostanie dodane bez uwierzytelnienia, narzędzia (java/Intelij IDE) zwrócą błąd 401 Unauthorized lub 403 Forbidden.
-
-### 3. Pobranie paczek
-
-Po dodaniu źródła możesz pobrać paczki ksef-client w swoim projekcie.
-
-```
 dependencies {
-    implementation("pl.akmf.ksef-sdk:ksef-client:$clientVersion")
+    implementation("io.alapierre.ksef-sdk:ksef-client:2.3.15")
 }
 ```
+
+Zmiana systemu budowania tego repozytorium na Maven nie wymaga migracji aplikacji
+korzystających z klienta. Można nadal używać Gradle.
+
+## Współrzędne tego forka
+
+Wcześniejsza instrukcja w tym pliku dotyczyła paczek MF
+`pl.akmf.ksef-sdk:ksef-client` w GitHub Packages organizacji CIRFMF.
+Powyższe przykłady dotyczą forka `io.alapierre.ksef-sdk:ksef-client`.
+Dotychczasowi użytkownicy tego forka zachowują te same współrzędne zależności.
+
+Jeżeli chcesz budować bibliotekę ze źródeł, zobacz
+[instrukcję budowania i testowania](README.md#building-and-testing).

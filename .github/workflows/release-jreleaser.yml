@@ -60,6 +60,10 @@ jobs:
           java-version: "21"
           cache: maven
 
+      - name: Prepare PomChecker
+        timeout-minutes: 5
+        run: bash .github/scripts/setup-pomchecker.sh
+
       - name: Verify, sign and stage artifacts locally
         env:
           MAVEN_GPG_KEY: ${{ secrets.SIGNING_KEY }}

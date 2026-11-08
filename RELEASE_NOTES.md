@@ -1,4 +1,11 @@
-# Unreleased — Maven build migration
+# Unreleased — Release tooling
+
+- Update JReleaser from 1.20.0 to 1.27.0 and remove an obsolete signing setting.
+- Prepare PomChecker 1.15.0 from Maven Central with a pinned SHA-256, Maven caching and HTTP retries; keep POM validation enabled.
+- Add explicit client POM description and project URL, avoiding the inherited module URL and satisfying strict POM checks.
+- Update build, dependency and release documentation for Maven; replace the old upstream GitHub Packages instructions.
+
+# v2.3.15 — Maven build migration
 
 - Replace Gradle with Maven Wrapper and a parent/client reactor; JDK 21 remains required.
 - Preserve the published client coordinates, public API, automatic module name and production dependency versions.

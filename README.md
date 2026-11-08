@@ -5,6 +5,10 @@
 
 An independently maintained community fork of the official KSeF 2.0 SDK, focused on reliable integrations, API coverage, and backward compatibility.
 
+For setup and maintenance, see [using the library](maven-package.md),
+[building and testing](#building-and-testing), [releases](#releases),
+and [release notes](RELEASE_NOTES.md).
+
 ## Independent development and upstream changes
 
 We have decided to develop this fork independently and stop merging upstream releases.
@@ -56,7 +60,7 @@ Development will follow the KSeF API contract and the needs of this fork’s use
 | Dependency management | it varies                | Updated and secure dependencies             |
 | Maven publishing      | Github Packages          | Published to public Maven repository        |
 | Maintenance           | Irregular / no updates   | Community maintained                        |
-| Build system          | Unmodified               | Cleaned up and improved for reproducibility |
+| Build system          | Gradle at the time of the fork | Maven Wrapper, generated sources under `target` |
 | Circuit breaker       | Enabled by default       | Not enabled implicitly                      |
 | Batch compression     | TAR.GZ-oriented defaults | Existing `BatchHelper` behavior remains ZIP |
 
@@ -110,15 +114,43 @@ client.openOnlineSession(
 The previous overloads accepting `UpoVersion` remain available for source compatibility,
 but are deprecated.
 
-## Public maven repo dependency
+## Using the library
 
-````xml
+The fork is published to Maven Central as `io.alapierre.ksef-sdk:ksef-client`.
+No GitHub Packages repository or GitHub token is required. Java 21 remains the
+minimum requirement. For example, to use the first Maven-built release:
+
+```xml
+<properties>
+    <ksef.client.version>2.3.15</ksef.client.version>
+</properties>
+
+<!-- Inside your project's <dependencies> element: -->
 <dependency>
     <groupId>io.alapierre.ksef-sdk</groupId>
     <artifactId>ksef-client</artifactId>
     <version>${ksef.client.version}</version>
 </dependency>
-````
+```
+
+See [dependency setup](maven-package.md) for Maven and Gradle examples.
+
+## Maven migration — since 2.3.15
+
+This repository now uses Maven instead of Gradle. Applications consuming the
+published library can continue using their existing build tool, including Gradle.
+The migration preserves the client coordinates, public Java API, automatic module
+name (`io.alapierre.ksef.client`) and production dependency versions. JSON handling
+still uses Jackson; the planned serializer abstraction is a separate change.
+
+If you build this repository from source, import the root `pom.xml` as a Maven
+project in your IDE and use `./mvnw` (`mvnw.cmd` on Windows). Update custom CI
+scripts that invoke `gradlew` or collect files from `ksef-client/build/libs`:
+the JARs are now in `ksef-client/target`. The reactor also builds a parent POM;
+run Maven from the repository root so both modules are available.
+
+The major library version remains `2`, corresponding to KSeF API 2. The build
+migration does not require moving integrations to a `3.x` library version.
 
 ## Disclaimer
 
@@ -131,11 +163,26 @@ We encourage the maintainers of the official SDK to continue improving it and to
 
 ### Building and testing
 
-Use JDK 21 and the Maven Wrapper (`mvnw.cmd` on Windows):
+Use JDK 21 and the Maven Wrapper, which pins Maven 3.9.11 and verifies its
+distribution checksum. A separate Maven installation is not needed. On Windows,
+replace `./mvnw` with `mvnw.cmd` (or `.\mvnw.cmd` in PowerShell).
 
 ```shell
 ./mvnw clean verify
 ```
+
+Run commands from the repository root:
+
+| Task | Command |
+|------|---------|
+| Clean build, local tests, sources and Javadoc JARs | `./mvnw clean verify` |
+| Run local tests during development | `./mvnw test` |
+| Install the parent POM and client into the local Maven repository | `./mvnw clean install` |
+| Regenerate the authentication classes from XSD | `./mvnw generate-sources` |
+
+The client artifacts are written to `ksef-client/target`. Test reports are in
+`ksef-client/target/surefire-reports`; live-test reports, when enabled, are in
+`ksef-client/target/failsafe-reports`.
 
 The default build runs local tests only. They need no KSeF connection, token,
 private certificate, or GitHub secret. HTTP contract tests use an in-memory
@@ -143,7 +190,8 @@ client; cryptographic tests generate their own keys. Tests cover request/respons
 mapping, error handling, ZIP contents and encrypted batch parts, certificate-link
 signatures, and authentication XML validation against the bundled XSD.
 Dependencies and the pinned Maven distribution are downloaded on the first run.
-After dependencies have been cached, the default build can also run with `-o`.
+After dependencies and plugins for the requested goals have been cached, the
+default build can also run with `-o`.
 
 XJC generates the authentication model into
 `ksef-client/target/generated-sources/jaxb` during `generate-sources`.
@@ -152,10 +200,6 @@ configuration instead. Generated classes are included in the binary, sources,
 and Javadoc JARs, retaining the existing packages and fluent `with…` methods.
 `IpChangePolicyEnum` is retained in the source tree for compatibility with older
 releases; it is no longer declared by the current schema.
-
-The Maven coordinates remain `io.alapierre.ksef-sdk:ksef-client` and the automatic
-module name remains `io.alapierre.ksef.client`. The build migration does not
-change the client's public API or production dependency versions.
 
 ### Optional KSeF TEST integration
 
@@ -171,7 +215,8 @@ This sends one generated invoice, using the existing FA(2) test fixture, to
 the supplied NIP and a working test environment that accepts this fixture.
 Missing credentials fail before connecting; authentication and processing waits
 are bounded. These tests never run in the default build or release workflow.
-Their failure remains visible and does not block releases.
+An unavailable KSeF TEST environment does not block the normal build or release.
+If the live profile is explicitly selected, a live-test failure fails that run.
 
 The **KSeF TEST integration (manual)** GitHub workflow uses repository secrets
 `KSEF_TOKEN` and `KSEF_NIP`. It is opt-in and is not a required release check.
@@ -180,33 +225,17 @@ Surefire and Failsafe reports are uploaded separately from normal build artifact
 ### Releases
 
 JReleaser continues to publish to Maven Central and create GitHub Releases.
-Push a tag such as `v2.3.15` **containing the Maven migration**, or dispatch the
-release workflow with an existing tag. Manual runs default to a dry run. Tags
-such as `v2.4.0-rc.1` are marked as prereleases. The major version continues to
-correspond to KSeF API 2; the build migration does not require a 3.x release.
+Pushing a new `v2.*` tag starts a **real publication**. Manual runs require an
+existing tag and default to a dry run. The workflow checks out that tag, derives
+`revision` from it, runs local tests, signs and stages artifacts, and validates
+the publication POMs. It does not run live KSeF tests.
 
-The workflow checks out the exact tag, derives the Maven `revision` from it,
-runs all local tests, signs the artifacts and stages them in
-`target/staging-deploy` before invoking JReleaser. The parent POM is published
-alongside the client. Flattened publication POMs contain resolved versions so
-consumers do not need to supply `revision`. The default development version is
-`2.3.15-SNAPSHOT`; it can be overridden with `-Drevision=...`.
+Both the client and parent POM are published. Their versions are resolved in the
+publication POMs; consumers do not need to define Maven's `revision` property.
 
-Existing publication secrets are reused: `SIGNING_KEY`, `SIGNING_PASSWORD`,
-`MAVENCENTRAL_USERNAME`, `MAVENCENTRAL_TOKEN`, and optionally
-`JRELEASER_GITHUB_TOKEN` (otherwise the workflow token is used). Maven's BC signer
-reads the exported private signing key directly from the environment; it does
-not need `SIGNING_KEY_ID` or a locally imported keyring.
-
-To verify signed staging locally, using your configured GPG signer:
-
-```shell
-./mvnw -Prelease -Drevision=2.3.15 \
-  -DaltDeploymentRepository="staging::file://$(pwd)/target/staging-deploy" clean deploy
-```
-
-This command stages locally; publication is a separate JReleaser operation.
-Neither local verification nor release requires KSeF TEST credentials.
+Releases run in [GitHub Actions](https://github.com/alapierre/ksef-client-java-mf-fork/actions/workflows/release-jreleaser.yml).
+The configuration is maintained in the [release workflow](.github/workflows/release-jreleaser.yml)
+and [jreleaser.yml](jreleaser.yml).
 
 Contributions and pull requests are welcome.
 If you have fixes, improvements, or API updates — please open an issue or submit a PR.

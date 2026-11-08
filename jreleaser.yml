@@ -1,6 +1,5 @@
 signing:
   active: NEVER
-  armored: true
 
 release:
   github:
@@ -16,10 +15,14 @@ release:
 
 deploy:
   maven:
+    pomchecker:
+      # Keep in sync with .github/scripts/setup-pomchecker.sh.
+      version: 1.15.0
     mavenCentral:
       app:
         active: ALWAYS
         sign: false
+        verifyPom: true
         url: https://central.sonatype.com/api/v1/publisher
         stagingRepositories:
           - ./target/staging-deploy

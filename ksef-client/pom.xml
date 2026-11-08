@@ -8,6 +8,8 @@
     </parent>
     <artifactId>ksef-client</artifactId>
     <name>KSeF Client</name>
+    <description>Independently maintained Java client for the KSeF 2.0 API</description>
+    <url>https://github.com/alapierre/ksef-client-java-mf-fork</url>
     <dependencies>
         <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
