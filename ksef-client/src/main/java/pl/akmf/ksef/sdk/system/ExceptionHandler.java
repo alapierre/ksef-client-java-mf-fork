@@ -1,7 +1,7 @@
 package pl.akmf.ksef.sdk.system;
 
-import com.fasterxml.jackson.databind.DatabindException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.alapierre.ksef.json.JsonSerializationException;
+import io.alapierre.ksef.json.JsonSerializer;
 import pl.akmf.ksef.sdk.api.HttpStatus;
 import pl.akmf.ksef.sdk.api.Url;
 import pl.akmf.ksef.sdk.client.model.ApiException;
@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
+import java.util.Objects;
 import java.util.Optional;
 
 import static pl.akmf.ksef.sdk.api.HttpUtils.formatExceptionMessage;
@@ -37,10 +38,10 @@ import static pl.akmf.ksef.sdk.client.Headers.RETRY_AFTER;
 
 public class ExceptionHandler {
 
-    private final ObjectMapper objectMapper;
+    private final JsonSerializer jsonSerializer;
 
-    public ExceptionHandler(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public ExceptionHandler(JsonSerializer jsonSerializer) {
+        this.jsonSerializer = Objects.requireNonNull(jsonSerializer, "jsonSerializer");
     }
 
     public void handleException(HttpResponse<byte[]> response, Url operation) throws IOException, ApiException {
@@ -58,39 +59,46 @@ public class ExceptionHandler {
 
         String message = formatExceptionMessage(operation.getOperationId(), response.statusCode(), response.body());
 
-        if (contentType.contains(APPLICATION_JSON)
-                || contentType.contains(APPLICATION_PROBLEM_JSON)) {
+        if (response.body() != null && response.body().length > 0
+                && (contentType.contains(APPLICATION_JSON)
+                || contentType.contains(APPLICATION_PROBLEM_JSON))) {
             try {
                 if (HttpStatus.UNAUTHORIZED.getCode() == response.statusCode()) {
                     tryParseException(() -> {
-                        UnauthorizedProblemDetails unauthorizedProblemDetails = objectMapper.readValue(response.body(), UnauthorizedProblemDetails.class);
+                        UnauthorizedProblemDetails unauthorizedProblemDetails = jsonSerializer.fromJson(response.body(), UnauthorizedProblemDetails.class);
+                        if (unauthorizedProblemDetails == null || unauthorizedProblemDetails.getStatus() == 0 || unauthorizedProblemDetails.getTitle() == null) {
+                            throw new IOException("fallback");
+                        }
                         throw new UnauthorizedApiException(response.statusCode(), uri, method, message, response.headers(), unauthorizedProblemDetails);
                     });
                 } else if (HttpStatus.FORBIDDEN.getCode() == response.statusCode()) {
                     tryParseException(() -> {
-                        ForbiddenProblemDetails forbiddenProblemDetails = objectMapper.readValue(response.body(), ForbiddenProblemDetails.class);
+                        ForbiddenProblemDetails forbiddenProblemDetails = jsonSerializer.fromJson(response.body(), ForbiddenProblemDetails.class);
+                        if (forbiddenProblemDetails == null || forbiddenProblemDetails.getStatus() == 0 || forbiddenProblemDetails.getTitle() == null) {
+                            throw new IOException("fallback");
+                        }
                         throw new ForbiddenApiException(response.statusCode(), uri, method, message, response.headers(), forbiddenProblemDetails);
                     });
                 } else if (HttpStatus.GONE.getCode() == response.statusCode()) {
                     tryParseException(() -> {
-                        GoneProblemDetails goneProblemDetails = objectMapper.readValue(response.body(), GoneProblemDetails.class);
-                        if (goneProblemDetails.getStatus() == 0 || goneProblemDetails.getTitle() == null) {
+                        GoneProblemDetails goneProblemDetails = jsonSerializer.fromJson(response.body(), GoneProblemDetails.class);
+                        if (goneProblemDetails == null || goneProblemDetails.getStatus() == 0 || goneProblemDetails.getTitle() == null) {
                             throw new IOException("fallback");
                         }
                         throw new GoneApiException(response.statusCode(), uri, method, message, response.headers(), goneProblemDetails);
                     });
                 } else if (HttpStatus.TOO_MANY_REQUESTS.getCode() == response.statusCode()) {
                     tryParseException(() -> {
-                        TooManyRequestsProblemDetails tooManyRequestsProblemDetails = objectMapper.readValue(response.body(), TooManyRequestsProblemDetails.class);
-                        if (tooManyRequestsProblemDetails.getStatus() == 0 || tooManyRequestsProblemDetails.getTitle() == null) {
+                        TooManyRequestsProblemDetails tooManyRequestsProblemDetails = jsonSerializer.fromJson(response.body(), TooManyRequestsProblemDetails.class);
+                        if (tooManyRequestsProblemDetails == null || tooManyRequestsProblemDetails.getStatus() == 0 || tooManyRequestsProblemDetails.getTitle() == null) {
                             throw new IOException("fallback");
                         }
                         throw new TooManyRequestsApiException(response.statusCode(), uri, method, message, response.headers(), tooManyRequestsProblemDetails);
                     });
                 } else {
                     tryParseException(() -> {
-                        BadRequestProblemDetails badRequestProblemDetails = objectMapper.readValue(response.body(), BadRequestProblemDetails.class);
-                        if (badRequestProblemDetails.getStatus() == 0 || badRequestProblemDetails.getTitle() == null) {
+                        BadRequestProblemDetails badRequestProblemDetails = jsonSerializer.fromJson(response.body(), BadRequestProblemDetails.class);
+                        if (badRequestProblemDetails == null || badRequestProblemDetails.getStatus() == 0 || badRequestProblemDetails.getTitle() == null) {
                             throw new IOException("fallback");
                         }
                         throw new BadRequestApiException(response.statusCode(), uri, method, message, response.headers(), badRequestProblemDetails);
@@ -98,11 +106,12 @@ public class ExceptionHandler {
                 }
 
                 // Fallback do formatu legacy ApiErrorResponse
-                exception = objectMapper.readValue(response.body(), ExceptionResponse.class);
-                if (HttpStatus.TOO_MANY_REQUESTS.getCode() == response.statusCode()) {
+                exception = jsonSerializer.fromJson(response.body(), ExceptionResponse.class);
+                if (HttpStatus.TOO_MANY_REQUESTS.getCode() == response.statusCode()
+                        && exception != null && exception.getStatus() != null) {
                     setErrorDetailsFor429Status(response.headers(), exception.getStatus());
                 }
-            } catch (DatabindException e) {
+            } catch (JsonSerializationException e) {
                 throw new KsefApiException(response.statusCode(), uri, method, message, response.headers(), exception);
             }
         }

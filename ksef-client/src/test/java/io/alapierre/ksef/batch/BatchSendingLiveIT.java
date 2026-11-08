@@ -1,5 +1,7 @@
 package io.alapierre.ksef.batch;
 
+import io.alapierre.ksef.json.jackson.JacksonJsonSerializer;
+import io.alapierre.ksef.json.jackson.KsefJsonModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.alapierre.ksef.batch.model.BatchConfig;
@@ -41,8 +43,8 @@ public class BatchSendingLiveIT {
         requireEnvironment("KSEF_NIP");
         apiClient = createHttpBuilder().build();
         ExampleApiProperties exampleApiProperties = new ExampleApiProperties();
-        ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties, objectMapper);
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new KsefJsonModule()).registerModule(new JavaTimeModule());
+        ksefClient = new DefaultKsefClient(apiClient, exampleApiProperties, new JacksonJsonSerializer(objectMapper));
         cryptographyService = new DefaultCryptographyService(ksefClient);
         helper = new BatchHelper(cryptographyService, ksefClient);
 

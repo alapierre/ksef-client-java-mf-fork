@@ -1,6 +1,7 @@
 package pl.akmf.ksef.sdk.client.model.lighthouse;
 
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 // Statusy systemu KSeF zwracane przez Latarnię.
 public enum Statuses {
@@ -13,20 +14,15 @@ public enum Statuses {
 
     ONGOING_TOTAL_FAILURE(900);
 
+    @Getter(onMethod_ = @JsonValue)
     private final int value;
 
     Statuses(int value) {
         this.value = value;
     }
 
-    @JsonValue
-    public int getValue() {
-        return value;
-    }
-
     @Override
     public String toString() {
         return String.valueOf(value);
     }
-
 }

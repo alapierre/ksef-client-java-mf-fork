@@ -1,8 +1,8 @@
 package pl.akmf.ksef.sdk.api;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.alapierre.ksef.json.JsonSerializationException;
+import io.alapierre.ksef.json.JsonSerializer;
+import io.alapierre.ksef.json.JsonType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
@@ -252,7 +252,7 @@ public class DefaultKsefClient implements KSeFClient {
     private static final String PUT = "PUT";
     private static final String DELETE = "DELETE";
 
-    private final ObjectMapper objectMapper;
+    private final JsonSerializer jsonSerializer;
     private final HttpClient apiClient;
     private final String baseURl;
     private final String suffixURl;
@@ -263,21 +263,21 @@ public class DefaultKsefClient implements KSeFClient {
 
     public DefaultKsefClient(HttpClient apiClient,
                              KsefApiProperties ksefApiProperties,
-                             ObjectMapper objectMapper) {
+                             JsonSerializer jsonSerializer) {
         this.apiClient = apiClient;
         this.defaultHeaders = ksefApiProperties.getDefaultHeaders();
         this.timeout = ksefApiProperties.getRequestTimeout();
         this.baseURl = ksefApiProperties.getBaseUri();
         this.suffixURl = ksefApiProperties.getSuffixUri();
-        this.objectMapper = objectMapper;
-        this.exceptionHandler = new ExceptionHandler(objectMapper);
+        this.jsonSerializer = Objects.requireNonNull(jsonSerializer, "jsonSerializer");
+        this.exceptionHandler = new ExceptionHandler(jsonSerializer);
     }
 
     public DefaultKsefClient(HttpClient apiClient,
                              KsefApiProperties ksefApiProperties,
                              ResponseHeaderObservationProperties responseHeaderObservationProperties,
-                             ObjectMapper objectMapper) {
-        this(apiClient, ksefApiProperties, objectMapper);
+                             JsonSerializer jsonSerializer) {
+        this(apiClient, ksefApiProperties, jsonSerializer);
         if (responseHeaderObservationProperties != null) {
             var options = responseHeaderObservationProperties.getResponseHeaderObservationOptions();
             if (options != null && options.isEnabled() && options.getHeaderNames() != null) {
@@ -2217,7 +2217,7 @@ public class DefaultKsefClient implements KSeFClient {
             return new ApiResponse<>(
                     response.statusCode(),
                     response.headers(),
-                    response.body() == null ? null : objectMapper.readValue(response.body(), new TypeReference<List<PublicKeyCertificate>>() {
+                    response.body() == null ? null : jsonSerializer.fromJson(response.body(), new JsonType<List<PublicKeyCertificate>>() {
                     })).getData();
         } catch (IOException e) {
             throw new KsefApiException(e);
@@ -2282,7 +2282,7 @@ public class DefaultKsefClient implements KSeFClient {
         return builder.build();
     }
 
-    private HttpRequest buildRequest(String uri, String method, Object body, Map<String, String> additionalHeaders) throws JsonProcessingException {
+    private HttpRequest buildRequest(String uri, String method, Object body, Map<String, String> additionalHeaders) throws JsonSerializationException {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(buildUri(baseURl, suffixURl, uri))
                 .timeout(timeout);
@@ -2316,12 +2316,12 @@ public class DefaultKsefClient implements KSeFClient {
                     break;
                 case POST:
                     builder.POST(body != null ?
-                            HttpRequest.BodyPublishers.ofByteArray(objectMapper.writeValueAsBytes(body)) :
+                            HttpRequest.BodyPublishers.ofByteArray(jsonSerializer.toJsonBytes(body)) :
                             HttpRequest.BodyPublishers.noBody());
                     break;
                 case PUT:
                     builder.PUT(body != null ?
-                            HttpRequest.BodyPublishers.ofByteArray(objectMapper.writeValueAsBytes(body)) :
+                            HttpRequest.BodyPublishers.ofByteArray(jsonSerializer.toJsonBytes(body)) :
                             HttpRequest.BodyPublishers.noBody());
                     break;
                 case DELETE:
@@ -2329,7 +2329,7 @@ public class DefaultKsefClient implements KSeFClient {
                     break;
                 default:
                     builder.method(method, body != null ?
-                            HttpRequest.BodyPublishers.ofByteArray(objectMapper.writeValueAsBytes(body)) :
+                            HttpRequest.BodyPublishers.ofByteArray(jsonSerializer.toJsonBytes(body)) :
                             HttpRequest.BodyPublishers.noBody());
             }
 
@@ -2596,7 +2596,7 @@ public class DefaultKsefClient implements KSeFClient {
             return new ApiResponse<>(
                     response.statusCode(),
                     response.headers(),
-                    response.body() == null ? null : objectMapper.readValue(response.body(), classType))
+                    response.body() == null ? null : jsonSerializer.fromJson(response.body(), classType))
                     .getData();
         } catch (IOException e) {
             throw new KsefApiException(e);

@@ -1,8 +1,12 @@
 package pl.akmf.ksef.sdk.client.model.permission.search;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class EntityPermissionSubjectEntityDetails {
     private EntityPermissionSubjectDetailsType subjectDetailsType;
     private String fullName;
@@ -17,44 +21,16 @@ public class EntityPermissionSubjectEntityDetails {
         this.address = address;
     }
 
-    public EntityPermissionSubjectDetailsType getSubjectDetailsType() {
-        return subjectDetailsType;
-    }
-
-    public void setSubjectDetailsType(EntityPermissionSubjectDetailsType subjectDetailsType) {
-        this.subjectDetailsType = subjectDetailsType;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
     public enum EntityPermissionSubjectDetailsType {
 
         ENTITY_BY_IDENTIFIER("EntityByIdentifier"),
         ENTITY_BY_FINGERPRINT("EntityByFingerprint");
 
+        @Getter(onMethod_ = @JsonValue)
         private final String value;
 
         EntityPermissionSubjectDetailsType(String value) {
             this.value = value;
-        }
-
-        @JsonValue
-        public String getValue() {
-            return value;
         }
 
         @Override

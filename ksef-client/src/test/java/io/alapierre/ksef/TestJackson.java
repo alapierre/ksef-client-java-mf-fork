@@ -1,5 +1,6 @@
 package io.alapierre.ksef;
 
+import io.alapierre.ksef.json.jackson.KsefJsonModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryFilters;
@@ -18,7 +19,7 @@ public class TestJackson {
         InvoiceQueryFilters q = new InvoiceQueryFilters();
         q.setSelfInvoicing(true);
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper().registerModule(new KsefJsonModule());
 
         var json = mapper.readTree(mapper.writeValueAsBytes(q));
         assertTrue(json.has("isSelfInvoicing"));

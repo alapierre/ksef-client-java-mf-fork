@@ -1,5 +1,6 @@
 package io.alapierre.ksef.batch;
 
+import io.alapierre.ksef.json.jackson.KsefJsonModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.alapierre.ksef.batch.model.*;
 import org.junit.Test;
@@ -72,7 +73,7 @@ public class BatchValidationTest {
 
     @Test
     public void compressionTypesFollowApiJsonContract() throws Exception {
-        var mapper = new ObjectMapper();
+        var mapper = new ObjectMapper().registerModule(new KsefJsonModule());
         var request = builder().withBatchFile(1, HASH, CompressionType.Zip)
                 .addBatchFilePart(1, 1, HASH)
                 .build();

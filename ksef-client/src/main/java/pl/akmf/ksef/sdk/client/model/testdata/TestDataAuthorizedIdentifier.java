@@ -1,30 +1,18 @@
 package pl.akmf.ksef.sdk.client.model.testdata;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class TestDataAuthorizedIdentifier {
     private TestDataAuthorizedIdentifierType type;
     private String value;
 
     public TestDataAuthorizedIdentifier(TestDataAuthorizedIdentifierType type, String value) {
         this.type = type;
-        this.value = value;
-    }
-
-    public TestDataAuthorizedIdentifierType getType() {
-        return type;
-    }
-
-    public void setType(TestDataAuthorizedIdentifierType type) {
-        this.type = type;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
         this.value = value;
     }
 
@@ -36,15 +24,11 @@ public class TestDataAuthorizedIdentifier {
 
         FINGERPRINT("Fingerprint");
 
+        @Getter(onMethod_ = @JsonValue)
         private final String value;
 
         TestDataAuthorizedIdentifierType(String value) {
             this.value = value;
-        }
-
-        @JsonValue
-        public String getValue() {
-            return value;
         }
 
         @Override

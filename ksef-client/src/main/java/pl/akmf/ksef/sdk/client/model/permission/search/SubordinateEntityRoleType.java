@@ -1,7 +1,8 @@
 package pl.akmf.ksef.sdk.client.model.permission.search;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 public enum SubordinateEntityRoleType {
 
@@ -9,15 +10,11 @@ public enum SubordinateEntityRoleType {
 
     VAT_GROUP_SUBUNIT("VatGroupSubUnit");
 
+    @Getter(onMethod_ = @JsonValue)
     private final String value;
 
     SubordinateEntityRoleType(String value) {
         this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
     }
 
     @Override

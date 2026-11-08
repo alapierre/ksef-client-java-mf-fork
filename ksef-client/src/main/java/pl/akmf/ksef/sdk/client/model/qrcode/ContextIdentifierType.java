@@ -1,22 +1,19 @@
 package pl.akmf.ksef.sdk.client.model.qrcode;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 public enum ContextIdentifierType {
     NIP("Nip"),
     INTERNALID("InternalId"),
     NIPVATUE("NipVatUe");
 
+    @Getter(onMethod_ = @JsonValue)
     private final String value;
 
     ContextIdentifierType(String value) {
         this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
     }
 
     @Override

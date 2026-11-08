@@ -12,6 +12,23 @@
     <url>https://github.com/alapierre/ksef-client-java-mf-fork</url>
     <dependencies>
         <dependency>
+            <groupId>io.alapierre.ksef-sdk</groupId>
+            <artifactId>ksef-json-serializer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.alapierre.ksef-sdk</groupId>
+            <artifactId>ksef-json-serializer-jackson</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.alapierre.ksef-sdk</groupId>
+            <artifactId>ksef-json-serializer-gson</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
             <artifactId>dss-xades</artifactId>
             <version>${dss.version}</version>
@@ -30,11 +47,6 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>3.18.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -65,7 +77,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.2</version>
+            <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -77,6 +89,76 @@
     </dependencies>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>jpms-runtime-classpath</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>build-classpath</goal>
+                        </goals>
+                        <configuration>
+                            <includeScope>runtime</includeScope>
+                            <outputFile>${project.build.directory}/jpms-runtime-classpath.txt</outputFile>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>jpms</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <summaryFile>${project.build.directory}/failsafe-reports/jpms-summary.xml</summaryFile>
+                            <includes>
+                                <include>**/JpmsIT.java</include>
+                            </includes>
+                            <failIfNoTests>true</failIfNoTests>
+                            <systemPropertyVariables>
+                                <jpms.buildDirectory>${project.build.directory}</jpms.buildDirectory>
+                                <jpms.clientJar>${project.build.directory}/${project.build.finalName}.jar</jpms.clientJar>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>independent-json-client</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <searchTransitive>true</searchTransitive>
+                                    <excludes>
+                                        <exclude>com.fasterxml.jackson.*:*</exclude>
+                                        <exclude>tools.jackson.*:*</exclude>
+                                        <exclude>com.google.code.gson:*</exclude>
+                                        <exclude>io.alapierre.ksef-sdk:ksef-json-serializer-*</exclude>
+                                    </excludes>
+                                    <includes>
+                                        <include>*:*:*:*:test</include>
+                                    </includes>
+                                    <message>The client must depend only on the JSON contract; serializer implementations belong to the application or tests.</message>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -134,10 +216,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <failIfNoTests>true</failIfNoTests>
-                    <forkedProcessTimeoutInSeconds>180</forkedProcessTimeoutInSeconds>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -157,37 +235,51 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.1</version>
                 <configuration>
                     <excludes>
                         <exclude>META-INF/JAXB/**</exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
-                        <id>sources</id>
+                        <id>delombok-for-javadoc</id>
+                        <phase>prepare-package</phase>
                         <goals>
-                            <goal>jar-no-fork</goal>
+                            <goal>run</goal>
                         </goals>
+                        <configuration>
+                            <target>
+                                <!-- Javadoc cannot process Lombok's onMethod_ annotations. -->
+                                <pathconvert property="delombok.classpath" refid="maven.compile.classpath"/>
+                                <java classname="lombok.launch.Main" fork="true" failonerror="true">
+                                    <classpath refid="maven.compile.classpath"/>
+                                    <arg value="delombok"/>
+                                    <arg value="${project.basedir}/src/main/java"/>
+                                    <arg value="--classpath"/>
+                                    <arg value="${delombok.classpath}"/>
+                                    <arg value="--encoding"/>
+                                    <arg value="UTF-8"/>
+                                    <arg value="-d"/>
+                                    <arg value="${project.build.directory}/delombok"/>
+                                </java>
+                            </target>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.11.3</version>
                 <!-- Existing upstream Javadocs contain invalid tags/HTML; keep the migration API-neutral. -->
                 <configuration>
                     <doclint>none</doclint>
+                    <sourcepath>${project.build.directory}/delombok${path.separator}${project.build.directory}/generated-sources/jaxb</sourcepath>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>javadoc</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
@@ -214,9 +306,35 @@
                                     <path>${project.build.directory}/${project.build.finalName}.jar</path>
                                 </file>
                             </newVersion>
+                            <!-- Comparison-only classpath for the Jackson-based 2.3.15 baseline.
+                                 These are not project dependencies and are not shipped to consumers. -->
+                            <dependencies>
+                                <dependency>
+                                    <groupId>com.fasterxml.jackson.core</groupId>
+                                    <artifactId>jackson-core</artifactId>
+                                    <version>${jackson.version}</version>
+                                </dependency>
+                                <dependency>
+                                    <groupId>com.fasterxml.jackson.core</groupId>
+                                    <artifactId>jackson-databind</artifactId>
+                                    <version>${jackson.version}</version>
+                                </dependency>
+                                <dependency>
+                                    <groupId>com.fasterxml.jackson.core</groupId>
+                                    <artifactId>jackson-annotations</artifactId>
+                                    <version>2.22</version>
+                                </dependency>
+                            </dependencies>
                             <parameter>
                                 <accessModifier>protected</accessModifier>
                                 <onlyModified>true</onlyModified>
+                                <!-- Intentional JSON SPI migration; keep all other members checked. -->
+                                <excludes>
+                                    <exclude>pl.akmf.ksef.sdk.api.DefaultKsefClient#DefaultKsefClient(java.net.http.HttpClient,pl.akmf.ksef.sdk.api.KsefApiProperties,com.fasterxml.jackson.databind.ObjectMapper)</exclude>
+                                    <exclude>pl.akmf.ksef.sdk.api.DefaultKsefClient#DefaultKsefClient(java.net.http.HttpClient,pl.akmf.ksef.sdk.api.KsefApiProperties,pl.akmf.ksef.sdk.system.headerobservation.ResponseHeaderObservationProperties,com.fasterxml.jackson.databind.ObjectMapper)</exclude>
+                                    <exclude>pl.akmf.ksef.sdk.api.DefaultLighthouseKsefClient#DefaultLighthouseKsefClient(com.fasterxml.jackson.databind.ObjectMapper,java.net.http.HttpClient,java.lang.String,java.time.Duration,java.util.Map)</exclude>
+                                    <exclude>pl.akmf.ksef.sdk.system.ExceptionHandler#ExceptionHandler(com.fasterxml.jackson.databind.ObjectMapper)</exclude>
+                                </excludes>
                                 <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
                                 <breakBuildOnSourceIncompatibleModifications>true</breakBuildOnSourceIncompatibleModifications>
                                 <!-- The major version follows KSeF API, not SemVer. -->

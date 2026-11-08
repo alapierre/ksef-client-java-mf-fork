@@ -1,7 +1,8 @@
 package pl.akmf.ksef.sdk.client.model.invoice;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
+import io.alapierre.ksef.json.annotation.JsonCreator;
+import io.alapierre.ksef.json.annotation.JsonValue;
+import lombok.Getter;
 
 public enum IdentifierType {
 
@@ -10,15 +11,11 @@ public enum IdentifierType {
     NIP("Nip"),
     VATUE("VatUe");
 
+    @Getter(onMethod_ = @JsonValue)
     private final String value;
 
     IdentifierType(String value) {
         this.value = value;
-    }
-
-    @JsonValue
-    public String getValue() {
-        return value;
     }
 
     @Override

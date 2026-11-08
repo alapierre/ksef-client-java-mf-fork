@@ -1,5 +1,7 @@
 package pl.akmf.ksef.sdk.api;
 
+import io.alapierre.ksef.json.jackson.JacksonJsonSerializer;
+import io.alapierre.ksef.json.jackson.KsefJsonModule;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -48,7 +50,7 @@ import java.util.concurrent.Executor;
 import static org.junit.Assert.*;
 
 public class Upstream327Test {
-    private final ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule())
+    private final ObjectMapper mapper = new ObjectMapper().registerModule(new KsefJsonModule()).registerModule(new JavaTimeModule())
             .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     private final TestApiProperties properties = new TestApiProperties("https://example.test/v2");
 
@@ -56,7 +58,7 @@ public class Upstream327Test {
     public void updatesCertificateWithJsonAndAcceptsBothSuccessStatuses() throws Exception {
         for (int status : new int[]{200, 204}) {
             MockHttpClient http = new MockHttpClient(status, "");
-            DefaultKsefClient client = new DefaultKsefClient(http, properties, mapper);
+            DefaultKsefClient client = new DefaultKsefClient(http, properties, new JacksonJsonSerializer(mapper));
             OffsetDateTime date = OffsetDateTime.parse("2026-10-01T12:00:00+02:00");
             client.updateCertificate("012ABC", new TestDataUpdateCertificateRequest(date), "access");
             HttpRequest request = http.getLastRequest();
@@ -71,7 +73,7 @@ public class Upstream327Test {
     @Test
     public void rejectsBlankCertificateSerialBeforeSending() throws Exception {
         MockHttpClient http = new MockHttpClient(204, "");
-        DefaultKsefClient client = new DefaultKsefClient(http, properties, mapper);
+        DefaultKsefClient client = new DefaultKsefClient(http, properties, new JacksonJsonSerializer(mapper));
         for (String serial : new String[]{null, "", "  "}) {
             try {
                 client.updateCertificate(serial, new TestDataUpdateCertificateRequest(), "access");
@@ -89,14 +91,14 @@ public class Upstream327Test {
                 "exceptionDescription":"Validation error","details":["validTo"]}],
                 "serviceCode":"test","timestamp":"2026-09-01T12:00:00Z"}}
                 """);
-        new DefaultKsefClient(http, properties, mapper).updateCertificate("012ABC",
+        new DefaultKsefClient(http, properties, new JacksonJsonSerializer(mapper)).updateCertificate("012ABC",
                 new TestDataUpdateCertificateRequest(), "access");
     }
 
     @Test
     public void observesHeadersOnlyAfterSubscriptionAndCanClearAndUnsubscribe() throws Exception {
         MockHttpClient http = new MockHttpClient(200, "[]");
-        DefaultKsefClient client = new DefaultKsefClient(http, properties, mapper);
+        DefaultKsefClient client = new DefaultKsefClient(http, properties, new JacksonJsonSerializer(mapper));
         var handler = client.getResponseHeaderCaptureHandler();
         client.retrievePublicKeyCertificate();
         assertTrue(handler.getCaptured().isEmpty());
@@ -123,7 +125,7 @@ public class Upstream327Test {
             var config = new ResponseHeaderObservationProperties() {
                 public ResponseHeaderObservationOptions getResponseHeaderObservationOptions() { return options; }
             };
-            var client = new DefaultKsefClient(new MockHttpClient(200, "[]"), properties, config, mapper);
+            var client = new DefaultKsefClient(new MockHttpClient(200, "[]"), properties, config, new JacksonJsonSerializer(mapper));
             assertEquals(0, client.retrievePublicKeyCertificate().size());
             assertEquals(enabled ? 1 : 0, client.getResponseHeaderCaptureHandler().getCaptured().size());
         }
@@ -198,7 +200,7 @@ public class Upstream327Test {
     @Test
     public void sendsOptionalApiFeatureWhenOpeningSessions() throws Exception {
         MockHttpClient http = new MockHttpClient(201, "{}");
-        DefaultKsefClient client = new DefaultKsefClient(http, properties, mapper);
+        DefaultKsefClient client = new DefaultKsefClient(http, properties, new JacksonJsonSerializer(mapper));
 
         client.openBatchSession(new OpenBatchSessionRequest(), "access");
         assertFalse(http.getLastRequest().headers().firstValue(Headers.X_KSEF_FEATURE).isPresent());
@@ -221,7 +223,7 @@ public class Upstream327Test {
 
     @Test
     public void fallsBackToLegacyErrorsWithTolerantObjectMapper() throws Exception {
-        ObjectMapper tolerantMapper = new ObjectMapper().registerModule(new JavaTimeModule())
+        ObjectMapper tolerantMapper = new ObjectMapper().registerModule(new KsefJsonModule()).registerModule(new JavaTimeModule())
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         String legacyException = """
                 {"exception":{"exceptionDetailList":[{"exceptionCode":21405,
@@ -239,7 +241,7 @@ public class Upstream327Test {
         }) {
             MockHttpClient http = new MockHttpClient((int) testCase[0], (String) testCase[1]);
             try {
-                new DefaultKsefClient(http, properties, tolerantMapper).retrievePublicKeyCertificate();
+                new DefaultKsefClient(http, properties, new JacksonJsonSerializer(tolerantMapper)).retrievePublicKeyCertificate();
                 fail("Expected legacy API error for HTTP " + testCase[0]);
             } catch (KsefApiException expected) {
                 assertEquals((int) testCase[0], expected.getCode());
@@ -255,7 +257,7 @@ public class Upstream327Test {
 
     @Test
     public void keepsProblemDetailsErrorsWithTolerantObjectMapper() throws Exception {
-        ObjectMapper tolerantMapper = new ObjectMapper()
+        ObjectMapper tolerantMapper = new ObjectMapper().registerModule(new KsefJsonModule())
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         MockHttpClient http = new MockHttpClient(400, """
                 {"title":"Bad Request","status":400,"detail":"Invalid request",
@@ -263,7 +265,7 @@ public class Upstream327Test {
                 """);
 
         try {
-            new DefaultKsefClient(http, properties, tolerantMapper).retrievePublicKeyCertificate();
+            new DefaultKsefClient(http, properties, new JacksonJsonSerializer(tolerantMapper)).retrievePublicKeyCertificate();
             fail("Expected Problem Details API error");
         } catch (BadRequestApiException expected) {
             assertEquals("Bad Request", expected.getBadRequestProblemDetails().getTitle());
