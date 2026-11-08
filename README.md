@@ -201,6 +201,36 @@ and Javadoc JARs, retaining the existing packages and fluent `with…` methods.
 `IpChangePolicyEnum` is retained in the source tree for compatibility with older
 releases; it is no longer declared by the current schema.
 
+### API compatibility and security checks
+
+CI also compares public and protected Java APIs with the published baseline
+using japicmp. Run the same check locally with:
+
+```shell
+./mvnw -Papi-compatibility clean verify
+```
+
+The baseline is pinned by `api.baseline.version` in the root POM (currently
+`2.3.15`). Source or binary incompatibilities fail the check, and reports are
+saved in `ksef-client/target/japicmp` and uploaded by CI. This profile needs the
+baseline artifact from Maven Central on its first run. Use SNAPSHOT versions for
+local development installs so published versions in your Maven cache remain intact.
+
+Intentional incompatible changes need a documented migration path and a reviewed,
+narrowly scoped japicmp exclusion in the same PR. Move the baseline only when
+deliberately adopting a new published compatibility baseline. Do not disable the
+whole check to accept one change. The check does not enforce SemVer major bumps:
+the major library version follows the KSeF API. It does not replace tests of JSON
+formats or runtime behavior.
+
+The separate CodeQL workflow analyzes Java after a Maven build, including JAXB
+generation, and also scans GitHub Actions. It runs on PRs, pushes to `main` and
+weekly. GitHub's CodeQL Default setup must be disabled when using this workflow.
+CodeQL and dependency update services are separate from the publication workflow.
+Dependabot checks Maven dependencies and pinned GitHub Actions weekly; security
+updates also require Dependabot alerts and security updates to be enabled in
+repository settings. See [SECURITY.md](SECURITY.md) for private vulnerability reports.
+
 ### Optional KSeF TEST integration
 
 The `ksef-live` profile explicitly enables `*LiveIT` tests using Maven Failsafe:
@@ -225,10 +255,20 @@ Surefire and Failsafe reports are uploaded separately from normal build artifact
 ### Releases
 
 JReleaser continues to publish to Maven Central and create GitHub Releases.
-Pushing a new `v2.*` tag starts a **real publication**. Manual runs require an
-existing tag and default to a dry run. The workflow checks out that tag, derives
-`revision` from it, runs local tests, signs and stages artifacts, and validates
-the publication POMs. It does not run live KSeF tests.
+Pushing a new `v2.*` tag starts a **real publication**. Its commit must belong to
+`origin/main`. Manual publication must be started from the `main` workflow with
+an existing tag and `dry_run=false`. The workflow derives `revision` from the tag,
+runs local tests and API compatibility checks, signs and stages artifacts, and
+validates the publication POMs. It does not run live KSeF tests.
+
+To check release configuration before tagging, use **Run workflow**, select the
+branch containing your changes, leave `tag` empty, enter a release `version`
+without `v` (for example `2.3.16`), and keep `dry_run=true`. This uses a separate
+job with read-only repository permissions and no publication secrets. It stages
+unsigned artifacts and runs `jreleaser:deploy` in dry-run mode. It validates the
+deployment, but does not test production signing credentials or create a GitHub
+Release. An optional existing tag can be used instead; it must contain the
+workflow's supporting scripts.
 
 Both the client and parent POM are published. Their versions are resolved in the
 publication POMs; consumers do not need to define Maven's `revision` property.

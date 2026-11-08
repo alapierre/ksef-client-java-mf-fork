@@ -1,5 +1,11 @@
 # Unreleased — Release tooling
 
+- Check source and binary API compatibility against 2.3.15 with japicmp in CI and release builds.
+- Add weekly Dependabot updates, CodeQL analysis of Maven-built Java and GitHub Actions, and a private vulnerability reporting policy.
+- Pin Actions to verified commit SHAs and stop persisting checkout credentials.
+- Allow release dry runs from untagged branches without signing or publication secrets; require real releases to reference commits on main.
+- Add tests for release input validation, checkout identity and branch ancestry.
+- Align Maven license metadata with the repository's MIT license and restore the original Ministry of Finance copyright notice.
 - Update JReleaser from 1.20.0 to 1.27.0 and remove an obsolete signing setting.
 - Prepare PomChecker 1.15.0 from Maven Central with a pinned SHA-256, Maven caching and HTTP retries; keep POM validation enabled.
 - Add explicit client POM description and project URL, avoiding the inherited module URL and satisfying strict POM checks.

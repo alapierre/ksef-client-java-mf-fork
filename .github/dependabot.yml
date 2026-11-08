@@ -1,0 +1,40 @@
+version: 2
+updates:
+  - package-ecosystem: maven
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 5
+    groups:
+      jackson:
+        patterns: ["com.fasterxml.jackson*:*", "tools.jackson*:*" ]
+        update-types: [minor, patch]
+      bouncycastle:
+        patterns: ["org.bouncycastle:*"]
+        update-types: [minor, patch]
+      dss:
+        patterns: ["eu.europa.ec.joinup.sd-dss:*"]
+        update-types: [minor, patch]
+      maven-plugins:
+        patterns: ["org.apache.maven.plugins:*", "org.codehaus.mojo:*"]
+        update-types: [minor, patch]
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+    # The API baseline is a deliberate compatibility contract, not an upgrade target.
+    ignore:
+      - dependency-name: io.alapierre.ksef-sdk:ksef-client
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Europe/Warsaw
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]

@@ -20,24 +20,37 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
 
-      - name: Build
-        run: ./mvnw -B -ntp clean verify
+      - name: Test release safeguards
+        run: python3 -m unittest discover -s .github/tests -v
+
+      - name: Build and check API compatibility
+        run: ./mvnw -B -ntp -Papi-compatibility clean verify
 
       - name: Check that generation did not modify tracked sources
         run: git diff --exit-code
 
+      - name: API compatibility reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: api-compatibility-reports
+          path: ksef-client/target/japicmp/
+          if-no-files-found: ignore
+
       - name: Test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-reports
           path: ksef-client/target/surefire-reports/

@@ -193,6 +193,53 @@
     </build>
     <profiles>
         <profile>
+            <id>api-compatibility</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.siom79.japicmp</groupId>
+                        <artifactId>japicmp-maven-plugin</artifactId>
+                        <version>0.27.0</version>
+                        <configuration>
+                            <oldVersion>
+                                <dependency>
+                                    <groupId>io.alapierre.ksef-sdk</groupId>
+                                    <artifactId>ksef-client</artifactId>
+                                    <version>${api.baseline.version}</version>
+                                    <type>jar</type>
+                                </dependency>
+                            </oldVersion>
+                            <newVersion>
+                                <file>
+                                    <path>${project.build.directory}/${project.build.finalName}.jar</path>
+                                </file>
+                            </newVersion>
+                            <parameter>
+                                <accessModifier>protected</accessModifier>
+                                <onlyModified>true</onlyModified>
+                                <breakBuildOnBinaryIncompatibleModifications>true</breakBuildOnBinaryIncompatibleModifications>
+                                <breakBuildOnSourceIncompatibleModifications>true</breakBuildOnSourceIncompatibleModifications>
+                                <!-- The major version follows KSeF API, not SemVer. -->
+                                <breakBuildBasedOnSemanticVersioning>false</breakBuildBasedOnSemanticVersioning>
+                                <ignoreMissingClasses>false</ignoreMissingClasses>
+                                <ignoreNonResolvableArtifacts>false</ignoreNonResolvableArtifacts>
+                                <reproducibleReport>true</reproducibleReport>
+                            </parameter>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>check-public-api</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>cmp</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>ksef-live</id>
             <build>
                 <plugins>

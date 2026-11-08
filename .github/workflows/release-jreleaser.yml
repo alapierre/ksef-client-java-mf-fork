@@ -7,63 +7,121 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing release tag, for example v2.3.15"
-        required: true
+        description: "Existing tag for publication; leave empty for a dry run of the selected ref"
+        required: false
+        type: string
+      version:
+        description: "Version without v, e.g. 2.3.16; required only for a dry run without a tag"
+        required: false
         type: string
       dry_run:
-        description: "Build and sign artifacts, then run JReleaser without publishing"
+        description: "Validate artifacts without signing, publishing or using publication secrets"
         required: true
         default: true
         type: boolean
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: release-${{ inputs.tag || github.ref_name }}
+  group: release-${{ inputs.tag || github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
+  dry-run:
+    if: github.event_name == 'workflow_dispatch' && inputs.dry_run
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
     env:
-      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_VERSION: ${{ inputs.version }}
     steps:
-      - name: Validate release tag
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ ! "$RELEASE_TAG" =~ ^v2\.[0-9]+\.[0-9]+(-[A-Za-z0-9]+([.-][A-Za-z0-9]+)*)?$ ]] || [[ "$RELEASE_TAG" == *SNAPSHOT* ]]; then
-            echo "Expected a release tag such as v2.3.15 or v2.4.0-rc.1"
-            exit 1
-          fi
-          echo "VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
-
-      - name: Checkout release tag
-        uses: actions/checkout@v4
+      - name: Checkout selected revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          ref: ${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || github.sha }}
           fetch-depth: 0
-
-      - name: Verify checkout
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
-          echo "BUILD_TIMESTAMP=$(git show -s --format=%cI HEAD)" >> "$GITHUB_ENV"
-
+          persist-credentials: false
+      - name: Validate dry-run version
+        run: bash .github/scripts/release-context.sh dry-run
       - name: Set up Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
           java-version: "21"
           cache: maven
-
       - name: Prepare PomChecker
         timeout-minutes: 5
         run: bash .github/scripts/setup-pomchecker.sh
+      - name: Verify and stage without signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./mvnw -B -ntp -Prelease,api-compatibility -Drevision="$VERSION" \
+            -Dproject.build.outputTimestamp="$BUILD_TIMESTAMP" -Dgpg.skip=true \
+            -DaltDeploymentRepository="staging::file://${GITHUB_WORKSPACE}/target/staging-deploy" \
+            clean deploy
+      - name: Check source tree
+        run: git diff --exit-code
+      - name: Validate deployment with JReleaser
+        env:
+          # Placeholders satisfy configuration validation; this job cannot publish.
+          JRELEASER_GITHUB_TOKEN: dry-run
+          JRELEASER_MAVENCENTRAL_USERNAME: dry-run
+          JRELEASER_MAVENCENTRAL_TOKEN: dry-run
+        run: ./mvnw -B -ntp -N -Drevision="$VERSION" -Djreleaser.dry.run=true jreleaser:deploy
+      - name: Reports
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-dry-run-reports
+          path: |
+            ksef-client/target/surefire-reports/
+            ksef-client/target/japicmp/
+          if-no-files-found: ignore
 
+  release:
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.dry_run)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+      RELEASE_VERSION: ${{ inputs.version }}
+    steps:
+      - name: Validate publication request
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_REF: ${{ github.ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == workflow_dispatch && "$WORKFLOW_REF" != refs/heads/main ]]; then
+            echo "::error::Start manual publication from the main workflow"
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^v2\.[0-9]+\.[0-9]+(-[A-Za-z0-9]+([.-][A-Za-z0-9]+)*)?$ ]] || [[ "$RELEASE_TAG" == *SNAPSHOT* ]]; then
+            echo "::error::Publication requires a release tag such as v2.3.16"
+            exit 1
+          fi
+      - name: Checkout release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify release belongs to main
+        run: bash .github/scripts/release-context.sh publish
+      - name: Set up Java
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Prepare PomChecker
+        timeout-minutes: 5
+        run: bash .github/scripts/setup-pomchecker.sh
       - name: Verify, sign and stage artifacts locally
         env:
           MAVEN_GPG_KEY: ${{ secrets.SIGNING_KEY }}
@@ -73,30 +131,24 @@ jobs:
           set -euo pipefail
           test -n "$MAVEN_GPG_KEY"
           test -n "$MAVEN_GPG_PASSPHRASE"
-          ./mvnw -B -ntp -Prelease -Drevision="$VERSION" \
+          ./mvnw -B -ntp -Prelease,api-compatibility -Drevision="$VERSION" \
             -Dproject.build.outputTimestamp="$BUILD_TIMESTAMP" -Dgpg.signer=bc \
             -DaltDeploymentRepository="staging::file://${GITHUB_WORKSPACE}/target/staging-deploy" \
             clean deploy
-
       - name: Check source tree
         run: git diff --exit-code
-
       - name: Publish with JReleaser
         env:
-          DRY_RUN: ${{ inputs.dry_run || false }}
           JRELEASER_GITHUB_TOKEN: ${{ secrets.JRELEASER_GITHUB_TOKEN || github.token }}
           JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.MAVENCENTRAL_USERNAME }}
           JRELEASER_MAVENCENTRAL_TOKEN: ${{ secrets.MAVENCENTRAL_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          ./mvnw -B -ntp -N -Drevision="$VERSION" \
-            -Djreleaser.dry.run="$DRY_RUN" jreleaser:full-release
-
-      - name: Test reports
+        run: ./mvnw -B -ntp -N -Drevision="$VERSION" -Djreleaser.dry.run=false jreleaser:full-release
+      - name: Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-test-reports
-          path: ksef-client/target/surefire-reports/
+          path: |
+            ksef-client/target/surefire-reports/
+            ksef-client/target/japicmp/
           if-no-files-found: ignore

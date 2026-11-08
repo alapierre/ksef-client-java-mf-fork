@@ -10,8 +10,8 @@
     <url>https://github.com/alapierre/ksef-client-java-mf-fork</url>
     <licenses>
         <license>
-            <name>Apache License 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
+            <name>MIT License</name>
+            <url>https://opensource.org/license/mit</url>
         </license>
     </licenses>
     <developers>
@@ -45,6 +45,7 @@
         <lombok.version>1.18.48</lombok.version>
         <zxing.version>3.5.3</zxing.version>
         <surefire.version>3.5.4</surefire.version>
+        <api.baseline.version>2.3.15</api.baseline.version>
     </properties>
     <build>
         <pluginManagement>
