@@ -41,7 +41,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.build.outputTimestamp>2026-11-08T00:00:00Z</project.build.outputTimestamp>
-        <bouncycastle.version>1.86</bouncycastle.version>
+        <bouncycastle.version>1.87</bouncycastle.version>
         <jackson.version>2.22.4</jackson.version>
         <gson.version>2.15.0</gson.version>
         <dss.version>6.0.1</dss.version>
