@@ -7,7 +7,9 @@ public enum EntityPermissionType {
   
   INVOICE_WRITE("InvoiceWrite"),
 
-  INVOICE_READ("InvoiceRead");
+  INVOICE_READ("InvoiceRead"),
+
+  COLLECTIVE_IDENTIFIER_MANAGE("CollectiveIdentifierManage");
 
   @Getter(onMethod_ = @JsonValue)
   private final String value;

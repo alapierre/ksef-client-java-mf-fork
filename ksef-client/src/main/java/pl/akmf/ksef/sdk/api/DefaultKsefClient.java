@@ -5,7 +5,10 @@ import io.alapierre.ksef.json.JsonSerializer;
 import io.alapierre.ksef.json.JsonType;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
+import pl.akmf.ksef.sdk.client.interfaces.ResponseHeaderListener;
 import pl.akmf.ksef.sdk.client.model.ApiException;
 import pl.akmf.ksef.sdk.client.model.ApiResponse;
 import pl.akmf.ksef.sdk.client.model.KsefApiException;
@@ -43,6 +46,7 @@ import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIden
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataUpdateCertificateRequest;
 import pl.akmf.ksef.sdk.system.ExceptionHandler;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceDownloadResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoicePackagePart;
@@ -118,8 +122,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.regex.Pattern;
 
 import static pl.akmf.ksef.sdk.api.Url.COLLECTIVE_IDENTIFIERS_QUERY;
 import static pl.akmf.ksef.sdk.api.Url.COLLECTIVE_IDENTIFIERS_BY_KSEF_NUMBER;
@@ -247,6 +254,7 @@ import static pl.akmf.ksef.sdk.client.Parameter.STATUSES;
 import static pl.akmf.ksef.sdk.client.Parameter.VERIFY_CERTIFICATE_CHAIN;
 
 public class DefaultKsefClient implements KSeFClient {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultKsefClient.class);
     private static final String GET = "GET";
     private static final String POST = "POST";
     private static final String PUT = "PUT";
@@ -260,6 +268,19 @@ public class DefaultKsefClient implements KSeFClient {
     private final Map<String, String> defaultHeaders;
     private final ExceptionHandler exceptionHandler;
     private final ResponseHeaderCaptureHandler responseHeaderCaptureHandler = new ResponseHeaderCaptureHandler();
+    private final CopyOnWriteArraySet<HeaderRegistration> headerListeners = new CopyOnWriteArraySet<>();
+
+    private record HeaderRegistration(String headerName, ResponseHeaderListener listener) {
+        private static final Pattern FIELD_NAME = Pattern.compile("[A-Za-z0-9!#$%&'*+.^_`|~-]+");
+
+        private HeaderRegistration {
+            Objects.requireNonNull(listener, "listener");
+            if (!FIELD_NAME.matcher(Objects.requireNonNull(headerName, "headerName")).matches()) {
+                throw new IllegalArgumentException("Invalid HTTP header name");
+            }
+            headerName = headerName.toLowerCase(Locale.ROOT);
+        }
+    }
 
     public DefaultKsefClient(HttpClient apiClient,
                              KsefApiProperties ksefApiProperties,
@@ -289,6 +310,16 @@ public class DefaultKsefClient implements KSeFClient {
     @Override
     public ResponseHeaderCaptureHandler getResponseHeaderCaptureHandler() {
         return responseHeaderCaptureHandler;
+    }
+
+    @Override
+    public void addResponseHeaderListener(String headerName, ResponseHeaderListener listener) {
+        headerListeners.add(new HeaderRegistration(headerName, listener));
+    }
+
+    @Override
+    public void removeResponseHeaderListener(String headerName, ResponseHeaderListener listener) {
+        headerListeners.remove(new HeaderRegistration(headerName, listener));
     }
 
     /**
@@ -1126,16 +1157,13 @@ public class DefaultKsefClient implements KSeFClient {
         return getResponse(response, ACCEPTED, GRANT_EU_REPRESENTATIVE, OperationResponse.class);
     }
 
-    /**
-     * Pobranie dokumentu po numerze KSeF
-     * Zwraca dokument o podanym numerze KSeF.
-     *
-     * @param ksefReferenceNumber Numer KSeF dokumentu (required)
-     * @return ApiResponse&lt;String&gt;
-     * @throws ApiException if fails to make API call
-     */
     @Override
     public byte[] getInvoice(String ksefReferenceNumber, String accessToken) throws ApiException {
+        return getInvoiceWithHeaders(ksefReferenceNumber, accessToken).getXml();
+    }
+
+    @Override
+    public InvoiceDownloadResponse getInvoiceWithHeaders(String ksefReferenceNumber, String accessToken) throws ApiException {
         String uri = buildUrlWithParams(INVOICE_DOWNLOAD_BY_KSEF.getUrl(), new HashMap<>())
                 .replace(PATH_KSEF_REFERENCE_NUMBER, ksefReferenceNumber);
 
@@ -1146,11 +1174,7 @@ public class DefaultKsefClient implements KSeFClient {
 
         validResponse(response, OK, INVOICE_DOWNLOAD_BY_KSEF);
 
-        return new ApiResponse<>(
-                response.statusCode(),
-                response.headers(),
-                response.body()
-        ).getData();
+        return new InvoiceDownloadResponse(response.statusCode(), response.headers(), response.body());
     }
 
     /**
@@ -2577,13 +2601,28 @@ public class DefaultKsefClient implements KSeFClient {
 
     protected HttpResponse<byte[]> sendHttpRequest(HttpRequest request, HttpResponse.BodyHandler<byte[]> bodyHandler) {
         try {
-            return apiClient.send(request, responseInfo -> {
+            HttpResponse<byte[]> response = apiClient.send(request, responseInfo -> {
                 responseHeaderCaptureHandler.capture(request, responseInfo.headers());
                 return bodyHandler.apply(responseInfo);
             });
+            notifyResponseHeaderListeners(request, response);
+            return response;
         } catch (IOException | InterruptedException e) {
             throw new SystemKSeFSDKException(request.method() + " " + request.uri() + " "
                     + (e.getMessage() != null ? e.getMessage() : ""), e);
+        }
+    }
+
+    private void notifyResponseHeaderListeners(HttpRequest request, HttpResponse<?> response) {
+        for (HeaderRegistration registration : headerListeners) {
+            String name = registration.headerName();
+            List<String> values = response.headers().allValues(name);
+            if (values.isEmpty()) continue;
+            try {
+                registration.listener().onResponseHeader(request.method(), request.uri().getRawPath(), name, values);
+            } catch (RuntimeException e) {
+                LOGGER.warn("Listener for response header {} failed", name, e);
+            }
         }
     }
 

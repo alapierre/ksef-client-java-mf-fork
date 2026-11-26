@@ -11,6 +11,16 @@ import pl.akmf.ksef.sdk.client.model.invoice.InvoiceMetadataInvoiceType;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceQueryFilters;
 import pl.akmf.ksef.sdk.client.model.limit.GetRateLimitResponse;
+import pl.akmf.ksef.sdk.client.model.permission.entity.EntityPermission;
+import pl.akmf.ksef.sdk.client.model.permission.entity.EntityPermissionType;
+import pl.akmf.ksef.sdk.client.model.permission.entity.GrantEntityPermissionsRequest;
+import pl.akmf.ksef.sdk.client.model.permission.indirect.GrantIndirectEntityPermissionsRequest;
+import pl.akmf.ksef.sdk.client.model.permission.indirect.IndirectPermissionType;
+import pl.akmf.ksef.sdk.client.model.permission.search.EntityPermissionItemScope;
+import pl.akmf.ksef.sdk.client.model.permission.search.OwnerPermissionScope;
+import pl.akmf.ksef.sdk.client.model.permission.search.QueryEntityPermissionsResponse;
+import pl.akmf.ksef.sdk.client.model.permission.search.QueryPersonalGrantResponse;
+import pl.akmf.ksef.sdk.client.model.permission.search.QueryPersonalPermissionTypes;
 import pl.akmf.ksef.sdk.client.model.testdata.TestDataPermission;
 import pl.akmf.ksef.sdk.client.model.certificate.SendCertificateEnrollmentRequest;
 import io.alapierre.ksef.json.annotation.JsonName;
@@ -104,6 +114,51 @@ public class KsefJsonContractTest {
         assertFalse(json.containsKey("permission"));
         assertEquals(TestDataPermission.PermissionType.CREDENTIAL_READ,
                 serializer.fromJson("\"CredentialsRead\"", TestDataPermission.PermissionType.class));
+    }
+
+    @Test
+    public void mapsCollectiveIdentifierManageInEntityAndIndirectGrants() throws Exception {
+        var entity = new GrantEntityPermissionsRequest();
+        entity.setPermissions(List.of(new EntityPermission(EntityPermissionType.COLLECTIVE_IDENTIFIER_MANAGE, true)));
+        Map<String, Object> entityJson = serializer.fromJson(serializer.toJson(entity), new JsonType<>() { });
+        assertEquals(List.of(Map.of("type", "CollectiveIdentifierManage", "canDelegate", true)), entityJson.get("permissions"));
+
+        var indirect = new GrantIndirectEntityPermissionsRequest();
+        indirect.setPermissions(List.of(IndirectPermissionType.COLLECTIVE_IDENTIFIER_MANAGE));
+        Map<String, Object> indirectJson = serializer.fromJson(serializer.toJson(indirect), new JsonType<>() { });
+        assertEquals(List.of("CollectiveIdentifierManage"), indirectJson.get("permissions"));
+
+        var response = serializer.fromJson("""
+                {"permissions":[{"permissionScope":"CollectiveIdentifierManage"}],"hasMore":false}
+                """, QueryEntityPermissionsResponse.class);
+        assertEquals(EntityPermissionItemScope.COLLECTIVE_IDENTIFIER_MANAGE,
+                response.getPermissions().getFirst().getPermissionScope());
+    }
+
+    @Test
+    public void readsOwnerPermissionsAlongsidePersonalGrants() throws Exception {
+        var response = serializer.fromJson("""
+                {"permissions":[{"permissionScope":"VatUeManage"}],"hasMore":true,
+                 "ownerPermissions":["InvoiceRead","CollectiveIdentifierManage"]}
+                """, QueryPersonalGrantResponse.class);
+        assertEquals(List.of(OwnerPermissionScope.INVOICE_READ, OwnerPermissionScope.COLLECTIVE_IDENTIFIER_MANAGE),
+                response.getOwnerPermissions());
+        assertEquals(QueryPersonalPermissionTypes.VAT_UE_MANAGE, response.getPermissions().getFirst().getPermissionScope());
+        assertEquals(Boolean.TRUE, response.getHasMore());
+    }
+
+    @Test
+    public void preservesAbsentNullAndEmptyOwnerPermissions() throws Exception {
+        var type = QueryPersonalGrantResponse.class;
+        assertNull(serializer.fromJson("""
+                {"permissions":[],"hasMore":false}
+                """, type).getOwnerPermissions());
+        assertNull(serializer.fromJson("""
+                {"permissions":[],"ownerPermissions":null,"hasMore":false}
+                """, type).getOwnerPermissions());
+        assertEquals(List.of(), serializer.fromJson("""
+                {"permissions":[],"ownerPermissions":[],"hasMore":false}
+                """, type).getOwnerPermissions());
     }
 
     @Test

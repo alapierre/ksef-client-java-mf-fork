@@ -33,6 +33,7 @@ import pl.akmf.ksef.sdk.client.model.collectiveidentifier.CollectiveIdentifiersQ
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierRequest;
 import pl.akmf.ksef.sdk.client.model.collectiveidentifier.GenerateCollectiveIdentifierResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InitAsyncInvoicesQueryResponse;
+import pl.akmf.ksef.sdk.client.model.invoice.InvoiceDownloadResponse;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportRequest;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoiceExportStatus;
 import pl.akmf.ksef.sdk.client.model.invoice.InvoicePackagePart;
@@ -100,15 +101,53 @@ import pl.akmf.ksef.sdk.system.headerobservation.ResponseHeaderCaptureHandler;
 
 import java.util.List;
 
+import static pl.akmf.ksef.sdk.client.Headers.X_SYSTEM_WARNING;
+
 public interface KSeFClient {
 
     /**
-     * Zwraca handler obserwacji nagłówków odpowiedzi. Obserwacja wymaga subskrypcji
-     * przez subscribe; po odczycie nagłówków należy wywołać clear.
+     * Zwraca handler obserwacji nagłówków odpowiedzi. Nagłówki wybrane przez
+     * {@link ResponseHeaderCaptureHandler#subscribe(String)} można odebrać zbiorczo przez
+     * {@link ResponseHeaderCaptureHandler#getAndClear()}.
      *
      * @return Handler obserwacji nagłówków.
      */
     ResponseHeaderCaptureHandler getResponseHeaderCaptureHandler();
+
+    /**
+     * Registers a listener for one HTTP response header, independently of header capture.
+     * Header names are case-insensitive. Registering the same pair twice has no additional effect.
+     * @throws IllegalArgumentException if headerName is not an HTTP field name
+     * @throws UnsupportedOperationException if this client implementation does not support listeners
+     */
+    default void addResponseHeaderListener(String headerName, ResponseHeaderListener listener) {
+        throw new UnsupportedOperationException("Response header listeners are not supported");
+    }
+
+    /**
+     * Removes the listener for this header only. A notification already in progress may still reach it.
+     * @throws UnsupportedOperationException if this client implementation does not support listeners
+     */
+    default void removeResponseHeaderListener(String headerName, ResponseHeaderListener listener) {
+        throw new UnsupportedOperationException("Response header listeners are not supported");
+    }
+
+    /**
+     * Registers a listener for responses containing X-System-Warning. Registration is independent
+     * of header capture. Registering the same listener more than once has no additional effect.
+     * @throws UnsupportedOperationException if this client implementation does not support listeners
+     */
+    default void addSystemWarningListener(SystemWarningListener listener) {
+        addResponseHeaderListener(X_SYSTEM_WARNING, listener);
+    }
+
+    /**
+     * Removes a registered listener. A notification already in progress may still reach it.
+     * @throws UnsupportedOperationException if this client implementation does not support listeners
+     */
+    default void removeSystemWarningListener(SystemWarningListener listener) {
+        removeResponseHeaderListener(X_SYSTEM_WARNING, listener);
+    }
 
     /**
      * Aktualizuje datę ważności certyfikatu na środowisku testowym.
@@ -607,6 +646,20 @@ public interface KSeFClient {
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
     byte[] getInvoice(String ksefReferenceNumber, String accessToken) throws ApiException;
+
+    /**
+     * Pobiera XML faktury wraz z datą nadania numeru KSeF, datą trwałego zapisu
+     * i skrótem SHA-256, jeśli serwer udostępnił te metadane.
+     *
+     * @param ksefReferenceNumber numer KSeF faktury
+     * @param accessToken token dostępowy
+     * @return odpowiedź zawierająca oryginalne bajty XML i nagłówki zwrócone przez KSeF
+     * @throws ApiException w przypadku błędu wywołania API
+     * @throws UnsupportedOperationException jeśli implementacja klienta nie udostępnia nagłówków
+     */
+    default InvoiceDownloadResponse getInvoiceWithHeaders(String ksefReferenceNumber, String accessToken) throws ApiException {
+        throw new UnsupportedOperationException("This client does not expose invoice response headers");
+    }
 
     /**
      * Zwraca listę metadanych faktur spełniające podane kryteria wyszukiwania.

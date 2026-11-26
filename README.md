@@ -94,6 +94,74 @@ The builder only describes an already prepared archive; it does not convert ZIP 
 to TAR.GZ. The export response exposes `InvoiceExportPackage.compressionType`, but the
 fork does not currently provide TAR.GZ export creation or extraction helpers.
 
+## Invoice download metadata
+
+`getInvoiceWithHeaders` returns the invoice XML and its metadata in a single request.
+Each metadata getter returns an empty `Optional` when KSeF omits that value.
+Both dates retain the text sent by KSeF.
+
+```java
+var invoice = client.getInvoiceWithHeaders(ksefNumber, accessToken);
+byte[] xml = invoice.getXml();
+Optional<String> acquisitionDate = invoice.getAcquisitionDate();
+Optional<String> permanentStorageDate = invoice.getPermanentStorageDate();
+Optional<String> sha256Base64 = invoice.getSha256Base64();
+```
+
+Use `invoice.getHeaders()` for other response headers, such as `X-System-Warning`.
+Use `getInvoice(ksefNumber, accessToken)` when you only need the XML bytes.
+
+## Listening for response headers
+
+`addResponseHeaderListener` selects a response header by name, ignoring case.
+The listener receives all values from a matching response on the calling thread.
+For example, a client can log the server's retry interval on an HTTP 429 response.
+
+```java
+ResponseHeaderListener retryAfter = (method, path, name, values) ->
+        log.info("KSeF {} {}: {} = {}", method, path, name, values);
+client.addResponseHeaderListener(Headers.RETRY_AFTER, retryAfter);
+```
+
+You can register the same listener for several names. Call
+`client.removeResponseHeaderListener(Headers.RETRY_AFTER, retryAfter)` to remove
+just that registration. The callback receives the header name in lowercase.
+
+### Logging KSeF system warnings
+
+Register a listener once on the client to log `X-System-Warning` as responses arrive.
+The listener runs on the calling thread for both successful and error responses.
+It receives the HTTP method, request path and raw header values. A single value can
+contain several warnings separated by `|`.
+
+```java
+SystemWarningListener warnings = (method, path, values) ->
+        values.forEach(value -> log.warn("KSeF {} {}: {}", method, path, value));
+client.addSystemWarningListener(warnings);
+```
+
+Registering a listener does not enable buffering. Concurrent requests can call the
+same listener concurrently. Use `client.removeSystemWarningListener(warnings)` to
+unregister it. A runtime exception from one listener is logged and delivery continues.
+
+## Collecting response headers across requests
+
+To collect system warnings across requests made by a shared client, subscribe once
+and periodically consume the buffer with `getAndClear()`.
+
+```java
+var capture = client.getResponseHeaderCaptureHandler();
+capture.subscribe("X-System-Warning");
+
+// After requests have run, take the entries accumulated so far.
+var entries = capture.getAndClear();
+```
+
+Each call takes the current entries in one operation. Warnings that arrive while
+the application processes them are available on the next call. The buffer has no
+size limit. Use `getCaptured()` to inspect it and `clear()` to discard its contents.
+Calling those two methods in sequence can discard entries captured between the calls.
+
 ## KSeF API 2.8 compatibility
 
 The client supports the API 2.8 rate-limit model, including separate online and batch

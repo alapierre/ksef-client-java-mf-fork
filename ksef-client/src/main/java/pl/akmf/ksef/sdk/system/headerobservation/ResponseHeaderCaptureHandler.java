@@ -15,8 +15,8 @@ public class ResponseHeaderCaptureHandler {
 
     private final Set<String> subscribedHeaders = ConcurrentHashMap.newKeySet();
 
-    // store: requestKey = (header + values)
-    private final ConcurrentHashMap<String, Map<String, List<String>>> store = new ConcurrentHashMap<>();
+    // Access under this handler's monitor so getAndClear can hand off the entire map.
+    private Map<String, Map<String, List<String>>> store = new HashMap<>();
 
     public void subscribe(String header) {
         subscribedHeaders.add(header.toLowerCase(Locale.ROOT));
@@ -41,18 +41,32 @@ public class ResponseHeaderCaptureHandler {
         }
 
         if (!captured.isEmpty()) {
-            store.put(requestKey, Map.copyOf(captured));
+            synchronized (this) {
+                store.put(requestKey, Map.copyOf(captured));
+            }
         }
     }
 
     /**
-     * Returns captured headers. Call {@link #clear()} after consuming them to release stored entries.
+     * Returns a snapshot of the current entries. To consume entries while requests are
+     * in flight, use {@link #getAndClear()}.
      */
-    public Map<String, Map<String, List<String>>> getCaptured() {
+    public synchronized Map<String, Map<String, List<String>>> getCaptured() {
         return new HashMap<>(store);
     }
 
-    public void clear() {
+    /**
+     * Atomically removes and returns all current entries. Entries captured after the handoff
+     * are available to the next caller.
+     */
+    public synchronized Map<String, Map<String, List<String>>> getAndClear() {
+        var entries = store;
+        store = new HashMap<>();
+        return entries;
+    }
+
+    /** Discards all current entries. */
+    public synchronized void clear() {
         store.clear();
     }
 

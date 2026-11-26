@@ -39,12 +39,17 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 
 import static org.junit.Assert.*;
@@ -111,11 +116,46 @@ public class Upstream327Test {
             assertEquals(1, entry.size());
         }
         handler.getCaptured().clear();
-        assertEquals(2, handler.getCaptured().size());
+        var snapshot = handler.getCaptured();
+        assertEquals(2, snapshot.size());
+        assertEquals(snapshot, handler.getAndClear());
+        assertTrue(handler.getCaptured().isEmpty());
+        client.retrievePublicKeyCertificate();
         handler.clear();
+        assertTrue(handler.getAndClear().isEmpty());
         handler.unsubscribe("x-System-Warning");
         client.retrievePublicKeyCertificate();
         assertTrue(handler.getCaptured().isEmpty());
+    }
+
+    @Test(timeout = 10000)
+    public void concurrentConsumersReceiveEveryCapturedEntryExactlyOnce() throws Exception {
+        var handler = new ResponseHeaderCaptureHandler();
+        handler.subscribe("X-System-Warning");
+        var request = HttpRequest.newBuilder(URI.create("https://example.test/invoices")).build();
+        var headers = HttpHeaders.of(Map.of("X-System-Warning", List.of("warning")), (name, value) -> true);
+        var start = new CountDownLatch(1);
+        int requestsPerWorker = 200;
+        Callable<List<String>> captureAndConsume = () -> {
+            start.await();
+            var keys = new ArrayList<String>();
+            for (int i = 0; i < requestsPerWorker; i++) {
+                handler.capture(request, headers);
+                keys.addAll(handler.getAndClear().keySet());
+            }
+            return keys;
+        };
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(captureAndConsume);
+            var second = executor.submit(captureAndConsume);
+            start.countDown();
+            var keys = new ArrayList<>(first.get());
+            keys.addAll(second.get());
+            assertEquals(2 * requestsPerWorker, keys.size());
+            assertEquals(keys.size(), new HashSet<>(keys).size());
+            assertTrue(handler.getCaptured().isEmpty());
+        }
     }
 
     @Test

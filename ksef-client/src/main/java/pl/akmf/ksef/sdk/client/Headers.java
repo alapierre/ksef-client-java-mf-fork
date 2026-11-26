@@ -8,6 +8,9 @@ public final class Headers {
 
     public static final String SERVICE_KEY = "ServiceKey";
     public static final String CONTINUATION_TOKEN = "x-continuation-token";
+    public static final String X_MS_META_ACQUISITION_DATE = "x-ms-meta-acquisition-date";
+    public static final String X_MS_META_PERMANENT_STORAGE_DATE = "x-ms-meta-permanent-storage-date";
+    public static final String X_MS_META_HASH = "x-ms-meta-hash";
     public static final String AUTHORIZATION = "Authorization";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String ACCEPT = "Accept";
@@ -20,6 +23,7 @@ public final class Headers {
     public static final String SUBJECT_IDENTIFIER_VALIDATION = "subject-identifier-validation";
     public static final String ENFORCE_XADES_COMPLIANCE = "enforce-xades-compliance";
     public static final String RETRY_AFTER = "Retry-After";
+    public static final String X_SYSTEM_WARNING = "X-System-Warning";
     public static final String X_ERROR_FORMAT = "X-Error-Format";
     public static final String X_ERROR_FORMAT_PROBLEM_DETAILS = "problem-details";
 }

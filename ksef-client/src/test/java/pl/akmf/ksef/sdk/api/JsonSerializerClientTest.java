@@ -8,6 +8,9 @@ import io.alapierre.ksef.json.gson.GsonJsonSerializer;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.Test;
+import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
+import pl.akmf.ksef.sdk.client.interfaces.ResponseHeaderListener;
+import pl.akmf.ksef.sdk.client.interfaces.SystemWarningListener;
 import pl.akmf.ksef.sdk.client.model.*;
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
 import pl.akmf.ksef.sdk.client.model.exceptions.BadRequestApiException;
@@ -35,6 +38,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 
 import static org.junit.Assert.*;
@@ -135,6 +139,125 @@ public class JsonSerializerClientTest {
         assertArrayEquals(xml.getBytes(StandardCharsets.UTF_8), requestBody(http.lastRequest));
         assertNull(serializer.encodedValue);
         assertEquals(1, client.getResponseHeaderCaptureHandler().getCaptured().size());
+    }
+
+    @Test
+    public void selectsAndRemovesResponseHeadersIndependently() throws Exception {
+        var http = new StubHttpClient(200, "<Faktura/>");
+        http.additionalHeaders = Map.of("X-Trace-Id", List.of("first", "second"));
+        KSeFClient client = new DefaultKsefClient(http, PROPERTIES, serializer);
+        var received = new HashMap<String, List<String>>();
+        ResponseHeaderListener listener = (method, path, name, values) -> {
+            assertEquals("GET", method);
+            assertEquals("/v2/invoices/ksef/invoice-1", path);
+            received.computeIfAbsent(name, ignored -> new ArrayList<>()).addAll(values);
+        };
+        client.addResponseHeaderListener("X-TRACE-ID", listener);
+        client.addResponseHeaderListener("x-trace-id", listener);
+        client.addResponseHeaderListener("Retry-After", listener);
+        client.addResponseHeaderListener("X-Missing", listener);
+        client.getInvoice("invoice-1", "access");
+        assertEquals(Map.of("x-trace-id", List.of("first", "second"), "retry-after", List.of("7")), received);
+
+        client.removeResponseHeaderListener("X-Trace-Id", listener);
+        received.clear();
+        client.getInvoice("invoice-1", "access");
+        assertEquals(Map.of("retry-after", List.of("7")), received);
+        assertTrue(client.getResponseHeaderCaptureHandler().getCaptured().isEmpty());
+    }
+
+    @Test
+    public void deliversWarningValuesOncePerResponseWithoutBuffering() throws Exception {
+        var http = new StubHttpClient(200, "<Faktura/>");
+        var values = List.of("[A]: first | [B]: second", "[C]: third");
+        http.systemWarnings = values;
+        KSeFClient client = new DefaultKsefClient(http, PROPERTIES, serializer);
+        var deliveries = new ArrayList<List<String>>();
+        SystemWarningListener listener = (method, path, warnings) -> {
+            assertEquals("GET", method);
+            assertEquals("/v2/invoices/ksef/invoice-1", path);
+            deliveries.add(warnings);
+        };
+        client.addSystemWarningListener(listener);
+        client.addSystemWarningListener(listener);
+        client.getInvoice("invoice-1", "access");
+        http.systemWarnings = List.of();
+        client.getInvoice("invoice-1", "access");
+        client.removeSystemWarningListener(listener);
+        http.systemWarnings = values;
+        client.getInvoice("invoice-1", "access");
+        assertEquals(List.of(values), deliveries);
+        assertTrue(client.getResponseHeaderCaptureHandler().getCaptured().isEmpty());
+    }
+
+    @Test
+    public void failingWarningListenerPreservesApiErrorAndOtherListeners() {
+        var http = new StubHttpClient(400, "{\"title\":\"Bad Request\",\"status\":400}");
+        http.contentType = "application/problem+json";
+        KSeFClient client = new DefaultKsefClient(http, PROPERTIES, serializer);
+        client.addSystemWarningListener((method, path, values) -> { throw new IllegalStateException("listener failed"); });
+        var received = new ArrayList<String>();
+        client.addSystemWarningListener((method, path, values) -> received.addAll(values));
+        assertThrows(BadRequestApiException.class, () -> client.getInvoice("invoice-1", "access"));
+        assertEquals(List.of("warning"), received);
+    }
+
+    @Test
+    public void deliversWarningsInTheCallingThreadsOfASharedClient() throws Exception {
+        var http = new StubHttpClient(200, "<Faktura/>");
+        KSeFClient client = new DefaultKsefClient(http, PROPERTIES, serializer);
+        ThreadLocal<String> observedPath = new ThreadLocal<>();
+        client.addSystemWarningListener((method, path, values) -> observedPath.set(path));
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var calls = List.of("first", "second").stream().map(invoice -> executor.submit(() -> {
+                client.getInvoice(invoice, "access");
+                return observedPath.get();
+            })).toList();
+            assertEquals("/v2/invoices/ksef/first", calls.getFirst().get());
+            assertEquals("/v2/invoices/ksef/second", calls.getLast().get());
+        }
+    }
+
+    @Test
+    public void downloadsInvoiceWithHeadersFromTheSameResponse() throws Exception {
+        String xml = "<Faktura>Łódź</Faktura>";
+        StubHttpClient http = new StubHttpClient(200, xml);
+        http.contentType = "application/xml";
+        String acquisitionDate = "2026-11-24T15:30:42+01:00";
+        String storageDate = "2026-11-24T15:30:43+01:00";
+        String hash = Base64.getEncoder().encodeToString(java.security.MessageDigest.getInstance("SHA-256")
+                .digest(xml.getBytes(StandardCharsets.UTF_8)));
+        http.additionalHeaders = Map.of("X-Ms-Meta-Acquisition-Date", List.of(acquisitionDate),
+                "x-ms-meta-permanent-storage-date", List.of(storageDate), "x-ms-meta-hash", List.of(hash));
+        KSeFClient client = new DefaultKsefClient(http, PROPERTIES, serializer);
+
+        var response = client.getInvoiceWithHeaders("invoice-1", "access");
+        assertEquals("GET", http.lastRequest.method());
+        assertEquals("/v2/invoices/ksef/invoice-1", http.lastRequest.uri().getPath());
+        assertEquals("Bearer access", http.lastRequest.headers().firstValue("Authorization").orElseThrow());
+        assertEquals(200, response.getStatusCode());
+        assertArrayEquals(xml.getBytes(StandardCharsets.UTF_8), response.getXml());
+        assertEquals(Optional.of(acquisitionDate), response.getAcquisitionDate());
+        assertEquals(Optional.of(storageDate), response.getPermanentStorageDate());
+        assertEquals(Optional.of(hash), response.getSha256Base64());
+        assertEquals(List.of("warning"), response.getHeaders().allValues("X-System-Warning"));
+
+        http.additionalHeaders = Map.of();
+        var withoutMetadata = client.getInvoiceWithHeaders("invoice-2", "access");
+        assertTrue(withoutMetadata.getAcquisitionDate().isEmpty());
+        assertTrue(withoutMetadata.getPermanentStorageDate().isEmpty());
+        assertTrue(withoutMetadata.getSha256Base64().isEmpty());
+        assertArrayEquals(xml.getBytes(StandardCharsets.UTF_8), withoutMetadata.getXml());
+        assertArrayEquals(xml.getBytes(StandardCharsets.UTF_8), client.getInvoice("invoice-2", "access"));
+    }
+
+    @Test
+    public void invoiceDownloadPropagatesApiErrorsWithAndWithoutHeaders() {
+        var http = new StubHttpClient(400, "{\"title\":\"Bad Request\",\"status\":400,\"detail\":\"Unknown invoice\"}");
+        http.contentType = "application/problem+json";
+        KSeFClient client = new DefaultKsefClient(http, PROPERTIES, serializer);
+        assertThrows(BadRequestApiException.class, () -> client.getInvoiceWithHeaders("invoice-1", "access"));
+        assertThrows(BadRequestApiException.class, () -> client.getInvoice("invoice-1", "access"));
     }
 
     @Test
@@ -271,6 +394,8 @@ public class JsonSerializerClientTest {
         private int status;
         private String body;
         private String contentType = "application/json";
+        private List<String> systemWarnings = List.of("warning");
+        private Map<String, List<String>> additionalHeaders = Map.of();
         private HttpRequest lastRequest;
 
         private StubHttpClient(int status, String body) {
@@ -280,8 +405,13 @@ public class JsonSerializerClientTest {
 
         public <T> HttpResponse<T> send(HttpRequest request, HttpResponse.BodyHandler<T> handler) {
             lastRequest = request;
-            var headers = HttpHeaders.of(Map.of("Content-Type", List.of(contentType),
-                    "Retry-After", List.of("7"), "X-System-Warning", List.of("warning")), (k, v) -> true);
+            var headerMap = new HashMap<>(additionalHeaders);
+            headerMap.put("Content-Type", List.of(contentType));
+            headerMap.put("Retry-After", List.of("7"));
+            if (!systemWarnings.isEmpty()) {
+                headerMap.put("x-system-warning", systemWarnings);
+            }
+            var headers = HttpHeaders.of(headerMap, (k, v) -> true);
             var subscriber = handler.apply(new HttpResponse.ResponseInfo() {
                 public int statusCode() { return status; }
                 public HttpHeaders headers() { return headers; }

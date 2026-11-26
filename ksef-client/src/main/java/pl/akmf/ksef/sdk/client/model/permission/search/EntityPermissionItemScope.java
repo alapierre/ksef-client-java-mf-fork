@@ -7,7 +7,9 @@ import lombok.Getter;
 public enum EntityPermissionItemScope {
     INVOICEWRITE("InvoiceWrite"),
 
-    INVOICEREAD("InvoiceRead");
+    INVOICEREAD("InvoiceRead"),
+
+    COLLECTIVE_IDENTIFIER_MANAGE("CollectiveIdentifierManage");
 
     @Getter(onMethod_ = @JsonValue)
     private final String value;
