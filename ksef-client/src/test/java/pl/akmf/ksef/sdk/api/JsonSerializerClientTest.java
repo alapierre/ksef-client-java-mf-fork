@@ -12,6 +12,12 @@ import pl.akmf.ksef.sdk.client.interfaces.KSeFClient;
 import pl.akmf.ksef.sdk.client.interfaces.ResponseHeaderListener;
 import pl.akmf.ksef.sdk.client.interfaces.SystemWarningListener;
 import pl.akmf.ksef.sdk.client.model.*;
+import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenRev2;
+import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenStatus;
+import pl.akmf.ksef.sdk.client.model.auth.AuthorTokenIdentifier;
+import pl.akmf.ksef.sdk.client.model.auth.KsefTokenRequestRev2;
+import pl.akmf.ksef.sdk.client.model.auth.QueryTokensFiltersRev2;
+import pl.akmf.ksef.sdk.client.model.auth.TokenPermissionType;
 import pl.akmf.ksef.sdk.client.model.certificate.publickey.PublicKeyCertificate;
 import pl.akmf.ksef.sdk.client.model.exceptions.BadRequestApiException;
 import pl.akmf.ksef.sdk.client.model.exceptions.GoneApiException;
@@ -35,6 +41,7 @@ import java.net.http.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -63,6 +70,112 @@ public class JsonSerializerClientTest {
         public Duration getRequestTimeout() { return Duration.ofSeconds(5); }
         public Map<String, String> getDefaultHeaders() { return Map.of(); }
     };
+
+    @Test
+    public void generatesTokenRev2WithValidityPeriod() throws Exception {
+        var http = new StubHttpClient(202, """
+                {"referenceNumber":"ref-1","token":"generated-token"}
+                """);
+        KSeFClient client = new DefaultKsefClient(http, PROPERTIES, serializer);
+        var from = OffsetDateTime.parse("2026-11-28T12:00:00+01:00");
+        var request = new KsefTokenRequestRev2(List.of(TokenPermissionType.INVOICE_READ), "Test token", from, from.plusDays(5));
+        var generated = client.generateKsefTokenRev2(request, "access");
+
+        assertEquals("ref-1", generated.getReferenceNumber());
+        assertEquals("generated-token", generated.getToken());
+        assertTokenRequest(http.lastRequest, "POST", "/v2/tokens/rev2");
+        assertEquals("application/json", http.lastRequest.headers().firstValue("Content-Type").orElseThrow());
+        var body = serializer.fromJson(requestBody(http.lastRequest), Map.class);
+        assertEquals(List.of("InvoiceRead"), body.get("permissions"));
+        assertEquals("Test token", body.get("description"));
+        assertEquals("2026-11-28T12:00:00+01:00", body.get("validFrom"));
+        assertEquals("2026-12-03T12:00:00+01:00", body.get("validTo"));
+    }
+
+    @Test
+    public void readsTokenMetadataAndFiltersRev2() throws Exception {
+        String metadata = """
+                {"referenceNumber":"ref-1","description":"Test token","dateCreated":"2026-11-28T10:00:00Z",
+                 "authorIdentifier":{"type":{"code":"Fingerprint","rawCode":"Fingerprint","displayName":"Fingerprint"},"value":"abc"},
+                 "contextIdentifier":{"type":{"code":"InternalId","rawCode":"InternalId","displayName":"ID"},"value":"id-1"},
+                 "requestedPermissions":[{"code":"FutureValue","rawCode":"NewPermission","displayName":"Nowe uprawnienie"}],
+                 "validFrom":"2026-11-28T12:00:00+01:00","validTo":"2026-12-03T12:00:00+01:00",
+                 "status":{"code":"Failed","rawCode":"Failed","displayName":"Błąd"},
+                 "failure":{"code":"ActivationError","description":"Błąd aktywacji","details":["detail"]}}
+                """;
+        var http = new StubHttpClient(200, "{\"continuationToken\":\"next\",\"tokens\":[" + metadata + "]}");
+        KSeFClient client = new DefaultKsefClient(http, PROPERTIES, serializer);
+        var filters = new QueryTokensFiltersRev2();
+        filters.setStatuses(List.of(QueryTokensFiltersRev2.Status.AwaitingApproval, QueryTokensFiltersRev2.Status.ApprovalExpired));
+        filters.setDescription("Łódź & A");
+        filters.setAuthorIdentifier("abc");
+        filters.setAuthorIdentifierType(AuthorTokenIdentifier.IdentifierType.FINGERPRINT);
+        filters.setValidFrom(OffsetDateTime.parse("2026-11-28T12:00:00+01:00"));
+        filters.setValidTo(filters.getValidFrom().plusDays(5));
+
+        var page = client.queryKsefTokensRev2(filters, "cursor", 20, "access");
+        assertEquals("next", page.getContinuationToken());
+        assertEquals(AuthenticationTokenRev2.Status.Failed, page.getTokens().getFirst().getStatus().getCode());
+        assertTokenRequest(http.lastRequest, "GET", "/v2/tokens/rev2");
+        assertEquals(Set.of("status=AwaitingApproval", "status=ApprovalExpired", "description=%C5%81%C3%B3d%C5%BA+%26+A",
+                        "authorIdentifier=abc", "authorIdentifierType=Fingerprint", "pageSize=20",
+                        "validFrom=2026-11-28T12%3A00%3A00%2B01%3A00", "validTo=2026-12-03T12%3A00%3A00%2B01%3A00"),
+                Set.of(http.lastRequest.uri().getRawQuery().split("&")));
+        assertEquals("cursor", http.lastRequest.headers().firstValue("x-continuation-token").orElseThrow());
+
+        http.body = metadata;
+        var token = client.getKsefTokenRev2("ref-1", "access");
+        assertTokenRequest(http.lastRequest, "GET", "/v2/tokens/rev2/ref-1");
+        assertEquals("ref-1", token.getReferenceNumber());
+        assertEquals(AuthenticationTokenRev2.AuthorType.Fingerprint, token.getAuthorIdentifier().getType().getCode());
+        assertEquals(AuthenticationTokenRev2.ContextType.InternalId, token.getContextIdentifier().getType().getCode());
+        var permission = token.getRequestedPermissions().getFirst();
+        assertEquals(AuthenticationTokenRev2.Permission.FutureValue, permission.getCode());
+        assertEquals("NewPermission", permission.getRawCode());
+        assertEquals("Nowe uprawnienie", permission.getDisplayName());
+        assertEquals(filters.getValidFrom(), token.getValidFrom());
+        assertEquals(filters.getValidTo(), token.getValidTo());
+        assertNull(token.getLastUseDate());
+        assertEquals("ActivationError", token.getFailure().getCode());
+        assertEquals(List.of("detail"), token.getFailure().getDetails());
+    }
+
+    @Test
+    public void queriesWithoutFiltersAndPreservesLegacyStatusParameters() throws Exception {
+        var http = new StubHttpClient(200, "{\"tokens\":[]}");
+        KSeFClient client = new DefaultKsefClient(http, PROPERTIES, serializer);
+        assertTrue(client.queryKsefTokensRev2(null, null, null, "access").getTokens().isEmpty());
+        assertNull(http.lastRequest.uri().getRawQuery());
+        assertTrue(http.lastRequest.headers().firstValue("x-continuation-token").isEmpty());
+
+        client.queryKsefTokens(List.of(AuthenticationTokenStatus.ACTIVE, AuthenticationTokenStatus.PENDING),
+                null, null, null, null, null, "access");
+        assertTokenRequest(http.lastRequest, "GET", "/v2/tokens");
+        assertEquals("status=Active&status=Pending", http.lastRequest.uri().getRawQuery());
+    }
+
+    @Test
+    public void approvesAndSimulatesApprovalExpiryWithBodylessPosts() throws Exception {
+        var http = new StubHttpClient(204, "");
+        KSeFClient client = new DefaultKsefClient(http, PROPERTIES, serializer);
+        client.approveKsefToken("ref-1", "access");
+        assertTokenRequest(http.lastRequest, "POST", "/v2/tokens/ref-1/approve");
+        assertEquals(0, requestBody(http.lastRequest).length);
+
+        client.expireKsefTokenApproval("ref-2", "access");
+        assertTokenRequest(http.lastRequest, "POST", "/v2/testdata/tokens/ref-2/expire-approval");
+        assertEquals(0, requestBody(http.lastRequest).length);
+        http.status = 400;
+        http.contentType = "application/problem+json";
+        http.body = "{\"title\":\"Approval expired\",\"status\":400}";
+        assertThrows(BadRequestApiException.class, () -> client.approveKsefToken("ref-2", "access"));
+    }
+
+    private static void assertTokenRequest(HttpRequest request, String method, String path) {
+        assertEquals(method, request.method());
+        assertEquals(path, request.uri().getPath());
+        assertEquals("Bearer access", request.headers().firstValue("Authorization").orElseThrow());
+    }
 
     @Test
     public void usesSelectedAdapterForHttpRequestsAndTypedResponses() throws Exception {

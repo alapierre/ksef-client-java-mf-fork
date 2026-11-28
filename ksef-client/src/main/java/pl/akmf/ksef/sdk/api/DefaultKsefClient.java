@@ -18,12 +18,16 @@ import pl.akmf.ksef.sdk.client.model.auth.AuthOperationStatusResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthStatus;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationChallengeResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationToken;
+import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenRev2;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenRefreshResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenStatus;
 import pl.akmf.ksef.sdk.client.model.auth.AuthorTokenIdentifier;
 import pl.akmf.ksef.sdk.client.model.auth.GenerateTokenResponse;
 import pl.akmf.ksef.sdk.client.model.auth.KsefTokenRequest;
+import pl.akmf.ksef.sdk.client.model.auth.KsefTokenRequestRev2;
+import pl.akmf.ksef.sdk.client.model.auth.QueryTokensFiltersRev2;
 import pl.akmf.ksef.sdk.client.model.auth.QueryTokensResponse;
+import pl.akmf.ksef.sdk.client.model.auth.QueryTokensResponseRev2;
 import pl.akmf.ksef.sdk.client.model.auth.SignatureResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentStatusResponse;
@@ -119,6 +123,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -213,6 +218,11 @@ import static pl.akmf.ksef.sdk.api.Url.TEST_PERSON_CREATE;
 import static pl.akmf.ksef.sdk.api.Url.TEST_PERSON_DELETE;
 import static pl.akmf.ksef.sdk.api.Url.TEST_SUBJECT_CREATE;
 import static pl.akmf.ksef.sdk.api.Url.TEST_SUBJECT_DELETE;
+import static pl.akmf.ksef.sdk.api.Url.TEST_TOKEN_EXPIRE_APPROVAL;
+import static pl.akmf.ksef.sdk.api.Url.TOKEN_APPROVE;
+import static pl.akmf.ksef.sdk.api.Url.TOKEN_GENERATE_REV2;
+import static pl.akmf.ksef.sdk.api.Url.TOKEN_LIST_REV2;
+import static pl.akmf.ksef.sdk.api.Url.TOKEN_STATUS_REV2;
 import static pl.akmf.ksef.sdk.api.Url.TOKEN_GENERATE;
 import static pl.akmf.ksef.sdk.api.Url.TOKEN_LIST;
 import static pl.akmf.ksef.sdk.api.Url.TOKEN_REVOKE;
@@ -2149,35 +2159,89 @@ public class DefaultKsefClient implements KSeFClient {
                                                Integer pageSize,
                                                String accessToken) throws ApiException {
 
-        HashMap<String, String> params = new HashMap<>();
-        statuses.forEach(stat -> params.put(STATUS, stat.toString()));
-        if (pageSize != null) {
-            params.put(PAGE_SIZE, String.valueOf(pageSize));
-        }
+        var params = tokenListParams(statuses, description, authorIdentifier, authorIdentifierType, pageSize);
+        return queryTokenPage(TOKEN_LIST, params, continuationToken, accessToken, QueryTokensResponse.class);
+    }
 
+    @Override
+    public GenerateTokenResponse generateKsefTokenRev2(KsefTokenRequestRev2 request, String accessToken) throws ApiException {
+        var headers = Map.of(AUTHORIZATION, BEARER + accessToken, CONTENT_TYPE, APPLICATION_JSON, ACCEPT, APPLICATION_JSON);
+        var response = post(TOKEN_GENERATE_REV2.getUrl(), request, headers);
+        return getResponse(response, ACCEPTED, TOKEN_GENERATE_REV2, GenerateTokenResponse.class);
+    }
+
+    @Override
+    public QueryTokensResponseRev2 queryKsefTokensRev2(QueryTokensFiltersRev2 filters, String continuationToken,
+                                                       Integer pageSize, String accessToken) throws ApiException {
+        if (filters == null) {
+            filters = new QueryTokensFiltersRev2();
+        }
+        var params = tokenListParams(filters.getStatuses(), filters.getDescription(), filters.getAuthorIdentifier(),
+                filters.getAuthorIdentifierType(), pageSize);
+        if (filters.getValidFrom() != null) {
+            params.add(new HttpUtils.KeyValue("validFrom", filters.getValidFrom().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)));
+        }
+        if (filters.getValidTo() != null) {
+            params.add(new HttpUtils.KeyValue("validTo", filters.getValidTo().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)));
+        }
+        return queryTokenPage(TOKEN_LIST_REV2, params, continuationToken, accessToken, QueryTokensResponseRev2.class);
+    }
+
+    private static List<HttpUtils.KeyValue> tokenListParams(List<? extends Enum<?>> statuses, String description,
+                                                            String authorIdentifier, AuthorTokenIdentifier.IdentifierType authorType,
+                                                            Integer pageSize) {
+        List<HttpUtils.KeyValue> params = new ArrayList<>();
+        if (statuses != null) {
+            statuses.forEach(status -> params.add(new HttpUtils.KeyValue(STATUS, status.toString())));
+        }
         if (StringUtils.isNotBlank(description)) {
-            params.put(DESCRIPTION, description);
+            params.add(new HttpUtils.KeyValue(DESCRIPTION, description));
         }
-
         if (StringUtils.isNotBlank(authorIdentifier)) {
-            params.put(AUTHOR_IDENTIFIER, authorIdentifier);
+            params.add(new HttpUtils.KeyValue(AUTHOR_IDENTIFIER, authorIdentifier));
         }
-
-        if (Objects.nonNull(authorIdentifierType)) {
-            params.put(AUTHOR_IDENTIFIER_TYPE, authorIdentifierType.getValue());
+        if (authorType != null) {
+            params.add(new HttpUtils.KeyValue(AUTHOR_IDENTIFIER_TYPE, authorType.getValue()));
         }
-        String uri = buildUrlWithParams(TOKEN_LIST.getUrl(), params);
+        if (pageSize != null) {
+            params.add(new HttpUtils.KeyValue(PAGE_SIZE, pageSize.toString()));
+        }
+        return params;
+    }
 
+    private <T> T queryTokenPage(Url endpoint, List<HttpUtils.KeyValue> params, String continuationToken,
+                                 String accessToken, Class<T> responseType) throws ApiException {
         Map<String, String> headers = new HashMap<>();
         headers.put(AUTHORIZATION, BEARER + accessToken);
         headers.put(ACCEPT, APPLICATION_JSON);
-
         if (continuationToken != null) {
             headers.put(CONTINUATION_TOKEN, continuationToken);
         }
-        HttpResponse<byte[]> response = get(uri, headers);
+        var response = get(buildUrlWithParams(endpoint.getUrl(), params), headers);
+        return getResponse(response, OK, endpoint, responseType);
+    }
 
-        return getResponse(response, OK, TOKEN_LIST, QueryTokensResponse.class);
+    @Override
+    public AuthenticationTokenRev2 getKsefTokenRev2(String referenceNumber, String accessToken) throws ApiException {
+        String uri = TOKEN_STATUS_REV2.getUrl().replace(PATH_REFERENCE_NUMBER, referenceNumber);
+        var response = get(uri, Map.of(AUTHORIZATION, BEARER + accessToken, ACCEPT, APPLICATION_JSON));
+        return getResponse(response, OK, TOKEN_STATUS_REV2, AuthenticationTokenRev2.class);
+    }
+
+    @Override
+    public void approveKsefToken(String referenceNumber, String accessToken) throws ApiException {
+        postTokenAction(TOKEN_APPROVE, referenceNumber, accessToken);
+    }
+
+    @Override
+    public void expireKsefTokenApproval(String referenceNumber, String accessToken) throws ApiException {
+        postTokenAction(TEST_TOKEN_EXPIRE_APPROVAL, referenceNumber, accessToken);
+    }
+
+    private void postTokenAction(Url endpoint, String referenceNumber, String accessToken) throws ApiException {
+        String uri = endpoint.getUrl().replace(PATH_REFERENCE_NUMBER, referenceNumber);
+        var response = post(uri, null, Map.of(AUTHORIZATION, BEARER + accessToken));
+        validResponse(response, NO_CONTENT, endpoint);
     }
 
     /**

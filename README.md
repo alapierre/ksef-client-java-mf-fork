@@ -162,6 +162,37 @@ the application processes them are available on the next call. The buffer has no
 size limit. Use `getCaptured()` to inspect it and `clear()` to discard its contents.
 Calling those two methods in sequence can discard entries captured between the calls.
 
+## KSeF token management on TEST (rev2)
+
+Use `generateKsefTokenRev2` to set a token’s validity period. Omitting both dates
+lets KSeF start the period at generation and set its length to 90 days. KSeF
+returns the token value only once, in the generation response.
+
+```java
+var request = KsefTokenRequestRev2.builder()
+        .permissions(List.of(TokenPermissionType.INVOICE_READ))
+        .description("Invoice reader")
+        .validTo(OffsetDateTime.now().plusDays(30))
+        .build();
+var generated = client.generateKsefTokenRev2(request, accessToken);
+var reference = generated.getReferenceNumber();
+var metadata = client.getKsefTokenRev2(reference, accessToken);
+```
+
+A token generated in a KSeF-token session requires approval within 24 hours
+of reaching `AwaitingApproval`. Call `client.approveKsefToken(reference, approverAccessToken)`
+from an authorized session authenticated with XAdES or Węzeł Krajowy. Check
+the status again before using the token. Only `Active` is ready to use.
+`NotYetActive` means its validity period has yet to begin.
+
+Use `queryKsefTokensRev2(filters, continuationToken, pageSize, accessToken)` to
+list tokens. `QueryTokensFiltersRev2` supports multiple statuses, description,
+author identifier and type, and validity dates. Pass `null` for optional
+arguments on the first call and use the returned continuation token for the next
+page. Use `revokeKsefToken` to revoke a token from either revision.
+On TEST, `expireKsefTokenApproval` lets an integration test move a token from
+`AwaitingApproval` to `ApprovalExpired` immediately.
+
 ## KSeF API 2.8 compatibility
 
 The client supports the API 2.8 rate-limit model, including separate online and batch

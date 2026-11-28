@@ -92,6 +92,11 @@ public enum Url {
 
     PEPPOL_QUERY("peppol/query", "peppolQuery"),
 
+    TOKEN_GENERATE_REV2("tokens/rev2", "apiV2TokensRev2Post"),
+    TOKEN_LIST_REV2("tokens/rev2", "apiV2TokensRev2Get"),
+    TOKEN_STATUS_REV2("tokens/rev2/{referenceNumber}", "apiV2TokensRev2ReferenceNumberGet"),
+    TOKEN_APPROVE("tokens/{referenceNumber}/approve", "apiV2TokensReferenceNumberApprovePost"),
+    TEST_TOKEN_EXPIRE_APPROVAL("testdata/tokens/{referenceNumber}/expire-approval", "apiV2TestdataTokensReferenceNumberExpireApprovalPost"),
     TOKEN_LIST("tokens", "apiV2TokensGet"),
     TOKEN_GENERATE("tokens", "apiV2TokensPost"),
     TOKEN_REVOKE("tokens/{referenceNumber}", "apiV2TokensReferenceNumberDelete"),

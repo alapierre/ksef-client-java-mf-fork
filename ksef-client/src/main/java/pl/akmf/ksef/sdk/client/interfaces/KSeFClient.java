@@ -7,12 +7,16 @@ import pl.akmf.ksef.sdk.client.model.auth.AuthOperationStatusResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthStatus;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationChallengeResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationToken;
+import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenRev2;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenRefreshResponse;
 import pl.akmf.ksef.sdk.client.model.auth.AuthenticationTokenStatus;
 import pl.akmf.ksef.sdk.client.model.auth.AuthorTokenIdentifier;
 import pl.akmf.ksef.sdk.client.model.auth.GenerateTokenResponse;
 import pl.akmf.ksef.sdk.client.model.auth.KsefTokenRequest;
+import pl.akmf.ksef.sdk.client.model.auth.KsefTokenRequestRev2;
+import pl.akmf.ksef.sdk.client.model.auth.QueryTokensFiltersRev2;
 import pl.akmf.ksef.sdk.client.model.auth.QueryTokensResponse;
+import pl.akmf.ksef.sdk.client.model.auth.QueryTokensResponseRev2;
 import pl.akmf.ksef.sdk.client.model.auth.SignatureResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentResponse;
 import pl.akmf.ksef.sdk.client.model.certificate.CertificateEnrollmentStatusResponse;
@@ -786,6 +790,38 @@ public interface KSeFClient {
      * @throws ApiException - Brak autoryzacji. (401 Unauthorized)
      */
     AuthenticationToken getKsefToken(String referenceNumber, String accessToken) throws ApiException;
+
+    /**
+     * Generuje token rev2. Daty są opcjonalne. Domyślnie token jest ważny przez 90 dni.
+     * Wartość tokena jest zwracana tylko przy generowaniu.
+     */
+    default GenerateTokenResponse generateKsefTokenRev2(KsefTokenRequestRev2 request, String accessToken) throws ApiException {
+        throw new UnsupportedOperationException("Token generation rev2 is not supported");
+    }
+
+    /** Zwraca stronę metadanych tokenów rev2. Filtry, token kontynuacji i rozmiar strony są opcjonalne. */
+    default QueryTokensResponseRev2 queryKsefTokensRev2(QueryTokensFiltersRev2 filters, String continuationToken,
+                                                        Integer pageSize, String accessToken) throws ApiException {
+        throw new UnsupportedOperationException("Token listing rev2 is not supported");
+    }
+
+    /** Pobiera metadane tokena wraz ze statusem, okresem ważności i ewentualną przyczyną błędu aktywacji. */
+    default AuthenticationTokenRev2 getKsefTokenRev2(String referenceNumber, String accessToken) throws ApiException {
+        throw new UnsupportedOperationException("Token status rev2 is not supported");
+    }
+
+    /**
+     * Zatwierdza token w statusie AwaitingApproval w sesji uwierzytelnionej Węzłem Krajowym lub podpisem XAdES.
+     * Jeżeli okres ważności jeszcze się nie rozpoczął, po zatwierdzeniu token ma status NotYetActive.
+     */
+    default void approveKsefToken(String referenceNumber, String accessToken) throws ApiException {
+        throw new UnsupportedOperationException("Token approval is not supported");
+    }
+
+    /** Symuluje upływ terminu zatwierdzenia tokena AwaitingApproval na środowisku testowym. */
+    default void expireKsefTokenApproval(String referenceNumber, String accessToken) throws ApiException {
+        throw new UnsupportedOperationException("Token approval expiry simulation is not supported");
+    }
 
     /**
      * Unieważnienie tokena.
